@@ -3,7 +3,7 @@
 package gcd
 
 import chisel3._
-
+import chisel3.util._
 /**
   * This provides an alternate way to run tests, by executing then as a main
   * From sbt (Note: the test: prefix is because this main is under the test package hierarchy):

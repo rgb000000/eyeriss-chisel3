@@ -10,3 +10,6 @@
 [submodule "torture"]
 	path = torture
 	url = https://github.com/ucb-bar/riscv-torture
+[submodule "chisel-testers"]
+	path = chisel-testers
+	url = https://github.com/freechipsproject/chisel-testers

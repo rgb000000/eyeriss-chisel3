@@ -5,7 +5,7 @@ package gcd
 import java.io.File
 
 import chisel3.iotesters
-import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
+import chisel3.iotesters.{Driver, PeekPokeTester}
 
 class GCDUnitTester(c: GCD) extends PeekPokeTester(c) {
   /**
