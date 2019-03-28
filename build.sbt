@@ -126,7 +126,7 @@ lazy val hardfloat  = dependOnChisel(project).settings(commonSettings)
 
   .settings(crossScalaVersions := Seq("2.12.4"))
 
-lazy val testers = (project in file("chisel-testers")).settings(commonSettings)
+lazy val testers = (project in file("chisel-testers")).settings(commonSettings).dependsOn(chisel)
 
 lazy val `rocket-macros` = (project in file("macros")).settings(commonSettings)
 
