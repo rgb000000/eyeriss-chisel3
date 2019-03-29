@@ -10,12 +10,12 @@ import scala.collection.mutable.ArrayBuffer
 
 object GetVerilog extends App {
   println("hi")
-  chisel3.Driver.execute(Array("--target-dir", "test_run_dir"), () => new Conv1d(3, 5, 8))
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir"), () => new PE(3, 5, 8))
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir"), () => new PEArray(2,2,3,3,16))
 }
 
 object SW extends App {
-  // PE.py 29~37 def __Conv1d__
+  // PE.py 29~37 def __PE__
   // TEST PASS
   def conv1d(filter: List[Int], img: List[Int], sumIn: List[Int]): List[Int] = {
     var result: List[Int] = List()
@@ -65,7 +65,7 @@ object SW extends App {
 }
 
 
-class Conv1dTest(c: Conv1d) extends PeekPokeTester(c) {
+class PETest(c: PE) extends PeekPokeTester(c) {
   val r = scala.util.Random
   val f = List.fill(c.filterLen)(r.nextInt(10) - 5)
   val i = List.fill(c.imgLen)(r.nextInt(10) - 5)
@@ -99,7 +99,7 @@ class PEArrayTest(c: PEArray) extends PeekPokeTester(c) {
 }
 
 
-class Conv1dTester extends ChiselFlatSpec {
+class PETester extends ChiselFlatSpec {
   val fLen = 5
   val iLen = 32
   val w = 16
@@ -113,15 +113,15 @@ class Conv1dTester extends ChiselFlatSpec {
 
   "using --backend-name verilator" should "be an alternative way to run using verilator" in {
     if (backendNames.contains("verilator")) {
-      Driver.execute(Array("--backend-name", "verilator"), () => new Conv1d(fLen, iLen, w)) {
-        c => new Conv1dTest(c)
+      Driver.execute(Array("--backend-name", "verilator"), () => new PE(fLen, iLen, w)) {
+        c => new PETest(c)
       } should be(true)
     }
   }
 
   "Basic test using Driver.execute" should "be used as an alternative way to run specification" in {
-    Driver(() => new Conv1d(fLen, iLen, w)) {
-      c => new Conv1dTest(c)
+    Driver(() => new PE(fLen, iLen, w)) {
+      c => new PETest(c)
     } should be(true)
   }
 }

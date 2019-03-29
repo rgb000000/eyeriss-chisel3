@@ -4,7 +4,7 @@ package conv
 
 import chisel3._
 
-class Conv1d(val filterLen: Int, val imgLen: Int, w: Int) extends Module {
+class PE(val filterLen: Int, val imgLen: Int, w: Int) extends Module {
   val io = IO(new Bundle {
     val filterRow = Input(Vec(filterLen, SInt(w.W)))
     val imgRow = Input(Vec(imgLen, SInt(w.W)))
@@ -46,7 +46,7 @@ class PEArray(
       val sum = Output(Vec(imgRowNum - filterRowNum + 1, Vec(imgLen - filterLen + 1,  SInt(w.W))))
     }
   })
-  val PEs = Array.fill(filterRowNum, imgRowNum - filterRowNum + 1)(Module(new Conv1d(filterLen, imgLen, w)).io)
+  val PEs = Array.fill(filterRowNum, imgRowNum - filterRowNum + 1)(Module(new PE(filterLen, imgLen, w)).io)
 
   // connect output sum
   //  (io.sum, PEs(0)).zipped.map((iosum, PE)=>{(iosum, PE.sum).zipped.map(_ := _)})
