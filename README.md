@@ -1,8 +1,9 @@
 Eyeriss by Chisel3(under development)
 =======================
 
-> #### Chisel Tutorial [tutorials](https://github.com/ucb-bar/chisel-tutorial)
-> #### IDEA Guide [IntelliJ Installation Guide](https://github.com/ucb-bar/chisel-template/wiki/IntelliJ-Installation-Guide)
+> #### Chisel Tutorial [Tutorial](https://github.com/ucb-bar/chisel-tutorial)
+> #### IDEA Guide [Guide](https://github.com/ucb-bar/chisel-template/wiki/IntelliJ-Installation-Guide)
+> #### breeze Tutorial [Tutorial](https://github.com/scalanlp/breeze/wiki/Quickstart)
 
 
 # Usage

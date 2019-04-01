@@ -5,13 +5,15 @@ package conv
 import org.scalatest._
 import chisel3._
 import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
+import breeze.linalg._
 
 import scala.collection.mutable.ArrayBuffer
 
 object GetVerilog extends App {
   println("hi")
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir"), () => new PE(3, 5, 8))
-  chisel3.Driver.execute(Array("--target-dir", "test_run_dir"), () => new PEArray(2,2,3,3,16))
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir"),
+    () => new PEArray(2, 2, 3, 3, 16))
 }
 
 object SW extends App {
@@ -47,21 +49,98 @@ object SW extends App {
     result.map(_.toList).toList
   }
 
+  // TODO: conInterleave filter and fmap
+  def convInterleave(filterin: List[Int], fmapin: List[Int], filterNum: Int,
+                     fmapNum: Int, nchannel: Int, model: Int): DenseMatrix[Int] = {
+
+    def shiftReg(x: List[Int]): List[Int] = {
+      return (x.tail :+ x.head)
+    }
+
+    var filterReg = filterin
+    var fmapReg = fmapin.slice(0, filterReg.length)
+    var pSumReg = DenseVector.fill[Int](100)(0)
+    var oSumReg = DenseMatrix.fill[Int](filterNum, fmapin.length - filterin.length/filterNum + 1)(0)
+
+    model match {
+      case 0 => {
+        // 1 filter  1 image  and 1 channel, reuse filter
+        assert(filterNum == 1 & nchannel == 1 & fmapNum == 1)
+
+        for (i <- 0 until fmapin.length - filterin.length + 1) {
+          for (j <- filterReg.indices) {
+            pSumReg(i) += filterReg.head * fmapReg.head
+            filterReg = shiftReg(filterReg)
+            fmapReg = shiftReg(fmapReg)
+          }
+          oSumReg(0, i) = pSumReg(i)
+          fmapReg = fmapin.slice(i + 1, i + 1 + filterReg.length)
+        }
+        oSumReg
+      }
+
+      case 1 => {
+        // several filters and one img, reuse img
+        assert(fmapNum == 1 & nchannel == 1 & filterNum != 1)
+
+        for (i <- 0 until fmapin.length - filterin.length / filterNum + 1) {
+          for (j <- Range(0, filterReg.length / filterNum)) {
+            for (k <- 0 until filterNum) {
+              pSumReg(i * filterNum + k) += filterReg.head * fmapReg.head
+              filterReg = shiftReg(filterReg)
+            }
+            fmapReg = shiftReg(fmapReg)
+          }
+          oSumReg(0 until filterNum, i) := pSumReg(i * filterNum until (i + 1) * filterNum)
+          fmapReg = fmapin.slice(i + 1, i + 1 + filterReg.length)
+        }
+        oSumReg
+      }
+      case 2 => {
+        // servel channel
+        assert(nchannel != 1)
+        var oSumReg = DenseMatrix.fill[Int](nchannel, fmapin.length/nchannel - filterin.length/nchannel + 1)(0)
+        for (i <- 0 until fmapin.length/nchannel - filterin.length / nchannel + 1) {
+          for (j <- Range(0, filterReg.length/nchannel)) {
+            for (k <- 0 until nchannel) {
+              pSumReg(i * nchannel + k) += filterReg.head * fmapReg.head
+              filterReg = shiftReg(filterReg)
+              fmapReg = shiftReg(fmapReg)
+            }
+          }
+          oSumReg(0 until nchannel, i) := pSumReg(i * nchannel until (i + 1) * nchannel)
+          fmapReg = fmapin.slice(i + nchannel, i + nchannel + filterReg.length)
+        }
+        oSumReg
+      }
+    }
+  }
+
   def test(ss: String): Unit = {
     println(ss)
   }
 
-  val f = List(1, 2, 3, 1, 2, 3, 1, 2)
-  val i = List(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 1, 1, 1, 2, 3, 4, 5, 5, 6)
-  conv1d(f, i, List.fill(i.length - f.length + 1)(1)).foreach((x: Int) => print(x.toString() + ","))
-  test("hi")
+  def testConv() = {
+    val f = List(1, 2, 3, 1, 2, 3, 1, 2)
+    val i = List(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 1, 1, 1, 2, 3, 4, 5, 5, 6)
+    conv1d(f, i, List.fill(i.length - f.length + 1)(1)).foreach((x: Int) => print(x.toString() + ","))
+    test("hi")
 
-  val r = scala.util.Random
-  val ff = List.fill(3, 3)(r.nextInt(10)-5)
-  val ii = List.fill(5, 5)(r.nextInt(10)-5)
-  println(ff)
-  println(ii)
-  println(conv2d(ff, ii))
+    val r = scala.util.Random
+    val ff = List.fill(3, 3)(r.nextInt(10) - 5)
+    val ii = List.fill(5, 5)(r.nextInt(10) - 5)
+    println(ff)
+    println(ii)
+    println(conv2d(ff, ii))
+  }
+
+  def testconvInterleave(): Unit = {
+    println(convInterleave(List(1, 2, 3, 4), List(1, 2, 3, 4, 5, 6), 1, 1, 2, 2))
+    println(conv1d(List(1, 3), List(1, 3, 5), List(0, 0, 0, 0)))
+    println(conv1d(List(2, 4), List(2, 4, 6), List(0, 0, 0, 0)))
+  }
+
+  testconvInterleave()
 }
 
 
@@ -84,16 +163,16 @@ class PEArrayTest(c: PEArray) extends PeekPokeTester(c) {
   val i = List.fill(c.imgRowNum, c.imgLen)(r.nextInt(10) - 5)
   val swResult = SW.conv2d(f, i)
 
-  (c.io.filterIn, f).zipped.map((iorow, frow)=>{
+  (c.io.filterIn, f).zipped.map((iorow, frow) => {
     (iorow, frow).zipped.map(poke(_, _))
   })
-  (c.io.imgIn, i).zipped.map((iorow, irow)=>{
+  (c.io.imgIn, i).zipped.map((iorow, irow) => {
     (iorow, irow).zipped.map(poke(_, _))
   })
   step(1)
   print(swResult)
   print(c.io.sum.map(peek(_)))
-  (c.io.sum, swResult).zipped.map((sumrow, swrow)=>{
+  (c.io.sum, swResult).zipped.map((sumrow, swrow) => {
     (sumrow, swrow).zipped.map(expect(_, _))
   })
 }
