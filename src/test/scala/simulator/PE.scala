@@ -22,6 +22,8 @@ class PE {
 
   var nchannel: Int = 0
 
+  var oSum = DenseMatrix.fill[Int](1,1)(0)
+
   var state = State.noClock
 
   def setAttribut(fLen:Int, fNum: Int, fIn: List[Int],
@@ -35,6 +37,7 @@ class PE {
     imgIn = iIn
     this.nchannel = nchannel
     this.state = state
+    oSum = DenseMatrix.fill[Int](filterNum, imgIn.length - filterIn.length/filterNum + 1)(0)
   }
 
   def shiftReg(x: List[Int]): List[Int] = {
@@ -53,7 +56,7 @@ class PE {
                 else if(nchannel == 1 & filterNum != 1 & imgNum == 1){ 1 }    //多filter 单img计算
                 else if(nchannel ==1 & filterNum == 1 & imgNum == 1){ 0 }     //单filter 单img计算
                 else {-1}
-    model match {
+    this.oSum = model match {
       case 0 => {
         // 1 filter  1 image  and 1 channel, reuse filter
         assert(filterNum == 1 & nchannel == 1 & imgNum == 1)
@@ -110,6 +113,23 @@ class PE {
         DenseMatrix.fill[Int](1,1)(0)
       }
     }
+    this.oSum
+  }
+}
+
+object PEArrayGenerator{
+  var fRow = 0
+  var fLen = 0
+  var iRow = 0
+  var iLen = 0
+
+  def getIput(filter: DenseMatrix[Int], img: DenseMatrix[Int]): Unit ={
+    (fRow, fLen) = (filter.rows, filter.cols)
+    (iRow, iLen) = (img.rows, img.cols)
+  }
+  def generateArray(): List[List[PE]] ={
+    val PEArray = List.fill[PE](fRow, iRow - fRow + 1)(new PE())
+    PEArray
   }
 }
 
@@ -187,6 +207,7 @@ object Main extends App{
   )
   println(pe.cal)
   println(SW.convMode0((1,2,3), (1,2,3,4,5), (0,0,0,0)))
+  println(pe.cal.toArray.toList == SW.convMode0((1,2,3), (1,2,3,4,5), (0,0,0,0)))
 
   println("---test mode1---")
   pe.setAttribut(
@@ -196,6 +217,7 @@ object Main extends App{
   )
   println(pe.cal)
   println(SW.convMode1((1,2,3,4), 2, (1,2,3,4,5), (0,0,0,0)))
+  println(pe.cal.t.toArray.toList == SW.convMode1((1,2,3,4), 2, (1,2,3,4,5), (0,0,0,0)).flatten)
 
   println("---test mode2---")
   pe.setAttribut(
@@ -205,5 +227,6 @@ object Main extends App{
   )
   println(pe.cal)
   println(SW.convMode2((1,2,3,4),  (1,2,3,4,5,6), 2, (0,0,0,0)))
+  println(pe.cal.t.toArray.toList == SW.convMode2((1,2,3,4),  (1,2,3,4,5,6), 2, (0,0,0,0)).flatten)
 
 }
