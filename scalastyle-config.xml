@@ -6,7 +6,7 @@
    <parameter name="maxFileLength"><![CDATA[800]]></parameter>
   </parameters>
  </check>
- <check level="warning" class="org.scalastyle.file.HeaderMatchesChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.file.HeaderMatchesChecker" enabled="false">
   <parameters>
    <parameter name="header"><![CDATA[// See README.md for license details.]]></parameter>
   </parameters>
@@ -46,7 +46,7 @@
    <parameter name="maxParameters"><![CDATA[8]]></parameter>
   </parameters>
  </check>
- <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.scalariform.MagicNumberChecker" enabled="false">
   <parameters>
    <parameter name="ignore"><![CDATA[-1,0,1,2,8,10,16]]></parameter>
   </parameters>
@@ -65,7 +65,7 @@
   </parameters>
   <customMessage>No lines ending with a ;</customMessage>
  </check>
- <check level="warning" class="org.scalastyle.file.RegexChecker" enabled="true">
+ <check level="warning" class="org.scalastyle.file.RegexChecker" enabled="false">
   <parameters>
    <parameter name="regex"><![CDATA[println]]></parameter>
   </parameters>
