@@ -230,6 +230,24 @@ object SW {
     result.map(_.toList).toList
   }
 
+  def conv2d(filter: DenseMatrix[Int], img: DenseMatrix[Int]): DenseMatrix[Int] = {
+    // only suppost  square 正方形 conv
+    assert(filter.rows == filter.cols)
+    assert(img.rows == img.cols)
+
+    val fSize = filter.rows
+    val iSize = img.rows
+
+    val result = DenseMatrix.fill[Int](iSize - fSize + 1, iSize - fSize + 1)(0)
+
+    for(i <- Range(0, iSize - fSize + 1)){
+      for(j <- Range(0, iSize - fSize + 1)){
+        result(i, j) = sum(img(i to i + fSize - 1, j to j + fSize - 1) *:* filter)
+      }
+    }
+    result
+  }
+
   def convMode0(filter: List[Int], img: List[Int], sum: List[Int]): List[Int] = conv1d(filter, img, sum)
 
   def convMode1(filters: List[Int], filterNum: Int, img: List[Int], sum: List[Int]): List[List[Int]] = {
@@ -308,4 +326,5 @@ object Main extends App {
   PEArray.cal
 
   println(SW.conv2d(List(List(1,2,3), List(4,5,6), List(7,8,9)), List(List(1,2,3,4,5),List(2,3,4,5,6),List(3,4,5,6,7),List(4,5,6,7,8),List(5,6,7,8,9))))
+  println(SW.conv2d(filter, img))
 }
