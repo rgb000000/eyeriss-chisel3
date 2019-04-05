@@ -154,7 +154,6 @@ class eyerissSystem(val PEArray: List[List[PE]]){
   def cal : DenseVector[DenseMatrix[Int]] = {
     PEArray.foreach(_.foreach(_.cal))
     val result = PEArray.map(_.map(_.oSum)).map(_.toArray).map(DenseVector(_)).reduce(_ + _)
-    println(result)
     result
   }
 }
@@ -169,19 +168,24 @@ object PEArrayGenerator {
       img.cols)
   }
 
-  def generateArray(filter: DenseMatrix[Int], img: DenseMatrix[Int]): List[List[PE]] = {
+  def generateArray(filter: DenseMatrix[Int], img: DenseMatrix[Int],
+                    filterNum: Int = 1, nchannel: Int = 1): List[List[PE]] = {
     val (fRow, fLen, iRow, iLen) = getIput(filter, img)
     val PEArray = List.fill[PE](fRow, iRow - fRow + 1)(new PE())
+
+    // Set nchannel
+    PEArray.foreach(_.foreach(_.nchannel = nchannel))
+
     // Set filter Row to One Row filter
     val filterList = ArrayBuffer[DenseVector[Int]]()
     filter.t(::,*).foreach(filterList.append(_))
     (PEArray, filterList).zipped.foreach((PERow, fRow)=>{
-      PERow.foreach(_.setFilter(fRow, 1))
+      PERow.foreach(_.setFilter(fRow, filterNum))
     })
 
     // Set filter Row to One Row image
     val imgList = ArrayBuffer[DenseVector[Int]]()
-    img(::,*).foreach(imgList.append(_))
+    img.t(::,*).foreach(imgList.append(_))
     var i = 0   //row
     var j = 0   //col
     PEArray.foreach((PERow) => {
@@ -200,6 +204,10 @@ object PEArrayGenerator {
 
 object SW {
 
+  implicit def denseVectorInt2ListInt(dv: DenseVector[Int]):List[Int] = {
+    dv.toArray.toList
+  }
+
   def conv1d(filter: List[Int], img: List[Int], sumIn: List[Int]): List[Int] = {
     var result: List[Int] = List()
     for (i <- 0 to img.length - filter.length) {
@@ -210,6 +218,10 @@ object SW {
       result = result :+ localSum
     }
     (result, sumIn).zipped.map(_ + _)
+  }
+
+  def conv1d(filter: DenseVector[Int], img: DenseVector[Int], sumIn: DenseVector[Int]): DenseVector[Int] = {
+    DenseVector(conv1d(filter.toArray.toList, img, sumIn).toArray)
   }
 
   def conv2d(filter: List[List[Int]], img: List[List[Int]]): List[List[Int]] = {
@@ -249,6 +261,9 @@ object SW {
   }
 
   def convMode0(filter: List[Int], img: List[Int], sum: List[Int]): List[Int] = conv1d(filter, img, sum)
+  def convMode0(filter: DenseVector[Int], img: DenseVector[Int], sum: DenseVector[Int]): DenseVector[Int] ={
+    conv1d(filter, img, sum)
+  }
 
   def convMode1(filters: List[Int], filterNum: Int, img: List[Int], sum: List[Int]): List[List[Int]] = {
     val filterLen = filters.length
@@ -258,6 +273,12 @@ object SW {
       filter.append(temp.map(_ (i)))
     }
     filter.map(conv1d(_, img, sum)).toList
+  }
+  def convMode1(filters: DenseVector[Int], filterNum: Int, img: DenseVector[Int],
+                sum: DenseVector[Int]): DenseVector[DenseVector[Int]] = {
+    DenseVector(convMode1(filters.toArray.toList, filterNum, img, sum).map((l:List[Int])=>{
+      DenseVector(l.toArray)
+    }).toArray)
   }
 
   def convMode2(filters: List[Int], imgs: List[Int], nchannel: Int, sum: List[Int]): List[List[Int]] = {
@@ -271,6 +292,13 @@ object SW {
       img.append(itemp.map(_ (i)))
     }
     (filter, img).zipped.map(conv1d(_, _, sum)).toList
+  }
+
+  def convMode2(filters: DenseVector[Int], imgs: DenseVector[Int], nchannel: Int,
+                sum: DenseVector[Int]): DenseVector[DenseVector[Int]] = {
+    DenseVector(convMode2(filters.toArray.toList, imgs, nchannel, sum).map((l: List[Int]) => {
+      DenseVector(l.toArray)
+    }).toArray)
   }
 }
 
@@ -287,8 +315,9 @@ object Main extends App {
     5, 1, List(1, 2, 3, 4, 5),
     1, State.clock
   )
-  println(pe.cal)
-  println(SW.convMode0((1, 2, 3), (1, 2, 3, 4, 5), (0, 0, 0, 0)))
+  println("PE.cal -> ", pe.cal)
+  println("SW.convMode0 list -> ", SW.convMode0((1, 2, 3), (1, 2, 3, 4, 5), (0, 0, 0, 0)))
+  println("SW.convMode0 DV -> ", SW.convMode0(DenseVector(1, 2, 3), DenseVector(1, 2, 3, 4, 5), DenseVector(0, 0, 0, 0)))
   println(pe.cal.toArray.toList == SW.convMode0((1, 2, 3), (1, 2, 3, 4, 5), (0, 0, 0, 0)))
 
   println("---test mode1---")
@@ -297,8 +326,9 @@ object Main extends App {
     5, 1, List(1, 2, 3, 4, 5),
     1, State.clock
   )
-  println(pe.cal)
-  println(SW.convMode1((1, 2, 3, 4), 2, (1, 2, 3, 4, 5), (0, 0, 0, 0)))
+  println("PE.cal -> ", pe.cal)
+  println("SW.convMode1 list -> ", SW.convMode1((1, 2, 3, 4), 2, (1, 2, 3, 4, 5), (0, 0, 0, 0)))
+  println("SW.convMode1 DV -> ", SW.convMode1(DenseVector(1, 2, 3, 4), 2, DenseVector(1, 2, 3, 4, 5), DenseVector(0, 0, 0, 0)))
   println(pe.cal.t.toArray.toList == SW.convMode1((1, 2, 3, 4), 2, (1, 2, 3, 4, 5), (0, 0, 0, 0)).flatten)
 
   println("---test mode2---")
@@ -308,23 +338,59 @@ object Main extends App {
     2, State.clock
   )
   println(pe.cal)
-  println(SW.convMode2((1, 2, 3, 4), (1, 2, 3, 4, 5, 6), 2, (0, 0, 0, 0)))
+  println("SW.convMode2 list -> ", SW.convMode2((1, 2, 3, 4), (1, 2, 3, 4, 5, 6), 2, (0, 0, 0, 0)))
+  println("SW.convMode0 DV -> ", SW.convMode2(DenseVector(1, 2, 3, 4), DenseVector(1, 2, 3, 4, 5, 6), 2, DenseVector(0, 0, 0, 0)))
   println(pe.cal.t.toArray.toList == SW.convMode2((1, 2, 3, 4), (1, 2, 3, 4, 5, 6), 2, (0, 0, 0, 0)).flatten)
 
-  println("---test conv2d---")
-  val filter = DenseMatrix((1,2,3),(4,5,6),(7,8,9))
-  val img = DenseMatrix((1,2,3,4,5),(2,3,4,5,6),(3,4,5,6,7),(4,5,6,7,8),(5,6,7,8,9))
-  val PEArray = new eyerissSystem(PEArrayGenerator.generateArray(filter, img))
+  println("---test conv2d mode0---")
+  var filter = DenseMatrix((1,2,3),(4,5,6),(7,8,9))
+  var img = DenseMatrix((1,2,3,4,5),(2,3,4,5,6),(3,4,5,6,7),(4,5,6,7,8),(5,6,7,8,9))
+  var PEArray = new eyerissSystem(PEArrayGenerator.generateArray(filter, img))
+
+//  PEArray.PEArray.foreach((PERow)=>{
+//    PERow.foreach((PE)=>{
+//      println(PE.filterIn)
+//      println(PE.imgIn)
+//    })
+//  })
+
+  println("PEArray mode1 -> \n", PEArray.cal)
+  println("SW.conv2d list -> ", SW.conv2d(List(List(1,2,3), List(4,5,6), List(7,8,9)), List(List(1,2,3,4,5),List(2,3,4,5,6),List(3,4,5,6,7),List(4,5,6,7,8),List(5,6,7,8,9))))
+  println("SW.conv2d DM -> \n", SW.conv2d(filter, img))
+
+  println("---test conv2d mode1---")
+  filter = DenseMatrix((1,2,3,4),(4,5,6,7))
+  img = DenseMatrix((1,2,3,4,5),(2,3,4,5,6),(3,4,5,6,7),(4,5,6,7,8),(5,6,7,8,9))
+  PEArray = new eyerissSystem(PEArrayGenerator.generateArray(filter, img, 2 ))
 
   PEArray.PEArray.foreach((PERow)=>{
     PERow.foreach((PE)=>{
       println(PE.filterIn)
       println(PE.imgIn)
+      println(PE.filterNum)
+      println(PE.nchannel)
     })
   })
 
-  PEArray.cal
+  println("PEArray mode1 -> \n", PEArray.cal)
+  println("SW.conv2d list -> ", SW.conv2d(List(List(1,3), List(4,6)), List(List(1,2,3,4,5),List(2,3,4,5,6),List(3,4,5,6,7),List(4,5,6,7,8),List(5,6,7,8,9))))
+  println("SW.conv2d DM -> \n", SW.conv2d(filter(::, 1 to filter.cols by 2), img))
 
-  println(SW.conv2d(List(List(1,2,3), List(4,5,6), List(7,8,9)), List(List(1,2,3,4,5),List(2,3,4,5,6),List(3,4,5,6,7),List(4,5,6,7,8),List(5,6,7,8,9))))
-  println(SW.conv2d(filter, img))
+  println("---test conv2d mode2---")
+  filter = DenseMatrix((1,2,3,4),(4,5,6,7))
+  img = DenseMatrix((1,2,3,4,5,6),(2,3,4,5,6,7),(3,4,5,6,7,8))
+  PEArray = new eyerissSystem(PEArrayGenerator.generateArray(filter, img, 1, 2 ))
+
+    PEArray.PEArray.foreach((PERow)=>{
+      PERow.foreach((PE)=>{
+        println(PE.filterIn)
+        println(PE.imgIn)
+        println(PE.filterNum)
+        println(PE.nchannel)
+      })
+    })
+
+  println("PEArray mode2 -> \n", PEArray.cal)
+  println("SW.conv2d list -> ", SW.conv2d(List(List(1,3), List(4,6)), List(List(1,3,5),List(2,4,6),List(3,5,7))))
+  println("SW.conv2d DM -> \n", SW.conv2d(filter(::, 1 to filter.cols by 2), img(::, 1 to img.cols by 2)))
 }
