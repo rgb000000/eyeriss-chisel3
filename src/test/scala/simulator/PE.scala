@@ -363,14 +363,14 @@ object Main extends App {
   img = DenseMatrix((1,2,3,4,5),(2,3,4,5,6),(3,4,5,6,7),(4,5,6,7,8),(5,6,7,8,9))
   PEArray = new eyerissSystem(PEArrayGenerator.generateArray(filter, img, 2 ))
 
-  PEArray.PEArray.foreach((PERow)=>{
-    PERow.foreach((PE)=>{
-      println(PE.filterIn)
-      println(PE.imgIn)
-      println(PE.filterNum)
-      println(PE.nchannel)
-    })
-  })
+//  PEArray.PEArray.foreach((PERow)=>{
+//    PERow.foreach((PE)=>{
+//      println(PE.filterIn)
+//      println(PE.imgIn)
+//      println(PE.filterNum)
+//      println(PE.nchannel)
+//    })
+//  })
 
   println("PEArray mode1 -> \n", PEArray.cal)
   println("SW.conv2d list -> ", SW.conv2d(List(List(1,3), List(4,6)), List(List(1,2,3,4,5),List(2,3,4,5,6),List(3,4,5,6,7),List(4,5,6,7,8),List(5,6,7,8,9))))
@@ -381,14 +381,14 @@ object Main extends App {
   img = DenseMatrix((1,2,3,4,5,6),(2,3,4,5,6,7),(3,4,5,6,7,8))
   PEArray = new eyerissSystem(PEArrayGenerator.generateArray(filter, img, 1, 2 ))
 
-    PEArray.PEArray.foreach((PERow)=>{
-      PERow.foreach((PE)=>{
-        println(PE.filterIn)
-        println(PE.imgIn)
-        println(PE.filterNum)
-        println(PE.nchannel)
-      })
-    })
+//    PEArray.PEArray.foreach((PERow)=>{
+//      PERow.foreach((PE)=>{
+//        println(PE.filterIn)
+//        println(PE.imgIn)
+//        println(PE.filterNum)
+//        println(PE.nchannel)
+//      })
+//    })
 
   println("PEArray mode2 -> \n", PEArray.cal)
   println("SW.conv2d list -> ", SW.conv2d(List(List(1,3), List(4,6)), List(List(1,3,5),List(2,4,6),List(3,5,7))))
