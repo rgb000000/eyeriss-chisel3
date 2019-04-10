@@ -6,108 +6,23 @@ import chisel3.util._
 import myutil._
 
 
-//class PE(filterSpadLen: Int, imgSpadLen: Int, w: Int) extends Module {
-//  val io = IO(new Bundle {
-//    // 00 -> idle
-//    // 01 -> getData
-//    // 10 -> cal
-//    val stateSW = Input(UInt(2.W))
-//    val filter = Flipped(DecoupledIO(UInt(w.W)))
-//    val img = Flipped(DecoupledIO(UInt(w.W)))
-//    val pSumIn = Flipped(DecoupledIO(UInt(w.W)))
-//    val oSum = DecoupledIO(UInt(w.W))
-//    val regConfig = Input(UInt(16.W))
-//  })
-//
-//  val idle :: getData :: cal :: Nil = Enum(3)
-//  val state = RegInit(idle)
-//  // reg 0 -> number of filter
-//  // reg 1 -> number of img
-//  // reg 2 -> number of channel
-//  // reg 3 -> no use
-//  val reg = RegInit(Vec(4, UInt(4.W)))
-//
-//
-//  // Counter
-//  val fcnt = Counter(filterSpadLen)
-//  val icnt = Counter(imgSpadLen)
-//  val fcntFull = !(fcnt.value === filterSpadLen.U)
-//  val icntFull = !(icnt.value === imgSpadLen.U)
-//  when(io.filter.fire()){
-//    fcnt.inc()
-//  }
-//  when(io.img.fire()){
-//    icnt.inc()
-//  }
-//
-//  io.filter.ready := fcntFull & (state === getData)
-//  io.img.ready := icntFull & (state === getData)
-//
-//  val doGetData = state === getData
-//  val doCal = state === cal
-//
-//  val filterIn = Wire(io.filter.cloneType)
-//  filterIn.bits := io.filter.bits
-//  filterIn.valid := Mux(doGetData, io.filter.valid, 0.U(1.W))
-//  filterIn.ready := Mux(doGetData, io.filter.ready, 0.U(1.W))
-//  val imgIn = Wire(io.img.cloneType)
-//  imgIn.bits := io.img.bits
-//  imgIn.valid := Mux(doGetData, io.img.valid, 0.U(1.W))
-//  imgIn.ready := Mux(doGetData, io.img.ready, 0.U(1.W))
-//
-//  val fQ = FIFO(filterIn, filterSpadLen)
-//
-//  fQ.ready := doCal
-//  val iQ = FIFO(imgIn, imgSpadLen)
-//  iQ.ready := doCal
-//
-//  val pSum = Wire(DecoupledIO(iQ.bits.cloneType))
-//  pSum.valid := 0.U
-//  pSum.bits := 0.U
-//  val pSumQ = FIFO(pSum, 16)
-//
-//
-//  switch(state){
-//    is (idle){
-//      when( (io.filter.valid | io.img.valid) & io.stateSW === 1.U){
-//        state := getData
-//      } .otherwise{
-//        state := state
-//      }
-//    }
-//    is (getData) {
-//      // TODO to judge when to switch state to cal
-//      when(!io.filter.valid & io.stateSW === 2.U){
-//        state := cal
-//      }.otherwise{
-//        state := state
-//      }
-//      reg(3) := io.regConfig(15,12)
-//      reg(2) := io.regConfig(11,8)
-//      reg(1) := io.regConfig(7,4)
-//      reg(0) := io.regConfig(3,0)
-//    }
-//    is (cal){
-//      when(iQ.fire() & fQ.fire()){
-//        pSum.bits := fQ.bits * iQ.bits
-//        pSum.valid := 1.U
-//      }.otherwise{
-//        pSum.valid := 0.U
-//        pSum.bits := 0.U
-//      }
-//    }
-//  }
-//  io.oSum <> pSumQ
-//}
 
+class PEConfigReg(val w:Int = 16) extends Bundle{
+  val filterNum = UInt(w.W)
+  val imgNum = UInt(w.W)
+  val nchannel = UInt(w.W)
+}
+
+
+// take care!  in PE stateSw is buffer one time
 @chiselName
-class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 12, w:Int = 16) extends Module{
+class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Module{
     val io = IO(new Bundle {
       // 00 -> idle
       // 01 -> getData
       // 10 -> cal
       val stateSW = Input(UInt(2.W))
-      val regConfig = Input(UInt(16.W))
+      val regConfig = Input(new PEConfigReg(16))
 
       val filter = Flipped(DecoupledIO(UInt(w.W)))
       val img = Flipped(DecoupledIO(UInt(w.W)))
@@ -115,23 +30,30 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 12, w:Int = 16) extends Mod
       val oSum = DecoupledIO(UInt(w.W))
     })
 
+  val configReg = Reg(new PEConfigReg(16))
+
   io.pSumIn.ready := 0.U
   io.oSum.valid := 0.U
   io.oSum.bits := 0.U
 
-  val idle :: data :: cal :: done :: Nil = Enum(4)
+  val fCnt = Counter(256)
+
+  // data mean getData
+  val idle :: data :: cal :: pDone :: allDone:: Nil = Enum(5)
   val state = RegInit(idle)
   val dodata = WireInit(state === data)
   val docal = WireInit(state === cal)
+
 
   val fQMuxIn = Wire(DecoupledIO(io.filter.bits.cloneType))
   val fQ = FIFO(fQMuxIn, filterSpadLen)
   io.filter.ready := 0.U
   fQ.ready := 0.U
-  when(dodata){
-    fQMuxIn :=  io.filter
+  // when getdata switch io.statwSW == cal and filter must all translate to fQ
+  when(dodata) {
+    fQMuxIn <> io.filter
   }.otherwise{
-    fQMuxIn := fQ
+    fQMuxIn <> fQ
   }
   fQ.ready := state === cal
 
@@ -140,35 +62,69 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 12, w:Int = 16) extends Mod
   io.img.ready := 0.U
   iQ.ready := 0.U
   when(dodata){
-    iQMuxIn := io.img
+    iQMuxIn <> io.img
   }.otherwise{
-    iQMuxIn := iQ
+    iQMuxIn <> iQ
   }
   iQ.ready := state === cal
 
   val mulReg = RegInit(0.U(w.W))
+  val pSumMem = Mem(32, UInt(w.W))
+  val calCnt = Counter(32)
+  val pSumAddr = Counter(32)
+
+  val trash = RegInit(0.U(w.W))
+
+  io.oSum.valid := 0.U
 
   switch (state){
     is(idle){
-      when(io.stateSW === dodata){
+      configReg := io.regConfig
+      when(io.stateSW === data){
         state := data
       }
     }
     is(data){
+      when(fQMuxIn.fire()){
+        fCnt.inc()
+      }
       // to swith to cal, filter in must done
-      when(io.stateSW === docal | io.filter.valid === 0.U){
+      when(io.stateSW === cal){
         state := cal
       }
     }
     is(cal){
       when(fQ.fire() & iQ.fire()){
-        io.oSum.valid := 1.U
-        io.oSum.bits := fQ.bits + iQ.bits
+        when(calCnt.value === fCnt.value - 1.U){
+          calCnt.value := 0.U
+          pSumAddr.inc()
+          pSumMem(pSumAddr.value) := fQ.bits * iQ.bits + pSumMem(pSumAddr.value)
+          io.oSum.bits := fQ.bits * iQ.bits + pSumMem(pSumAddr.value)
+          io.oSum.valid := 1.U
+          state := pDone
+        }.otherwise{
+          pSumMem(pSumAddr.value) := fQ.bits * iQ.bits + pSumMem(pSumAddr.value)
+          io.oSum.bits := 0.U
+          calCnt.inc()
+        }
       }.otherwise{
-
+        io.oSum.valid := 0.U
       }
     }
-    is(done){
+    is(pDone){
+      fQMuxIn.valid := 0.U
+      // let img FIFO spit a data to trash
+      iQ.ready := 1.U
+      trash := iQ.bits
+      core.dontTouch(trash)
+      iQMuxIn <> io.img
+      when(io.img.valid === 0.U){
+        state := allDone
+      }.otherwise{
+        state := cal
+      }
+    }
+    is(allDone){
 
     }
   }

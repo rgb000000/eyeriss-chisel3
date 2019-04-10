@@ -1,7 +1,6 @@
 package simulator
 
 import breeze.linalg._
-
 import scala.collection.mutable.ArrayBuffer
 
 object State extends scala.Enumeration {
@@ -394,3 +393,8 @@ object Main extends App {
   println("SW.conv2d list -> ", SW.conv2d(List(List(1,3), List(4,6)), List(List(1,3,5),List(2,4,6),List(3,5,7))))
   println("SW.conv2d DM -> \n", SW.conv2d(filter(::, 1 to filter.cols by 2), img(::, 1 to img.cols by 2)))
 }
+
+object tempTest extends App{
+  println(SW.conv1d(List(1,2,3), List(1,2,3,4,5), List(0,0,0,0,0,0,0,0,0)))
+}
+
