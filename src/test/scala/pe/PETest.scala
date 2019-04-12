@@ -17,7 +17,6 @@ class PETest(c: PE) extends PeekPokeTester(c){
 
   val a = RegInit(3.U(8.W))
 
-
   poke(c.io.stateSW, 0)
   step(1)
   step(1)
@@ -87,8 +86,14 @@ class PETest(c: PE) extends PeekPokeTester(c){
 class PETopTester(c: PETesterTop) extends PeekPokeTester(c){
   poke(c.io.stateSW, 0)
   step(1)
-  // first: let PE in idle and input data to FIFO
-  for(i <- Range(1,6)){
+  poke(c.io.peconfig.filterNum, 2)
+  poke(c.io.peconfig.singleFilterLen, 3)
+  poke(c.io.peconfig.imgNum, 1)
+  poke(c.io.peconfig.singleImgLen, 6)
+  poke(c.io.peconfig.nchannel,1)
+  step(1)
+  // first: let PE in idle and input data to input FIFO
+  for(i <- Range(1,7)){
     poke(c.io.fIn.valid, 1)
     poke(c.io.iIn.valid, 1)
     poke(c.io.fIn.bits, i)
@@ -103,10 +108,13 @@ class PETopTester(c: PETesterTop) extends PeekPokeTester(c){
   step(1)
   step(1)
   step(1)
+  step(1)
+  step(1)
+  step(1)
   poke(c.io.stateSW,2)
   step(1)
   step(1)
-  for(i <- Range(0,50)){
+  for(i <- Range(0,200)){
     step(1)
   }
 }
