@@ -395,6 +395,7 @@ object Main extends App {
 }
 
 object tempTest extends App{
-  println(SW.convMode1(List(1,2,3,4,5,6), 2, List(1,2,3,4,5,6), List(0,0,0,0,0,0,0,0,0)))
+//  println(SW.convMode1(List(1,2,3), 1, List(1,2,3,4,5,6), List(0,0,0,0,0,0,0,0,0)))
+  println(SW.convMode2(List(1, 2, 3, 4, 5, 6), List(1, 2, 3, 4, 5, 6), 2, List(0, 0, 0, 0)))
 }
 

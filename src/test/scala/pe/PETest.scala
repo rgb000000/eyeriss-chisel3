@@ -86,11 +86,11 @@ class PETest(c: PE) extends PeekPokeTester(c){
 class PETopTester(c: PETesterTop) extends PeekPokeTester(c){
   poke(c.io.stateSW, 0)
   step(1)
-  poke(c.io.peconfig.filterNum, 2)
-  poke(c.io.peconfig.singleFilterLen, 3)
+  poke(c.io.peconfig.filterNum, 1)
+  poke(c.io.peconfig.singleFilterLen, 2)
   poke(c.io.peconfig.imgNum, 1)
-  poke(c.io.peconfig.singleImgLen, 6)
-  poke(c.io.peconfig.nchannel,1)
+  poke(c.io.peconfig.singleImgLen, 2)
+  poke(c.io.peconfig.nchannel,3)
   step(1)
   // first: let PE in idle and input data to input FIFO
   for(i <- Range(1,7)){

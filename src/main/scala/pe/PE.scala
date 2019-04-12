@@ -42,6 +42,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
   val iCnt = Counter(256)
   val calCnt = Counter(32)
   val fCalCnt = Counter(32)
+  val cCalCnt = Counter(32)
+  val pDoneCnt = Counter(32)
   val pSumAddr = Counter(32)
 
   // data mean getData
@@ -103,6 +105,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
     addr := pSumAddr.value
   }.elsewhen(mode === multiFilter){
     addr := pSumAddr.value + fCalCnt.value * singleResultLen
+  }.elsewhen(mode === multiChannel){
+    addr := pSumAddr.value
   }
   val pSumReg = Reg(UInt(w.W))
 
@@ -136,7 +140,12 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
           }
         }
         is(multiChannel){
-
+          when(fQMuxIn.fire()){
+            fCnt.inc()
+          }
+          when(io.stateSW === cal){
+            state := cal
+          }
         }
       }
     }
@@ -186,9 +195,27 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
         }
 
         is(multiChannel){
-
+          when(fQ.fire() & iQ.fire()){
+            when(calCnt.value === fCnt.value - 1.U){
+              calCnt.value := 0.U
+              pSumAddr.inc()
+              pSumMem(addr) := fQ.bits * iQ.bits + pSumMem(addr)
+              io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
+              io.oSum.valid := 1.U
+              when(io.img.valid){
+                state := pDone
+              }.otherwise{
+                state := allDone
+              }
+            }.otherwise{
+              pSumMem(addr) := fQ.bits * iQ.bits + pSumMem(addr)
+              io.oSum.bits := 0.U
+              calCnt.inc()
+            }
+          }.otherwise{
+            io.oSum.valid := 0.U
+          }
         }
-
       }
     }
     is(pDone){
@@ -220,7 +247,24 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
           }
         }
         is(multiChannel){
-
+          fQMuxIn.valid := 0.U
+          // let img FIFO spit a data to trash
+          iQ.ready := 1.U
+          trash := iQ.bits
+          core.dontTouch(trash)
+          iQMuxIn <> io.img
+          pDoneCnt.inc()
+          when(pDoneCnt.value === configReg.nchannel - 1.U){
+            state := cal
+            pDoneCnt.value := 0.U
+          }.otherwise{
+            state := pDone
+          }
+//          when(io.img.valid === 0.U){
+//            state := allDone
+//          }.otherwise{
+//            state := cal
+//          }
         }
       }
     }
