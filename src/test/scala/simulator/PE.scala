@@ -259,7 +259,7 @@ object SW {
     result
   }
 
-  def convMode0(filter: List[Int], img: List[Int], sum: List[Int]): List[Int] = conv1d(filter, img, sum)
+  def convMode0(filter: List[Int], img: List[Int], sum: List[Int] = List.fill[Int](20)(0)): List[Int] = conv1d(filter, img, sum)
   def convMode0(filter: DenseVector[Int], img: DenseVector[Int], sum: DenseVector[Int]): DenseVector[Int] ={
     conv1d(filter, img, sum)
   }
