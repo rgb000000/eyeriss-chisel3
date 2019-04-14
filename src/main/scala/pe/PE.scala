@@ -40,12 +40,25 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
 
   val fCnt = Counter(256)
   val iCnt = Counter(256)
-  val calCnt = Counter(32)
-  val fCalCnt = Counter(32)
-  val cCalCnt = Counter(32)
-  val pDoneCnt = Counter(32)
-  val pSumAddr = Counter(32)
-
+  val calCnt = Counter(256)
+  val fCalCnt = Counter(256)
+  val cCalCnt = Counter(256)
+  val pDoneCnt = Counter(256)
+  val pSumAddr = Counter(256)
+  val zfc = WireInit(fCnt.value)
+  val zic = WireInit(iCnt.value)
+  val zcc = WireInit(calCnt.value)
+  val zfcc = WireInit(fCalCnt.value)
+  val zccc = WireInit(cCalCnt.value)
+  val zpc = WireInit(pDoneCnt.value)
+  val zpsa = WireInit(pSumAddr.value)
+  core.dontTouch(zfc)
+  core.dontTouch(zic)
+  core.dontTouch(zcc)
+  core.dontTouch(zfcc)
+  core.dontTouch(zccc)
+  core.dontTouch(zpc)
+  core.dontTouch(zpsa)
   // data mean getData
   val idle :: data :: cal :: pDone :: allDone:: Nil = Enum(5)
   val state = RegInit(idle)
@@ -82,7 +95,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
   iQ.ready := (state === cal) & (fCalCnt.value === 0.U)
 
   val mulReg = RegInit(0.U(w.W))
-  val pSumMem = Mem(32, UInt(w.W))
+  val pSumMem = Mem(256, UInt(w.W))
 
   val trash = RegInit(0.U(w.W))
 
@@ -109,6 +122,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
     addr := pSumAddr.value
   }
   val pSumReg = Reg(UInt(w.W))
+
+
 
   switch (state){
     is(idle){
@@ -172,6 +187,18 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
 
         is(multiFilter){
           iQMuxIn.valid := 0.U
+          val memdata = pSumMem(addr)
+
+          io.oSum.bits := 0.U
+          when(   (calCnt.value === configReg.singleFilterLen)) {
+            io.oSum.valid := 1.U
+            io.oSum.bits := fQ.bits * iQreg + pSumMem(addr)
+                                      /*^*/
+          }.elsewhen((calCnt.value ===/*|*/configReg.singleFilterLen - 1.U) & (fCalCnt.value === 0.U)){ // 0 mean the last
+            io.oSum.valid := 1.U      /*v*/   // when the first result it use iQ.bits, else will use iQreg
+            io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
+          }
+
           when(fQ.fire() & iQ.fire()){
             iQMuxIn.valid := 1.U
             pSumMem(addr) := fQ.bits * iQ.bits + pSumMem(addr)
@@ -185,6 +212,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
             }.otherwise{
               fCalCnt.inc()
             }
+
 //            calCnt.inc()
             when((calCnt.value === configReg.singleFilterLen) & (fCalCnt.value === configReg.filterNum - 1.U)){
               calCnt.value := 0.U
@@ -240,7 +268,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
           trash := iQ.bits
           core.dontTouch(trash)
           iQMuxIn <> io.img
-          when(io.img.valid === 0.U){
+          when((io.img.valid === 0.U) | (pSumAddr.value === configReg.singleImgLen - iCnt.value + 1.U)){
             state := allDone
           }.otherwise{
             state := cal

@@ -74,7 +74,7 @@ class PE {
     }
     var filterReg = filterIn
     var fmapReg = imgIn.slice(0, filterReg.length)
-    var pSumReg = DenseVector.fill[Int](100)(0)
+    var pSumReg = DenseVector.fill[Int](10000)(0)
     var oSumReg = DenseMatrix.fill[Int](filterNum, imgIn.length - filterIn.length / filterNum + 1)(0)
     var model = if (nchannel != 1 & filterNum == 1 & imgNum == 1) {
       2
@@ -88,6 +88,12 @@ class PE {
     else {
       -1
     }
+    println(s"mode: ${model}")
+    println(s"filterNum ${filterNum}")
+    println(s"imgNum ${imgNum}")
+    println(s"nchannel ${nchannel}")
+    println(s"fLen ${filterLen}")
+    println(s"iLen ${imgLen}")
     this.oSum = model match {
       case 0 => {
         // 1 filter  1 image  and 1 channel, reuse filter
@@ -395,7 +401,7 @@ object Main extends App {
 }
 
 object tempTest extends App{
-//  println(SW.convMode1(List(1,2,3), 1, List(1,2,3,4,5,6), List(0,0,0,0,0,0,0,0,0)))
-  println(SW.convMode2(List(1, 2, 3, 4, 5, 6), List(1, 2, 3, 4, 5, 6), 2, List(0, 0, 0, 0)))
+//  println(SW.convMode1(List(1,2,3,4,5,6), 2, List(1,2,3,4,5), List(0,0,0,0,0,0,0,0,0)))
+  println(SW.convMode2(List(1, 2, 3, 4, 5, 6), List(1, 2, 3, 4, 5, 6,7,8,9,10), 2, List(0, 0, 0, 0)))
 }
 

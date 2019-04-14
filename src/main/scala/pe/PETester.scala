@@ -11,9 +11,11 @@ class PETesterTop(w:Int=16) extends Module{
     val iIn = Flipped(Decoupled(UInt(w.W)))
     val oSum = Decoupled(UInt(w.W))
   })
-  val pe = Module(new PE(8, 8, 16))
-  val fIn = Queue(io.fIn, 32)
-  val iIn = Queue(io.iIn, 32)
+  val pe = Module(new PE(256, 256, 16))
+  val fIn = Queue(io.fIn, 256)
+  val iIn = Queue(io.iIn, 256)
+  val oSumOut = Queue(pe.io.oSum, 256)
+  oSumOut.ready := 1.U
   pe.io.filter <> fIn
   pe.io.img <> iIn
   pe.io.oSum <> io.oSum
