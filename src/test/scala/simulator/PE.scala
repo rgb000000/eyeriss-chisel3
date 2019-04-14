@@ -286,7 +286,7 @@ object SW {
     }).toArray)
   }
 
-  def convMode2(filters: List[Int], imgs: List[Int], nchannel: Int, sum: List[Int]): List[List[Int]] = {
+  def convMode2(filters: List[Int], imgs: List[Int], nchannel: Int, sum: List[Int]): List[Int] = {
     val filterLen = filters.length
     val filter = List[List[Int]]().toBuffer
     val img = List[List[Int]]().toBuffer
@@ -296,13 +296,16 @@ object SW {
       filter.append(ftemp.map(_ (i)))
       img.append(itemp.map(_ (i)))
     }
-    (filter, img).zipped.map(conv1d(_, _, sum)).toList
+    def listAdd(a: List[Int],b: List[Int]): List[Int] ={
+      (a,b).zipped.map(_+_)
+    }
+    (filter, img).zipped.map(conv1d(_, _, sum)).toList.reduce(listAdd(_,_))
   }
 
   def convMode2(filters: DenseVector[Int], imgs: DenseVector[Int], nchannel: Int,
                 sum: DenseVector[Int]): DenseVector[DenseVector[Int]] = {
-    DenseVector(convMode2(filters.toArray.toList, imgs, nchannel, sum).map((l: List[Int]) => {
-      DenseVector(l.toArray)
+    DenseVector(convMode2(filters.toArray.toList, imgs, nchannel, sum).map((l: Int) => {
+      DenseVector(l)
     }).toArray)
   }
 }
@@ -345,7 +348,7 @@ object Main extends App {
   println(pe.cal)
   println("SW.convMode2 list -> ", SW.convMode2((1, 2, 3, 4), (1, 2, 3, 4, 5, 6), 2, (0, 0, 0, 0)))
   println("SW.convMode0 DV -> ", SW.convMode2(DenseVector(1, 2, 3, 4), DenseVector(1, 2, 3, 4, 5, 6), 2, DenseVector(0, 0, 0, 0)))
-  println(pe.cal.t.toArray.toList == SW.convMode2((1, 2, 3, 4), (1, 2, 3, 4, 5, 6), 2, (0, 0, 0, 0)).flatten)
+  println(pe.cal.t.toArray.toList == SW.convMode2((1, 2, 3, 4), (1, 2, 3, 4, 5, 6), 2, (0, 0, 0, 0)))
 
   println("---test conv2d mode0---")
   var filter = DenseMatrix((1,2,3),(4,5,6),(7,8,9))
@@ -402,6 +405,6 @@ object Main extends App {
 
 object tempTest extends App{
 //  println(SW.convMode1(List(1,2,3,4,5,6), 2, List(1,2,3,4,5), List(0,0,0,0,0,0,0,0,0)))
-  println(SW.convMode2(List(1, 2, 3, 4, 5, 6), List(1, 2, 3, 4, 5, 6,7,8,9,10), 2, List(0, 0, 0, 0)))
+  println(SW.convMode2(List(1, 2, 3, 4, 5, 6), List(1, 2, 3, 4, 5, 6,7,8,9,10), 2, List(0, 0, 0, 0, 0, 0, 0, 0)))
 }
 

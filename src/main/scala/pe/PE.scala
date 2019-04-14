@@ -18,7 +18,7 @@ class PEConfigReg(val w:Int = 16) extends Bundle{
 
 // take care!  in PE stateSw is buffer one time
 @chiselName
-class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Module{
+class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256, w:Int = 16) extends Module{
     val io = IO(new Bundle {
       // 00 -> idle
       // 01 -> getData
@@ -95,7 +95,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
   iQ.ready := (state === cal) & (fCalCnt.value === 0.U)
 
   val mulReg = RegInit(0.U(w.W))
-  val pSumMem = Mem(256, UInt(w.W))
+  val pSumMem = Mem(pSumMemLen, UInt(w.W))
 
   val trash = RegInit(0.U(w.W))
 
@@ -117,7 +117,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
   when(mode === normal){
     addr := pSumAddr.value
   }.elsewhen(mode === multiFilter){
-    addr := pSumAddr.value + fCalCnt.value * singleResultLen
+    addr := /*pSumAddr.value + */  fCalCnt.value // * singleResultLen
   }.elsewhen(mode === multiChannel){
     addr := pSumAddr.value
   }
@@ -247,6 +247,9 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, w:Int = 16) extends Mo
       }
     }
     is(pDone){
+      for(i <- Range(0, pSumMemLen)){
+        pSumMem(i) := 0.U
+      }
       switch(mode){
         is(normal){
           fQMuxIn.valid := 0.U

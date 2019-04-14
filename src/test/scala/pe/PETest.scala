@@ -90,11 +90,11 @@ class PETest(c: PE) extends PeekPokeTester(c) {
 class PETopTester(c: PETesterTop) extends PeekPokeTester(c) {
   poke(c.io.stateSW, 0)
   step(1)
-  poke(c.io.peconfig.filterNum, 4)
-  poke(c.io.peconfig.singleFilterLen, 2)
+  poke(c.io.peconfig.filterNum, 1)
+  poke(c.io.peconfig.singleFilterLen, 6)
   poke(c.io.peconfig.imgNum, 1)
-  poke(c.io.peconfig.singleImgLen, 5)
-  poke(c.io.peconfig.nchannel, 1)
+  poke(c.io.peconfig.singleImgLen, 10)
+  poke(c.io.peconfig.nchannel, 2)
   step(1)
   // first: let PE in idle and input data to input FIFO
   for (i <- Range(1, 11)) {
@@ -109,8 +109,6 @@ class PETopTester(c: PETesterTop) extends PeekPokeTester(c) {
   step(1)
   // second: let PE in getData, it will get data from FIFO
   poke(c.io.stateSW, 1)
-  step(1)
-  step(1)
   step(1)
   step(1)
   step(1)
@@ -235,7 +233,7 @@ class PETopModeTester extends ChiselFlatSpec {
     var imgNum = 1
     var nchannel = 1
     val random = scala.util.Random
-    var mode = random.nextInt(1) + 1
+    var mode = random.nextInt(3)
     mode match {
       case 0 => {
         var fNum = random.nextInt(1) + 1
@@ -251,7 +249,7 @@ class PETopModeTester extends ChiselFlatSpec {
       case 1 => {
         var fNum = random.nextInt(64) + 1
         var iNum = random.nextInt(1) + 1
-        var fLen = random.nextInt(5) + 1
+        var fLen = random.nextInt(3) + 1
         var iLen = random.nextInt(64) + fLen
         var filter2d = DenseMatrix.fill[Int](fNum, fLen)(random.nextInt(10))
         filter = filter2d.toArray.toList
@@ -269,6 +267,17 @@ class PETopModeTester extends ChiselFlatSpec {
 //         filterNum = fNum
 //         imgNum = iNum
 //         nchannel = 1
+      }
+      case 2 => {
+        var nchannel = random.nextInt(3) + 1
+        var fNum = random.nextInt(1) + 1
+        var iNum = random.nextInt(1) + 1
+        var fLen = random.nextInt(5) + 1
+        var iLen = random.nextInt(64) + fLen
+        filter = List.fill[Int](fLen*nchannel)(random.nextInt(10))
+        img = List.fill[Int](iLen*nchannel)(random.nextInt(10))
+        filterNum = fNum
+        imgNum = iNum
       }
       case _ => {}
     }
