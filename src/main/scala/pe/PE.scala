@@ -123,7 +123,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   }
   val pSumReg = Reg(UInt(w.W))
 
-
+  val pResultCurrect = WireInit(fQ.bits * iQ.bits + pSumMem(addr))
+  val pResultLast = WireInit(fQ.bits * iQreg + pSumMem(addr))
 
   switch (state){
     is(idle){
@@ -171,12 +172,12 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             when(calCnt.value === fCnt.value - 1.U){
               calCnt.value := 0.U
               pSumAddr.inc()
-              pSumMem(pSumAddr.value) := fQ.bits * iQ.bits + pSumMem(pSumAddr.value)
-              io.oSum.bits := fQ.bits * iQ.bits + pSumMem(pSumAddr.value)
+              pSumMem(pSumAddr.value) := pResultCurrect
+              io.oSum.bits := pResultCurrect
               io.oSum.valid := 1.U
               state := pDone
             }.otherwise{
-              pSumMem(pSumAddr.value) := fQ.bits * iQ.bits + pSumMem(pSumAddr.value)
+              pSumMem(pSumAddr.value) := pResultCurrect
               io.oSum.bits := 0.U
               calCnt.inc()
             }
@@ -192,21 +193,23 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
           io.oSum.bits := 0.U
           when(   (calCnt.value === configReg.singleFilterLen)) {
             io.oSum.valid := 1.U
-            io.oSum.bits := fQ.bits * iQreg + pSumMem(addr)
-                                      /*^*/
-          }.elsewhen((calCnt.value ===/*|*/configReg.singleFilterLen - 1.U) & (fCalCnt.value === 0.U)){ // 0 mean the last
-            io.oSum.valid := 1.U      /*v*/   // when the first result it use iQ.bits, else will use iQreg
-            io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
+            io.oSum.bits := pResultLast
+            // io.oSum.bits := fQ.bits * iQreg + pSumMem(addr)
+            //                           /*^*/
+          }.elsewhen((calCnt.value ===   /*|*/ configReg.singleFilterLen - 1.U) & (fCalCnt.value === 0.U)){ // 0 mean the last
+            io.oSum.valid := 1.U         /*v*/   // when the first result it use iQ.bits, else will use iQreg
+            io.oSum.bits := pResultCurrect
+            // io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
           }
 
           when(fQ.fire() & iQ.fire()){
             iQMuxIn.valid := 1.U
-            pSumMem(addr) := fQ.bits * iQ.bits + pSumMem(addr)
+            pSumMem(addr) := pResultCurrect
             iQreg := iQ.bits
             fCalCnt.inc()
             calCnt.inc()
           }.elsewhen(fQ.fire()){
-            pSumMem(addr) := fQ.bits * iQreg + pSumMem(addr)
+            pSumMem(addr) := pResultLast
             when(fCalCnt.value === configReg.filterNum - 1.U){
               fCalCnt.value := 0.U
             }.otherwise{
@@ -227,8 +230,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             when(calCnt.value === fCnt.value - 1.U){
               calCnt.value := 0.U
               pSumAddr.inc()
-              pSumMem(addr) := fQ.bits * iQ.bits + pSumMem(addr)
-              io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
+              pSumMem(addr) := pResultCurrect
+              io.oSum.bits := pResultCurrect
               io.oSum.valid := 1.U
               when(io.img.valid){
                 state := pDone
@@ -236,7 +239,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
                 state := allDone
               }
             }.otherwise{
-              pSumMem(addr) := fQ.bits * iQ.bits + pSumMem(addr)
+              pSumMem(addr) := pResultCurrect
               io.oSum.bits := 0.U
               calCnt.inc()
             }

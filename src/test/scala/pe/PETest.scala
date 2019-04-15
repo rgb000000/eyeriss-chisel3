@@ -233,7 +233,7 @@ class PETopModeTester extends ChiselFlatSpec {
     var imgNum = 1
     var nchannel = 1
     val random = scala.util.Random
-    var mode = random.nextInt(3)
+    var mode = random.nextInt(1) + 1
     mode match {
       case 0 => {
         var fNum = random.nextInt(1) + 1
@@ -288,7 +288,7 @@ class PETopModeTester extends ChiselFlatSpec {
       DenseVector(img.toArray), imgNum,
       nchannel
     )
-    println(s"SW: ${pe.cal}")
+    println(s"SW:\n${pe.cal}")
 
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PETOPmode0_vcd", "--top-name", "make_PETOPmode0_vcd",
