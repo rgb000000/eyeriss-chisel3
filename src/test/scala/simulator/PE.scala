@@ -455,6 +455,6 @@ object tempTest extends App {
     DenseVector(x: _*)
   }
 
-  println(SW.convGeneral(Range(1, 13).toList, 3, Range(1, 7).toList /*::: Range(0, 7).toList*/, 1, 2, List.fill[Int](20)(0)))
+  println(SW.convGeneral(Range(1, 13).toList, 3, Range(1, 7).toList ::: Range(1, 7).toList::: Range(1, 7).toList, 3, 2, List.fill[Int](20)(0)))
 }
 
