@@ -38,13 +38,13 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   io.oSum.valid := 0.U
   io.oSum.bits := 0.U
 
-  val fCnt = Counter(256)
-  val iCnt = Counter(256)
-  val calCnt = Counter(256)
-  val fCalCnt = Counter(256)
-  val cCalCnt = Counter(256)
-  val pDoneCnt = Counter(256)
-  val pSumAddr = Counter(256)
+  val fCnt = Counter(256)             // input filter total length
+  val iCnt = Counter(256)             // input img total length
+  val calCnt = Counter(256)           // calculate times
+  val fCalCnt = Counter(256)          // f shift times
+  val cCalCnt = Counter(256)          // channel shift times
+  val pDoneCnt = Counter(256)         // in pDont state times
+  val pSumAddr = Counter(256)         // for addr
   val zfc = WireInit(fCnt.value)
   val zic = WireInit(iCnt.value)
   val zcc = WireInit(calCnt.value)
@@ -85,7 +85,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   iQ.ready := 0.U
   when(dodata){
     iQMuxIn <> io.img
-    when(iCnt.value === configReg.singleFilterLen){
+    when(iCnt.value === configReg.singleFilterLen * configReg.nchannel){
       iQMuxIn.valid := 0.U
       io.img.ready := 0.U
     }
@@ -104,7 +104,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val normal :: multiFilter :: multiChannel :: Nil = Enum(3)
   val mode = Wire(UInt(8.W))
   when(configReg.nchannel =/= 1.U){
-    mode := multiChannel
+    mode := multiFilter//multiChannel
   }.elsewhen(configReg.filterNum =/= 1.U){
     mode := multiFilter
   }.otherwise{
@@ -188,15 +188,15 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 
         is(multiFilter){
           iQMuxIn.valid := 0.U
-          val memdata = pSumMem(addr)
 
           io.oSum.bits := 0.U
-          when(   (calCnt.value === configReg.singleFilterLen)) {
+          when(   (calCnt.value === configReg.singleFilterLen * configReg.nchannel)) {
             io.oSum.valid := 1.U
             io.oSum.bits := pResultLast
             // io.oSum.bits := fQ.bits * iQreg + pSumMem(addr)
             //                           /*^*/
-          }.elsewhen((calCnt.value ===   /*|*/ configReg.singleFilterLen - 1.U) & (fCalCnt.value === 0.U)){ // 0 mean the last
+          }.elsewhen((calCnt.value ===   /*|*/ configReg.singleFilterLen * configReg.nchannel - 1.U) &
+                                                                    (fCalCnt.value === 0.U)){ // 0 mean the last
             io.oSum.valid := 1.U         /*v*/   // when the first result it use iQ.bits, else will use iQreg
             io.oSum.bits := pResultCurrect
             // io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
@@ -217,7 +217,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             }
 
 //            calCnt.inc()
-            when((calCnt.value === configReg.singleFilterLen) & (fCalCnt.value === configReg.filterNum - 1.U)){
+            when((calCnt.value === configReg.singleFilterLen * configReg.nchannel) &
+                                                                (fCalCnt.value === configReg.filterNum - 1.U)){
               calCnt.value := 0.U
               pSumAddr.inc()
               state := pDone
@@ -274,10 +275,14 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
           trash := iQ.bits
           core.dontTouch(trash)
           iQMuxIn <> io.img
+          pDoneCnt.inc()
           when((io.img.valid === 0.U) | (pSumAddr.value === configReg.singleImgLen - iCnt.value + 1.U)){
             state := allDone
-          }.otherwise{
+          }.elsewhen(pDoneCnt.value === configReg.nchannel -1.U){
             state := cal
+            pDoneCnt.value := 0.U
+          }.otherwise{
+            state := pDone
           }
         }
         is(multiChannel){
