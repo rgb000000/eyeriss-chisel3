@@ -42,6 +42,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val iCnt = Counter(256)             // input img total length
   val calCnt = Counter(256)           // calculate times
   val fCalCnt = Counter(256)          // f shift times
+  val iCalCnt = Counter(256)          // i shift times
   val cCalCnt = Counter(256)          // channel shift times
   val pDoneCnt = Counter(256)         // in pDont state times
   val pSumAddr = Counter(256)         // for addr
@@ -276,7 +277,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
           core.dontTouch(trash)
           iQMuxIn <> io.img
           pDoneCnt.inc()
-          when((io.img.valid === 0.U) | (pSumAddr.value === configReg.singleImgLen - iCnt.value + 1.U)){
+          when((io.img.valid === 0.U) /*| (pSumAddr.value === configReg.singleImgLen - iCnt.value + 1.U)*/){
             state := allDone
           }.elsewhen(pDoneCnt.value === configReg.nchannel -1.U){
             state := cal

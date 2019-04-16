@@ -265,7 +265,7 @@ object SW {
     result
   }
 
-  def convMode0(filter: List[Int], img: List[Int], sum: List[Int] = List.fill[Int](20)(0)): List[Int] = conv1d(filter, img, sum)
+  def convMode0(filter: List[Int], img: List[Int], sum: List[Int] = List.fill[Int](2000)(0)): List[Int] = conv1d(filter, img, sum)
 
   def convMode0(filter: DenseVector[Int], img: DenseVector[Int], sum: DenseVector[Int]): DenseVector[Int] = {
     conv1d(filter, img, sum)
@@ -313,8 +313,13 @@ object SW {
   }
 
   def convGeneral(filters: DenseVector[Int], filterNum: Int, imgs: DenseVector[Int], imgNum: Int, nchannel: Int,
-                  sum: List[Int]): DenseMatrix[Int] = {
+                  sum: List[Int] = List.fill[Int](10)(0)): DenseMatrix[Int] = {
     //    assert(filters.length == nchannel * filterNum)
+    println(s"filters: ${filters} __ ${filters.length}")
+    println(s"filterNum: ${filterNum}")
+    println(s"imgs: ${imgs} __ ${imgs.length}")
+    println(s"imgNum: ${imgNum}")
+    println(s"nchannel: ${nchannel}")
     var filter = DenseMatrix.fill[Int](filterNum, filters.length / (filterNum * nchannel))(0)
     var img = DenseMatrix.fill[Int](imgNum, imgs.length / (imgNum * nchannel))(0)
     val results = List[DenseMatrix[Int]]().toBuffer
@@ -322,6 +327,8 @@ object SW {
       val result = DenseMatrix.fill[Int](filterNum * imgNum, imgs.length / (imgNum * nchannel) -
         filters.length / (filterNum * nchannel) + 1)(0)
       for (j <- Range(0, filterNum)) {
+//        println(s"filter cols: ${filter.cols}")
+//        println(s"local filter cols: ${filters(j + i * filterNum to filters.length - 1 by nchannel * filterNum).length}")
         filter(j, ::) := filters(j + i * filterNum to filters.length - 1 by nchannel * filterNum).t
       }
       for (j <- Range(0, imgNum)) {
@@ -337,20 +344,21 @@ object SW {
       var icnt = 0
       filter(*, ::).foreach((f: DenseVector[Int]) => {
         img(*, ::).foreach((x: DenseVector[Int]) => {
-                    println("result")
-                    println(f)
-                    println(x)
+//                    println("result")
+//                    println(f)
+//                    println(x)
+//          println(result.cols)
           result(fcnt + icnt * filterNum, ::) := DenseVector(convMode0(f, x): _*).t
           icnt += 1
         })
         fcnt += 1
         icnt = 0
       })
-      println("------")
-      println(result)
+//      println("------")
+//      println(result)
       results.append(result)
     }
-    println(results)
+//    println(results)
     results.reduce(_ + _)
   }
 }

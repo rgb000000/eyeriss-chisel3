@@ -134,6 +134,8 @@ class testModen(c: PETesterTop, filter: List[Int], filterNum: Int, img: List[Int
 //  val sw = pe.cal
   //  println(pe.cal)
   // first let PE in idle state
+  val sw = SW.convGeneral(DenseVector(filter:_*), filterNum, DenseVector(img:_*), imgNum, nchannel)
+  println("SW: \n" + sw.toString())
   poke(c.io.stateSW, 0)
   step(1) // because PE buf state, so need 1 clock
 
@@ -176,7 +178,7 @@ class testModen(c: PETesterTop, filter: List[Int], filterNum: Int, img: List[Int
     //    println("sw.rows: " + sw.rows.toString)
     if (peek(c.io.oSum.valid) == 1) {
       //      println(peek(c.io.oSum.bits).toString())
-//      expect(c.io.oSum.bits, sw(j % filterNum, j / filterNum))
+      expect(c.io.oSum.bits, sw(j % filterNum, j / filterNum))
       //      println(s"${j} test pass")
       j = j + 1
     }
@@ -247,26 +249,32 @@ class PETopModeTester extends ChiselFlatSpec {
         nchannel = 1
       }
       case 1 => {
-//        var fNum = random.nextInt(64) + 1
-//        var iNum = random.nextInt(1) + 1
-//        var fLen = random.nextInt(3) + 1
-//        var iLen = random.nextInt(64) + fLen
-//        var filter2d = DenseMatrix.fill[Int](fNum, fLen)(random.nextInt(10))
-//        filter = filter2d.toArray.toList
-//        img = List.fill[Int](iLen)(random.nextInt(10))
-//        filterNum = fNum
-//        imgNum = iNum
-//        nchannel = 1
+        var fNum = random.nextInt(32) + 1
+        var iNum = 1
+        var fLen = random.nextInt(3) + 1
+        var iLen = random.nextInt(16) + fLen
+        do {
+          nchannel = random.nextInt(5) + 1
+          fNum = random.nextInt(32) + 1
+          iNum = 1
+          fLen = random.nextInt(3) + 1
+          iLen = random.nextInt(16) + fLen
+          var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10))
+          filter = filter2d.toArray.toList
+          img = List.fill[Int](iLen * nchannel)(random.nextInt(10))
+          filterNum = fNum
+          imgNum = iNum
+        }while(filter.length > 255 | img.length > 255)
 
-         var fNum = 3
-         var iNum = 1
-         var fLen = 2
-         var iLen = 3
-         filter = List(1,2,3,4,5,6,7,8,9,10,11,12)
-         img = List(1,2,3,4,5,6)
-         filterNum = fNum
-         imgNum = iNum
-         nchannel = 2
+//         var fNum = 3
+//         var iNum = 1
+//         var fLen = 2
+//         var iLen = 3
+//         filter = List(1,2,3,4,5,6,7,8,9,10,11,12)
+//         img = List(1,2,3,4,5,6)
+//         filterNum = fNum
+//         imgNum = iNum
+//         nchannel = 2
       }
       case 2 => {
         var nchannel = random.nextInt(3) + 1
