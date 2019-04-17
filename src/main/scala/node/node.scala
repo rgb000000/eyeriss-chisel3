@@ -29,8 +29,12 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
   if (row) {
     io.dataPackageIn.ready := qIn.ready &
       ((io.dataPackageIn.bits.positon.row === (-1).S) | (io.dataPackageIn.bits.positon.row === positon._1.S))
+    qIn.valid := io.dataPackageIn.valid &
+      ((io.dataPackageIn.bits.positon.row === (-1).S) | (io.dataPackageIn.bits.positon.row === positon._1.S))
   } else {
     io.dataPackageIn.ready := qIn.ready &
+      ((io.dataPackageIn.bits.positon.col === (-1).S) | (io.dataPackageIn.bits.positon.col === positon._2.S))
+    qIn.valid := io.dataPackageIn.valid &
       ((io.dataPackageIn.bits.positon.col === (-1).S) | (io.dataPackageIn.bits.positon.col === positon._2.S))
   }
 

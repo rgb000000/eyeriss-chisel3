@@ -79,6 +79,7 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
 
     //      println(s"${j} test pass")
     j = j + 1
+    step(1)
   }
   step(1)
   println("j: " + j.toString)
