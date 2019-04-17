@@ -41,8 +41,8 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     val temp = List[Node]().toBuffer
     for (j <- Range(0, shape._2)) {
       val node = Module(new Node(j == 0, (i, j), w))
-      if(j != 0){
-        val pe = Module(new PETesterTop())
+      if (j != 0) {
+        val pe = Module(new PETesterTop((i, j)))
         pe.io.pSumIn.bits := 0.S
         pe.io.pSumIn.valid := 0.U
         pe.io.oSum.ready := 0.U
@@ -61,8 +61,8 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
   // NoC valid and bits
   for (i <- Range(0, shape._1)) {
     for (j <- Range(1, shape._2)) {
-      NoC(i)(j).io.dataPackageIn.valid := NoC(i)(0).io.dataPackageOut.valid
-      NoC(i)(j).io.dataPackageIn.bits := NoC(i)(0).io.dataPackageOut.bits
+      NoC(i)(j).io.dataPackageIn.valid := NoC(i).head.io.dataPackageOut.valid
+      NoC(i)(j).io.dataPackageIn.bits := NoC(i).head.io.dataPackageOut.bits
     }
   }
 

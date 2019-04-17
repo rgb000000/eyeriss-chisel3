@@ -18,7 +18,8 @@ class PEConfigReg(val w:Int = 16) extends Bundle{
 
 // take care!  in PE stateSw is buffer one time
 @chiselName
-class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256, w:Int = 16) extends Module{
+class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256, w:Int = 16, position: (Int, Int)=(0,0))
+  extends Module{
     val io = IO(new Bundle {
       // 00 -> idle
       // 01 -> getData
@@ -32,6 +33,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       val oSum = DecoupledIO(SInt(w.W))
     })
 
+  override def desiredName: String = position.toString()
   val configReg = Reg(new PEConfigReg(16))
 
   io.pSumIn.ready := 0.U
