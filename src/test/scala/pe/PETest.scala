@@ -98,14 +98,14 @@ class PETopTester(c: PETesterTop) extends PeekPokeTester(c) {
   step(1)
   // first: let PE in idle and input data to input FIFO
   for (i <- Range(1, 11)) {
-    poke(c.io.fIn.valid, 1)
-    poke(c.io.iIn.valid, 1)
-    poke(c.io.fIn.bits, i)
-    poke(c.io.iIn.bits, i)
+    poke(c.io.filter.valid, 1)
+    poke(c.io.img.valid, 1)
+    poke(c.io.filter.bits, i)
+    poke(c.io.img.bits, i)
     step(1)
   }
-  poke(c.io.fIn.valid, 0)
-  poke(c.io.iIn.valid, 0)
+  poke(c.io.filter.valid, 0)
+  poke(c.io.img.valid, 0)
   step(1)
   // second: let PE in getData, it will get data from FIFO
   poke(c.io.stateSW, 1)
@@ -153,20 +153,22 @@ class testModen(c: PETesterTop, filter: List[Int], filterNum: Int, img: List[Int
   step(1) // PE buf basic infotmation after 1 clock
 
   // third put data in
-  poke(c.io.fIn.valid, 0)
-  poke(c.io.iIn.valid, 0)
+  poke(c.io.pSumIn.valid, 0)
+  poke(c.io.pSumIn.bits, 0)
+  poke(c.io.filter.valid, 0)
+  poke(c.io.img.valid, 0)
   filter.foreach((num) => {
-    poke(c.io.fIn.valid, 1);
-    poke(c.io.fIn.bits, num);
+    poke(c.io.filter.valid, 1);
+    poke(c.io.filter.bits, num);
     step(1)
   })
-  poke(c.io.fIn.valid, 0)
+  poke(c.io.filter.valid, 0)
   img.foreach((num) => {
-    poke(c.io.iIn.valid, 1);
-    poke(c.io.iIn.bits, num);
+    poke(c.io.img.valid, 1);
+    poke(c.io.img.bits, num);
     step(1)
   })
-  poke(c.io.iIn.valid, 0)
+  poke(c.io.img.valid, 0)
   step(1)
 
   // fourth let PE in getdata state
