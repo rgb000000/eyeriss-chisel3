@@ -26,17 +26,17 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       val stateSW = Input(UInt(2.W))
       val regConfig = Input(new PEConfigReg(16))
 
-      val filter = Flipped(DecoupledIO(UInt(w.W)))
-      val img = Flipped(DecoupledIO(UInt(w.W)))
-      val pSumIn = Flipped(DecoupledIO(UInt(w.W)))
-      val oSum = DecoupledIO(UInt(w.W))
+      val filter = Flipped(DecoupledIO(SInt(w.W)))
+      val img = Flipped(DecoupledIO(SInt(w.W)))
+      val pSumIn = Flipped(DecoupledIO(SInt(w.W)))
+      val oSum = DecoupledIO(SInt(w.W))
     })
 
   val configReg = Reg(new PEConfigReg(16))
 
   io.pSumIn.ready := 0.U
   io.oSum.valid := 0.U
-  io.oSum.bits := 0.U
+  io.oSum.bits := 0.S
 
   val fCnt = Counter(256)             // input filter total length
   val iCnt = Counter(256)             // input img total length
@@ -98,34 +98,33 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   }
   iQ.ready := (state === cal) & (fCalCnt.value === 0.U)
 
-  val mulReg = RegInit(0.U(w.W))
-  val pSumMem = Mem(pSumMemLen, UInt(w.W))
+  val pSumMem = Mem(pSumMemLen, SInt(w.W))
 
-  val trash = RegInit(0.U(w.W))
+  val trash = RegInit(0.S(w.W))
 
   io.oSum.valid := 0.U
 
   val normal :: multiFilter :: multiChannel :: Nil = Enum(3)
   val mode = Wire(UInt(8.W))
-  when(configReg.nchannel =/= 1.U){
-    mode := multiFilter//multiChannel
-  }.elsewhen(configReg.filterNum =/= 1.U){
-    mode := multiFilter
-  }.otherwise{
-    mode := normal
-  }
+  mode := multiFilter
+//  when(configReg.nchannel =/= 1.U){
+//    mode := multiFilter//multiChannel
+//  }.elsewhen(configReg.filterNum =/= 1.U){
+//    mode := multiFilter
+//  }.otherwise{
+//    mode := normal
+//  }
 
-  val addr = Wire(UInt(64.W))
+  val addr = Wire(UInt(16.W))
   val singleResultLen = configReg.singleImgLen - configReg.singleFilterLen + 1.U
-  addr := 0.U
-  when(mode === normal){
-    addr := pSumAddr.value
-  }.elsewhen(mode === multiFilter){
-    addr := /*pSumAddr.value + */  fCalCnt.value // * singleResultLen
-  }.elsewhen(mode === multiChannel){
-    addr := pSumAddr.value
-  }
-  val pSumReg = Reg(UInt(w.W))
+  addr := fCalCnt.value
+//  when(mode === normal){
+//    addr := pSumAddr.value
+//  }.elsewhen(mode === multiFilter){
+//    addr := /*pSumAddr.value + */  fCalCnt.value // * singleResultLen
+//  }.elsewhen(mode === multiChannel){
+//    addr := pSumAddr.value
+//  }
 
   val pResultCurrect = WireInit(fQ.bits * iQ.bits + pSumMem(addr))
   val pResultLast = WireInit(fQ.bits * iQreg + pSumMem(addr))
@@ -142,13 +141,6 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
     is(data){
       switch(mode){
         is(normal){
-          when(fQMuxIn.fire()){
-            fCnt.inc()
-          }
-          // to swith to cal, filter in must done
-          when(io.stateSW === cal){
-            state := cal
-          }
         }
         is(multiFilter){
           when(fQMuxIn.fire()){
@@ -162,40 +154,18 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
           }
         }
         is(multiChannel){
-          when(fQMuxIn.fire()){
-            fCnt.inc()
-          }
-          when(io.stateSW === cal){
-            state := cal
-          }
         }
       }
     }
     is(cal){
       switch(mode){
         is(normal){
-          when(fQ.fire() & iQ.fire()){
-            when(calCnt.value === fCnt.value - 1.U){
-              calCnt.value := 0.U
-              pSumAddr.inc()
-              pSumMem(pSumAddr.value) := pResultCurrect
-              io.oSum.bits := pResultCurrect
-              io.oSum.valid := 1.U
-              state := pDone
-            }.otherwise{
-              pSumMem(pSumAddr.value) := pResultCurrect
-              io.oSum.bits := 0.U
-              calCnt.inc()
-            }
-          }.otherwise{
-            io.oSum.valid := 0.U
-          }
         }
 
         is(multiFilter){
           iQMuxIn.valid := 0.U
 
-          io.oSum.bits := 0.U
+          io.oSum.bits := 0.S
           when(   (calCnt.value === configReg.singleFilterLen * configReg.nchannel)) {
             io.oSum.valid := 1.U
             io.oSum.bits := pResultLast
@@ -233,46 +203,15 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
         }
 
         is(multiChannel){
-          when(fQ.fire() & iQ.fire()){
-            when(calCnt.value === fCnt.value - 1.U){
-              calCnt.value := 0.U
-              pSumAddr.inc()
-              pSumMem(addr) := pResultCurrect
-              io.oSum.bits := pResultCurrect
-              io.oSum.valid := 1.U
-              when(io.img.valid){
-                state := pDone
-              }.otherwise{
-                state := allDone
-              }
-            }.otherwise{
-              pSumMem(addr) := pResultCurrect
-              io.oSum.bits := 0.U
-              calCnt.inc()
-            }
-          }.otherwise{
-            io.oSum.valid := 0.U
-          }
         }
       }
     }
     is(pDone){
       for(i <- Range(0, pSumMemLen)){
-        pSumMem(i) := 0.U
+        pSumMem(i) := 0.S
       }
       switch(mode){
         is(normal){
-          fQMuxIn.valid := 0.U
-          // let img FIFO spit a data to trash
-          iQ.ready := 1.U
-          trash := iQ.bits
-          core.dontTouch(trash)
-          iQMuxIn <> io.img
-          when(io.img.valid === 0.U){
-            state := allDone
-          }.otherwise{
-            state := cal
-          }
         }
         is(multiFilter){
           fQMuxIn.valid := 0.U
@@ -304,24 +243,6 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
           }
         }
         is(multiChannel){
-          fQMuxIn.valid := 0.U
-          // let img FIFO spit a data to trash
-          iQ.ready := 1.U
-          trash := iQ.bits
-          core.dontTouch(trash)
-          iQMuxIn <> io.img
-          pDoneCnt.inc()
-          when(pDoneCnt.value === configReg.nchannel - 1.U){
-            state := cal
-            pDoneCnt.value := 0.U
-          }.otherwise{
-            state := pDone
-          }
-//          when(io.img.valid === 0.U){
-//            state := allDone
-//          }.otherwise{
-//            state := cal
-//          }
         }
       }
     }

@@ -247,7 +247,7 @@ class PETopModeTester extends ChiselFlatSpec {
     var imgNum = 1
     var nchannel = 1
     val random = scala.util.Random
-    var mode = random.nextInt(1) + 1
+    var mode = 1
     mode match {
       case 0 => {
         var fNum = random.nextInt(1) + 1
@@ -267,8 +267,8 @@ class PETopModeTester extends ChiselFlatSpec {
           var iNum = random.nextInt(5) + 1
           var fLen = random.nextInt(3) + 1
           var iLen = random.nextInt(16) + fLen
-          var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10))
-          var img2d = DenseMatrix.fill[Int](iNum * nchannel, iLen)(random.nextInt(10))
+          var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10) - 5 )
+          var img2d = DenseMatrix.fill[Int](iNum * nchannel, iLen)(random.nextInt(10) - 5)
           filter = filter2d.toArray.toList
           img = img2d.toArray.toList
           filterNum = fNum
