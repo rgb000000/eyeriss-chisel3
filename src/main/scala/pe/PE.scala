@@ -45,6 +45,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val iCalCnt = Counter(256)          // i shift times
   val cCalCnt = Counter(256)          // channel shift times
   val pDoneCnt = Counter(256)         // in pDont state times
+  val newImgCnt = Counter(256)         // in pDont state times
   val pSumAddr = Counter(256)         // for addr
   val zfc = WireInit(fCnt.value)
   val zic = WireInit(iCnt.value)
@@ -53,6 +54,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val zccc = WireInit(cCalCnt.value)
   val zpc = WireInit(pDoneCnt.value)
   val zpsa = WireInit(pSumAddr.value)
+  val znic = WireInit(newImgCnt.value)
   core.dontTouch(zfc)
   core.dontTouch(zic)
   core.dontTouch(zcc)
@@ -60,8 +62,9 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   core.dontTouch(zccc)
   core.dontTouch(zpc)
   core.dontTouch(zpsa)
+  core.dontTouch(znic)
   // data mean getData
-  val idle :: data :: cal :: pDone :: allDone:: Nil = Enum(5)
+  val idle :: data :: cal :: pDone :: newImg :: allDone:: Nil = Enum(6)
   val state = RegInit(idle)
   val dodata = WireInit(state === data)
   val docal = WireInit(state === cal)
@@ -126,6 +129,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 
   val pResultCurrect = WireInit(fQ.bits * iQ.bits + pSumMem(addr))
   val pResultLast = WireInit(fQ.bits * iQreg + pSumMem(addr))
+
+  val needNewImg = RegInit(0.U(1.W))
 
   switch (state){
     is(idle){
@@ -273,15 +278,27 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
           fQMuxIn.valid := 0.U
           // let img FIFO spit a data to trash
           iQ.ready := 1.U
-          trash := iQ.bits
+          when(iQ.fire()){
+            trash := iQ.bits
+          }
           core.dontTouch(trash)
           iQMuxIn <> io.img
           pDoneCnt.inc()
           when((io.img.valid === 0.U) /*| (pSumAddr.value === configReg.singleImgLen - iCnt.value + 1.U)*/){
             state := allDone
+          }.elsewhen(needNewImg === 1.U){
+            state := newImg
+            pDoneCnt.value := 0.U
           }.elsewhen(pDoneCnt.value === configReg.nchannel -1.U){
             state := cal
             pDoneCnt.value := 0.U
+            when(iCalCnt.value === configReg.singleImgLen - configReg.singleFilterLen - 1.U){
+              iCalCnt.value := 0.U
+              needNewImg := 1.U
+            }.otherwise{
+              iCalCnt.inc()
+              needNewImg := 0.U
+            }
           }.otherwise{
             state := pDone
           }
@@ -306,6 +323,24 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 //            state := cal
 //          }
         }
+      }
+    }
+    is(newImg){
+      needNewImg := 0.U
+      fQMuxIn.valid := 0.U
+      // let img FIFO spit a data to trash
+      iQ.ready := 1.U
+      when(iQ.fire()){
+        trash := iQ.bits
+      }
+      core.dontTouch(trash)
+      iQMuxIn <> io.img
+      newImgCnt.inc()
+      when(io.img.valid === 0.U){
+        state := allDone
+      }.elsewhen(newImgCnt.value === iCnt.value - 2.U){
+        newImgCnt.value := 0.U
+        state := cal
       }
     }
     is(allDone){
