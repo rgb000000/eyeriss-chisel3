@@ -18,6 +18,8 @@ git submodule update --init
 run this, to check
 ```sh
 sbt 'testOnly gcd.GCDTester -- -z Basic'
+or
+testOnly pe.PETopModeTester
 ```
 
 
