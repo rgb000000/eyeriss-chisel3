@@ -187,9 +187,9 @@ class testModen(c: PETesterTop, filter: List[Int], filterNum: Int, img: List[Int
       //      println(peek(c.io.oSum.bits).toString())
       expect(c.io.oSum.bits, sw(j))
       print(sw(j).toString + " <---> " + peek(c.io.oSum.bits).toString() + "   ")
-      if(sw(j) == peek((c.io.oSum.bits))){
+      if (sw(j) == peek((c.io.oSum.bits))) {
         println("pass")
-      }else{
+      } else {
         println("FAID")
       }
 
@@ -269,7 +269,7 @@ class PETopModeTester extends ChiselFlatSpec {
           var iNum = random.nextInt(5) + 1
           var fLen = random.nextInt(3) + 1
           var iLen = random.nextInt(16) + fLen
-          var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10) - 5 )
+          var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10) - 5)
           var img2d = DenseMatrix.fill[Int](iNum * nchannel, iLen)(random.nextInt(10) - 5)
           filter = filter2d.toArray.toList
           img = img2d.toArray.toList
@@ -277,15 +277,16 @@ class PETopModeTester extends ChiselFlatSpec {
           imgNum = iNum
         } while (filter.length > 255 | img.length > 255)
 
-        //        var fNum = 3
-        //        var iNum = 3
-        //        var fLen = 2
-        //        var iLen = 3
-        //        filter = List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-        //        img = List(1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6)
-        //        filterNum = fNum
-        //        imgNum = iNum
-        //        nchannel = 2
+//        var fNum = 1
+//        var iNum = 1
+////        var fLen = 3
+////        var iLen = 5
+//        filter = List(4, -5, -5, -3)
+//        img = List(1, -1, 4, 4)
+//        filterNum = fNum
+//        imgNum = iNum
+//        nchannel = 1
+
       }
       case 2 => {
         var nchannel = random.nextInt(3) + 1
@@ -316,7 +317,7 @@ class PETopModeTester extends ChiselFlatSpec {
     ) {
       c => new testModen(c, filter, filterNum, img, imgNum, nchannel)
     } should be(true)
-    new File("test_run_dir/make_PETOPmode0_vcd/PETesterTop.vcd").exists should be(true)
+    //    new File("test_run_dir/make_PETOPmode0_vcd/PETesterTop.vcd").exists should be(true)
 
   }
 }

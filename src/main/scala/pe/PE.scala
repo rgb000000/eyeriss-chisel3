@@ -184,8 +184,21 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             iQMuxIn.valid := 1.U
             pSumMem(addr) := pResultCurrect
             iQreg := iQ.bits
-            fCalCnt.inc()
+            fCalCnt.inc()   // when configReg.fNum = 1 error!!! so change to next
+            when((configReg.filterNum === 1.U) & fCalCnt.value === 0.U){
+              fCalCnt.value := 0.U
+            }.otherwise{
+              fCalCnt.inc()
+            }
+
             calCnt.inc()
+            when((configReg.filterNum===1.U) & (calCnt.value === configReg.singleFilterLen * configReg.nchannel - 1.U) &
+              (fCalCnt.value === 0.U)){
+              calCnt.value := 0.U
+              pSumAddr.inc()
+              state := pDone
+            }
+
           }.elsewhen(fQ.fire()){
             pSumMem(addr) := pResultLast
             when(fCalCnt.value === configReg.filterNum - 1.U){
@@ -227,7 +240,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
           pDoneCnt.inc()
           when((io.img.valid === 0.U) /*| (pSumAddr.value === configReg.singleImgLen - iCnt.value + 1.U)*/){
             state := allDone
-          }.elsewhen(needNewImg === 1.U){
+          }.elsewhen((needNewImg === 1.U) | (configReg.singleImgLen === configReg.singleFilterLen)){
             state := newImg
             pDoneCnt.value := 0.U
           }.elsewhen(pDoneCnt.value === configReg.nchannel -1.U){
