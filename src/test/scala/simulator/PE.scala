@@ -466,3 +466,9 @@ object tempTest extends App {
   println(SW.convGeneral(Range(1, 13).toList, 3, Range(1, 7).toList ::: Range(1, 7).toList::: Range(1, 7).toList, 3, 2, List.fill[Int](20)(0)))
 }
 
+
+object tempTest2 extends App{
+  val filter = List(List(1,2,3), List(1,2,3), List(1,2,3))
+  val img = List(List(1,2,3,4,5), List(1,2,3,4,5), List(1,2,3,4,5), List(1,2,3,4,5), List(1,2,3,4,5))
+  println(SW.conv2d(filter, img))
+}

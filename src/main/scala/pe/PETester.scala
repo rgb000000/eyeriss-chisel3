@@ -19,10 +19,11 @@ class PETesterTop(position: (Int, Int) = (0,0), w:Int=16) extends Module{
 
 //  override def desiredName: String = position.toString()
 
-  oSumOut.ready := 1.U
+//  oSumOut.ready := 1.U
+  oSumOut <> io.oSum
   pe.io.filter <> fIn
   pe.io.img <> iIn
-  pe.io.oSum <> io.oSum
+//  pe.io.oSum <> io.oSum
   pe.io.regConfig := io.peconfig
   pe.io.pSumIn <> io.pSumIn
   pe.io.stateSW := io.stateSW

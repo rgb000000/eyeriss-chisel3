@@ -34,21 +34,18 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     val dataIn = Flipped(DecoupledIO(new dataPackage(w).cloneType))
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg(16))
-    val test = Output(Bool())
-    val test1 = Output(SInt(4.W))
-    val test2 = Output(SInt(4.W))
+    val oSum = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
   })
-  io.test := ((-1).S === io.dataIn.bits.positon.col)
-  io.test1 := (-1).S
-  io.test2 := io.dataIn.bits.positon.col
 
   val NoC = List[List[Node]]().toBuffer
+  val pes = List[List[PETesterTop]]().toBuffer
   for (i <- Range(0, shape._1)) {
-    val temp = List[Node]().toBuffer
-    for (j <- Range(0, shape._2)) {
+    val tempNoC = List[Node]().toBuffer
+    val tempPE = List[PETesterTop]().toBuffer
+    for (j <- Range(0, shape._2 + 1)) {
       val node = Module(new Node(j == 0, (i, j), w))
       if (j != 0) {
-        val pe = Module(new PETesterTop((i, j)))
+        val pe = Module(new PETesterTop((i, j - 1)))
         pe.io.pSumIn.bits := 0.S
         pe.io.pSumIn.valid := 0.U
         pe.io.oSum.ready := 0.U
@@ -58,15 +55,17 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
         ds.io.dataIn <> node.io.dataPackageOut
         pe.io.filter <> ds.io.filter
         pe.io.img <> ds.io.img
+        tempPE.append(pe)
       }
-      temp.append(node)
+      tempNoC.append(node)
     }
-    NoC.append(temp.toList)
+    NoC.append(tempNoC.toList)
+    pes.append(tempPE.toList)
   }
 
   // NoC valid and bits
   for (i <- Range(0, shape._1)) {
-    for (j <- Range(1, shape._2)) {
+    for (j <- Range(1, shape._2 + 1)) {
       NoC(i)(j).io.dataPackageIn.valid := NoC(i).head.io.dataPackageOut.valid
       NoC(i)(j).io.dataPackageIn.bits := NoC(i).head.io.dataPackageOut.bits
     }
@@ -79,5 +78,11 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     i.head.io.dataPackageIn.bits := io.dataIn.bits
   }
   io.dataIn.ready := NoC.map(_.head.io.dataPackageIn.ready).reduce(_ | _)
+
+  for(out <- io.oSum; i <- io.oSum.indices){
+    out.valid := pes.map(_(i)).map(_.io.oSum.valid).reduce(_ | _)
+    out.bits := pes.map(_(i)).map(_.io.oSum.bits).reduce(_ + _)
+    pes.map(_(i)).foreach(_.io.oSum.ready := out.valid & out.ready)
+  }
 
 }

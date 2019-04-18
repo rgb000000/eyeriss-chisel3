@@ -39,7 +39,23 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
     poke(c.io.dataIn.valid, 1)
     poke(c.io.dataIn.bits.data, num)
     poke(c.io.dataIn.bits.dataType, 0)
-    poke(c.io.dataIn.bits.positon.row, 3)
+    poke(c.io.dataIn.bits.positon.row, 0)
+    poke(c.io.dataIn.bits.positon.col, (-1).S)
+    step(1)
+  })
+  filter.foreach((num) => {
+    poke(c.io.dataIn.valid, 1)
+    poke(c.io.dataIn.bits.data, num)
+    poke(c.io.dataIn.bits.dataType, 0)
+    poke(c.io.dataIn.bits.positon.row, 1)
+    poke(c.io.dataIn.bits.positon.col, (-1).S)
+    step(1)
+  })
+  filter.foreach((num) => {
+    poke(c.io.dataIn.valid, 1)
+    poke(c.io.dataIn.bits.data, num)
+    poke(c.io.dataIn.bits.dataType, 0)
+    poke(c.io.dataIn.bits.positon.row, 2)
     poke(c.io.dataIn.bits.positon.col, (-1).S)
     step(1)
   })
@@ -48,10 +64,27 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
     poke(c.io.dataIn.valid, 1)
     poke(c.io.dataIn.bits.data, num)
     poke(c.io.dataIn.bits.dataType, 1)
-    poke(c.io.dataIn.bits.positon.row, 3)
+    poke(c.io.dataIn.bits.positon.row, 0)
     poke(c.io.dataIn.bits.positon.col, (-1).S)
     step(1)
   })
+  img.foreach((num) => {
+    poke(c.io.dataIn.valid, 1)
+    poke(c.io.dataIn.bits.data, num)
+    poke(c.io.dataIn.bits.dataType, 1)
+    poke(c.io.dataIn.bits.positon.row, 1)
+    poke(c.io.dataIn.bits.positon.col, (-1).S)
+    step(1)
+  })
+  img.foreach((num) => {
+    poke(c.io.dataIn.valid, 1)
+    poke(c.io.dataIn.bits.data, num)
+    poke(c.io.dataIn.bits.dataType, 1)
+    poke(c.io.dataIn.bits.positon.row, 2)
+    poke(c.io.dataIn.bits.positon.col, (-1).S)
+    step(1)
+  })
+
   poke(c.io.dataIn.valid, 0)
   step(1)
 
@@ -62,6 +95,9 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
   // finial let PE in cal state
   poke(c.io.stateSW, 2)
   step(1)
+  c.io.oSum.foreach((x) => {
+    poke(x.ready, 1)
+  })
   var j = 0
   for (i <- Range(0, 20000)) {
     //    println("oSum.bits: " + peek(c.io.oSum.valid).toString())
@@ -96,41 +132,41 @@ class PEArrayTester extends ChiselFlatSpec {
     var mode = 1
     mode match {
       case 1 => {
-        do {
-          nchannel = random.nextInt(5) + 1
-          var fNum = random.nextInt(32) + 1
-          var iNum = random.nextInt(5) + 1
-          var fLen = random.nextInt(3) + 1
-          var iLen = random.nextInt(16) + fLen
-          var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10) - 5)
-          var img2d = DenseMatrix.fill[Int](iNum * nchannel, iLen)(random.nextInt(10) - 5)
-          filter = filter2d.toArray.toList
-          img = img2d.toArray.toList
-          filterNum = fNum
-          imgNum = iNum
-        } while (filter.length > 255 | img.length > 255)
+        //        do {
+        //          nchannel = random.nextInt(5) + 1
+        //          var fNum = random.nextInt(32) + 1
+        //          var iNum = random.nextInt(5) + 1
+        //          var fLen = random.nextInt(3) + 1
+        //          var iLen = random.nextInt(16) + fLen
+        //          var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10) - 5)
+        //          var img2d = DenseMatrix.fill[Int](iNum * nchannel, iLen)(random.nextInt(10) - 5)
+        //          filter = filter2d.toArray.toList
+        //          img = img2d.toArray.toList
+        //          filterNum = fNum
+        //          imgNum = iNum
+        //        } while (filter.length > 255 | img.length > 255)
 
-        //        var fNum = 3
-        //        var iNum = 3
-        //        var fLen = 2
-        //        var iLen = 3
-        //        filter = List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-        //        img = List(1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6)
-        //        filterNum = fNum
-        //        imgNum = iNum
-        //        nchannel = 2
+        var fNum = 1
+        var iNum = 1
+        var fLen = 3
+        var iLen = 5
+        nchannel = 1
+        filter = List(1, 2, 3)
+        img = List(1, 2, 3, 4, 5)
+        filterNum = fNum
+        imgNum = iNum
       }
       case _ => {}
     }
 
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd" ,
+      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
         "--backend-name", "verilator"),
       () => new PEArray((6, 7))
     ) {
       c => new PEArrayTest(c, filter, filterNum, img, imgNum, nchannel)
     } should be(true)
-    new File("test_run_dir/make_PETOPmode0_vcd/PETesterTop.vcd").exists should be(true)
+    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
 
   }
 }
