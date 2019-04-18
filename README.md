@@ -19,6 +19,7 @@ run this, to check
 ```sh
 sbt 'testOnly gcd.GCDTester -- -z Basic'
 or
+sbt
 testOnly pe.PETopModeTester
 ```
 
