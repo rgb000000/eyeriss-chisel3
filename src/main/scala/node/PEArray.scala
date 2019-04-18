@@ -34,7 +34,13 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     val dataIn = Flipped(DecoupledIO(new dataPackage(w).cloneType))
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg(16))
+    val test = Output(Bool())
+    val test1 = Output(SInt(4.W))
+    val test2 = Output(SInt(4.W))
   })
+  io.test := ((-1).S - io.dataIn.bits.positon.col) === 0.S
+  io.test1 := (-1).S
+  io.test2 := io.dataIn.bits.positon.col
 
   val NoC = List[List[Node]]().toBuffer
   for (i <- Range(0, shape._1)) {

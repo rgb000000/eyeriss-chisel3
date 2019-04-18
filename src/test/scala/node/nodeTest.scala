@@ -40,7 +40,7 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
     poke(c.io.dataIn.bits.data, num)
     poke(c.io.dataIn.bits.dataType, 0)
     poke(c.io.dataIn.bits.positon.row, 3)
-    poke(c.io.dataIn.bits.positon.col, 5)
+    poke(c.io.dataIn.bits.positon.col, -1)
     step(1)
   })
 
@@ -49,7 +49,7 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
     poke(c.io.dataIn.bits.data, num)
     poke(c.io.dataIn.bits.dataType, 1)
     poke(c.io.dataIn.bits.positon.row, 3)
-    poke(c.io.dataIn.bits.positon.col, 5)
+    poke(c.io.dataIn.bits.positon.col, -1)
     step(1)
   })
   poke(c.io.dataIn.valid, 0)

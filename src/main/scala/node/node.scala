@@ -26,16 +26,20 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
   qIn <> io.dataPackageIn
   q <> io.dataPackageOut
 
+  val boardcast = Wire(Bool())
+
   if (row) {
+    boardcast := (io.dataPackageIn.bits.positon.row - (-1).asSInt(4.W)) === 0.S
     io.dataPackageIn.ready := qIn.ready &
-      ((io.dataPackageIn.bits.positon.row === (-1).S) | (io.dataPackageIn.bits.positon.row === positon._1.S))
+      ( boardcast | (io.dataPackageIn.bits.positon.row === positon._1.S))
     qIn.valid := io.dataPackageIn.valid &
       ((io.dataPackageIn.bits.positon.row === (-1).S) | (io.dataPackageIn.bits.positon.row === positon._1.S))
   } else {
+    boardcast := (io.dataPackageIn.bits.positon.col - (-1).asSInt(4.W)) === 0.S
     io.dataPackageIn.ready := qIn.ready &
-      ((io.dataPackageIn.bits.positon.col === (-1).S) | (io.dataPackageIn.bits.positon.col === positon._2.S))
+      ( boardcast | (io.dataPackageIn.bits.positon.col === positon._2.S))
     qIn.valid := io.dataPackageIn.valid &
-      ((io.dataPackageIn.bits.positon.col === (-1).S) | (io.dataPackageIn.bits.positon.col === positon._2.S))
+      ( boardcast | (io.dataPackageIn.bits.positon.col === positon._2.S))
   }
 
 }
