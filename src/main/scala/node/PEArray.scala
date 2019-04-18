@@ -38,7 +38,7 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     val test1 = Output(SInt(4.W))
     val test2 = Output(SInt(4.W))
   })
-  io.test := ((-1).S - io.dataIn.bits.positon.col) === 0.S
+  io.test := ((-1).S === io.dataIn.bits.positon.col)
   io.test1 := (-1).S
   io.test2 := io.dataIn.bits.positon.col
 

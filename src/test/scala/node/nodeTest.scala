@@ -40,7 +40,7 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
     poke(c.io.dataIn.bits.data, num)
     poke(c.io.dataIn.bits.dataType, 0)
     poke(c.io.dataIn.bits.positon.row, 3)
-    poke(c.io.dataIn.bits.positon.col, -1)
+    poke(c.io.dataIn.bits.positon.col, (-1).S)
     step(1)
   })
 
@@ -49,7 +49,7 @@ class PEArrayTest(c: PEArray, filter: List[Int], filterNum: Int, img: List[Int],
     poke(c.io.dataIn.bits.data, num)
     poke(c.io.dataIn.bits.dataType, 1)
     poke(c.io.dataIn.bits.positon.row, 3)
-    poke(c.io.dataIn.bits.positon.col, -1)
+    poke(c.io.dataIn.bits.positon.col, (-1).S)
     step(1)
   })
   poke(c.io.dataIn.valid, 0)
@@ -124,7 +124,7 @@ class PEArrayTester extends ChiselFlatSpec {
     }
 
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
+      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd" ,
         "--backend-name", "verilator"),
       () => new PEArray((6, 7))
     ) {
