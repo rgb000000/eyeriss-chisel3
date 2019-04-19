@@ -195,4 +195,6 @@ libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze-viz" % "0.13.2"
 )
 
+libraryDependencies += "org.platanios" % "tensorflow_2.12" % "0.4.1" classifier "linux-cpu-x86_64"
+
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
