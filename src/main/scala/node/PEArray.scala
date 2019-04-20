@@ -79,10 +79,14 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
   }
   io.dataIn.ready := NoC.map(_.head.io.dataPackageIn.ready).reduce(_ | _)
 
-  for(out <- io.oSum; i <- io.oSum.indices){
-    out.valid := pes.map(_(i)).map(_.io.oSum.valid).reduce(_ | _)
-    out.bits := pes.map(_(i)).map(_.io.oSum.bits).reduce(_ + _)
-    pes.map(_(i)).foreach(_.io.oSum.ready := out.valid & out.ready)
+  // error  shoule use cols to reduce instead of rows
+  require(io.oSum.length == shape._2)
+  require(pes.length == shape._1)
+  require(pes.head.length == shape._2)
+  for(i <- io.oSum.indices){
+    io.oSum(i).valid := pes.map(_(i)).map(_.io.oSum.valid).reduce(_ | _)
+    io.oSum(i).bits := pes.map(_(i)).map(_.io.oSum.bits).reduce(_ + _)
+    pes.map(_(i)).foreach(_.io.oSum.ready := io.oSum(i).valid & io.oSum(i).ready)
   }
 
 }

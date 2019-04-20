@@ -20,6 +20,11 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
     val dataPackageOut = DecoupledIO(new dataPackage(w))
   })
 
+  val x = WireInit(positon._1.asUInt(8.W))
+  val y = WireInit(positon._2.asUInt(8.W))
+  core.dontTouch(x)
+  core.dontTouch(y)
+
   val qIn = Wire(io.dataPackageIn.cloneType)
   val q = Queue(qIn, 5)
 

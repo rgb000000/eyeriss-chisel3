@@ -158,14 +158,14 @@ class testModen(c: PETesterTop, filter: List[Int], filterNum: Int, img: List[Int
   poke(c.io.filter.valid, 0)
   poke(c.io.img.valid, 0)
   filter.foreach((num) => {
-    poke(c.io.filter.valid, 1);
-    poke(c.io.filter.bits, num);
+    poke(c.io.filter.valid, 1)
+    poke(c.io.filter.bits, num)
     step(1)
   })
   poke(c.io.filter.valid, 0)
   img.foreach((num) => {
-    poke(c.io.img.valid, 1);
-    poke(c.io.img.bits, num);
+    poke(c.io.img.valid, 1)
+    poke(c.io.img.bits, num)
     step(1)
   })
   poke(c.io.img.valid, 0)

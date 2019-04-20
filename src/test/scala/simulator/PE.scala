@@ -362,21 +362,80 @@ object SW {
     results.reduce(_ + _)
   }
 
+  def randomMatrix(shape: (Int, Int)): DenseMatrix[Int] = {
+    val random = scala.util.Random
+    val a = DenseMatrix.fill(shape._1, shape._2)(random.nextInt(10) - 5)
+    a
+  }
+
+  def fd2List(data: DenseMatrix[DenseMatrix[Int]], t: Int): List[List[Int]] = {
+    if (t == 0) {
+      // filter
+      val channel = data.rows
+      val num = data.cols
+      val singleLen = data(0, 0).cols
+      var rows = data(0, 0).rows
+      val list = List[Int]().toBuffer
+      val l = List[List[Int]]().toBuffer
+      for (i <- Range(0, singleLen * singleLen)) {
+        for (j <- Range(0, channel)) {
+          for (k <- Range(0, num)) {
+            list.append(data(j, k)(i / singleLen, i % singleLen))
+          }
+
+        }
+      }
+      val list2d = List[List[Int]]().toBuffer
+      for (i <- Range(0, data(0, 0).rows)) {
+        val rowLen = data.size * data(0, 0).cols
+        list2d.append(list.slice(i * rowLen, (i + 1) * rowLen).toList)
+      }
+      list2d.toList
+    } else {
+      // img
+      val channel = data.rows
+      val num = data.cols
+      val singleLen = data(0, 0).cols
+      var rows = data(0, 0).rows
+      val list = List[Int]().toBuffer
+      for (l <- Range(0, singleLen)) {
+        for (i <- Range(0, num)) {
+          for (j <- Range(0, singleLen)) {
+            for (k <- Range(0, channel)) {
+              list.append(data(k, i)(l, j))
+            }
+          }
+        }
+      }
+      val list2d = List[List[Int]]().toBuffer
+
+      for (i <- Range(0, data(0, 0).rows)) {
+        val rowLen = data.size * data(0, 0).cols
+        list2d.append(list.slice(i * rowLen, (i + 1) * rowLen).toList)
+      }
+      list2d.toList
+    }
+  }
+
   // DM(channel, num)(height, width)
-  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]]): Unit = {
+  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]]):
+  DenseMatrix[DenseMatrix[Int]] = {
     assert(filter.rows == img.rows) // channelIn must ==
     val channelIn = filter.rows
     val channelOut = filter.cols
     val imgNum = img.cols
+    val result = DenseMatrix.fill(channelOut, imgNum)(DenseMatrix.fill(img(0, 0).cols - filter(0, 0).cols + 1,
+      img(0, 0).cols - filter(0, 0).cols + 1)(0))
     println(s"channelIn: ${channelIn}")
     println(s"channelOut: ${channelOut}")
     println(s"imgNum: ${imgNum}")
     for (i <- Range(0, channelOut)) {
       for (j <- Range(0, imgNum)) {
-        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
-        println()
+        //        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
+        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _)
       }
     }
+    result
   }
 
 }
@@ -491,8 +550,9 @@ object tempTest2 extends App {
   println(SW.conv2d(filter, img))
 }
 
-object tempTest3 extends App{
-  val filter = DenseMatrix((1,2,3),(1,2,3),(1,2,3))
-  val img = DenseMatrix((1,2,3,4,5), (6,7,8,9,10), (1,2,3,4,5), (1,2,3,4,5), (1,2,3,4,5))
-  SW.conv4d(DenseMatrix.fill(1,1)(filter), DenseMatrix.fill(1, 1)(img))
+object tempTest3 extends App {
+  val filter = DenseMatrix((1, 2, 3), (4, 5, 6), (7, 8, 9))
+  val img = DenseMatrix((1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5))
+  SW.conv4d(DenseMatrix.fill(3, 3)(SW.randomMatrix(3, 3)), DenseMatrix.fill(3, 3)(SW.randomMatrix(5, 5)))
+  println(SW.fd2List(DenseMatrix.fill(1, 1)(filter), 0))
 }

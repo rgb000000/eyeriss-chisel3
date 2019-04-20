@@ -34,6 +34,10 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
     })
 
   override def desiredName: String = position.toString()
+  val x = WireInit(position._1.U(8.W))
+  val y = WireInit(position._2.U(8.W))
+  core.dontTouch(x)
+  core.dontTouch(y)
   val configReg = Reg(new PEConfigReg(16))
 
   io.pSumIn.ready := 0.U
@@ -280,7 +284,10 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       }
     }
     is(allDone){
-
+      // then don't read data
+      fQMuxIn.ready := 0.U
+      iQMuxIn.ready := 0.U
+      io.oSum.valid := 0.U
     }
   }
 
