@@ -22,13 +22,33 @@ class PEArrayTest(c: PEArray, filter: DenseMatrix[DenseMatrix[Int]], img: DenseM
   val nchannel = filter.rows
 
   val sw = SW.conv4d(filter, img)
-  println(s"filter: \n${filter}")
-  println(s"img: \n${img}")
   val filter2d = SW.fd2List(filter, 0)
   val img2d = SW.fd2List(img, 1)
-  println(s"filter2d: \n${filter2d}")
-  println(s"img2d: \n${img2d}")
-  println(s"SW: \n${sw}")
+  println("filter2d: ")
+  filter2d.map((x) => {
+    println(x.toString()); println()
+  })
+  println("img2d: ")
+  img2d.map((x) => {
+    println(x.toString()); println()
+  })
+  println("sw: ")
+  sw.map((x) => {
+    println(x.toString()); println()
+  })
+
+  val sw1d = List[Int]().toBuffer
+  val singLen = sw(0, 0).cols * sw.size
+  for (k <- Range(0, sw(0, 0).rows)) {
+    for (i <- Range(0, sw.cols)) {
+      for (l <- Range(0, sw(0, 0).cols)) {
+        for (j <- Range(0, sw.rows)) {
+          sw1d.append(sw(j, i)(k, l))
+        }
+      }
+    }
+  }
+  println(sw1d.toString())
 
 
   poke(c.io.stateSW, 0)
@@ -54,14 +74,14 @@ class PEArrayTest(c: PEArray, filter: DenseMatrix[DenseMatrix[Int]], img: DenseM
       step(1)
     }
   }
-  for (i <- filter2d.indices) {               // row = filter's row
-    for (j <- Range(0, iLen - fLen + 1)) {    // col = iLen - fLen + 1
+  for (i <- filter2d.indices) { // row = filter's row
+    for (j <- Range(0, iLen - fLen + 1)) { // col = iLen - fLen + 1
       for (k <- img2d(0).indices) {
         poke(c.io.dataIn.valid, 1)
         poke(c.io.dataIn.bits.data, img2d(i + j)(k))
         poke(c.io.dataIn.bits.dataType, 1)
         poke(c.io.dataIn.bits.positon.row, i)
-        poke(c.io.dataIn.bits.positon.col, j + 1)   //because cols 0  is  row controller
+        poke(c.io.dataIn.bits.positon.col, j + 1) //because cols 0  is  row controller
         step(1)
       }
     }
@@ -80,7 +100,14 @@ class PEArrayTest(c: PEArray, filter: DenseMatrix[DenseMatrix[Int]], img: DenseM
     poke(x.ready, 1)
   })
   var j = 0
+  var jj = List.fill(c.io.oSum.length)(0).toBuffer
   for (i <- Range(0, 20000)) {
+    for(i <- c.io.oSum.indices){
+      if(peek(c.io.oSum(i).valid) == 1){
+        expect(c.io.oSum(i).bits, sw1d(i*singLen + jj(i)))
+        jj(i) += 1
+      }
+    }
     step(1)
   }
   step(1)
@@ -101,8 +128,8 @@ class PEArrayTester extends ChiselFlatSpec {
         do {
           val random = scala.util.Random
           nchannel = random.nextInt(1) + 1
-          var fNum = random.nextInt(1) + 1
-          var iNum = random.nextInt(1) + 1
+          var fNum = random.nextInt(1) + 2
+          var iNum = random.nextInt(1) + 2
           var fLen = random.nextInt(3) + 1
           var iLen = random.nextInt(3) + fLen + 1
           filter4d = DenseMatrix.fill(nchannel, fNum)(SW.randomMatrix((fLen, fLen)))

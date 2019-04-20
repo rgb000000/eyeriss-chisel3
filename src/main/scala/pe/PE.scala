@@ -218,6 +218,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
               pSumAddr.inc()
               state := pDone
             }
+          } .otherwise{
+            state := allDone
           }
         }
 
