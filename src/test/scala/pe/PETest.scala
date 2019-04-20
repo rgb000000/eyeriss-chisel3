@@ -179,6 +179,7 @@ class testModen(c: PETesterTop, filter: List[Int], filterNum: Int, img: List[Int
   poke(c.io.stateSW, 2)
   step(1)
   var j = 0
+  poke(c.io.oSum.ready, 1)
   for (i <- Range(0, 20000)) {
     //    println("oSum.bits: " + peek(c.io.oSum.valid).toString())
     //    println("sw.cols: " + sw.cols.toString())
