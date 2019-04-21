@@ -17,7 +17,7 @@ class PETesterTop(position: (Int, Int) = (0,0), w:Int=16) extends Module{
   val iIn = Queue(io.img, 256)
   val oSumOut = Queue(pe.io.oSum, 256)
 
-  override def desiredName: String = position.toString()
+//  override def desiredName: String = position.toString()
 
 //  oSumOut.ready := 1.U
   oSumOut <> io.oSum

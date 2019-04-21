@@ -33,7 +33,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       val oSum = DecoupledIO(SInt(w.W))
     })
 
-  override def desiredName: String = position.toString()
+//  override def desiredName: String = position.toString()
   val x = WireInit(position._1.U(8.W))
   val y = WireInit(position._2.U(8.W))
   core.dontTouch(x)
@@ -268,21 +268,29 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       }
     }
     is(newImg){
-      needNewImg := 0.U
-      fQMuxIn.valid := 0.U
-      // let img FIFO spit a data to trash
-      iQ.ready := 1.U
-      when(iQ.fire()){
-        trash := iQ.bits
-      }
-      core.dontTouch(trash)
-      iQMuxIn <> io.img
-      newImgCnt.inc()
-      when(io.img.valid === 0.U){
-        state := allDone
-      }.elsewhen(newImgCnt.value === iCnt.value - 2.U){
-        newImgCnt.value := 0.U
+      when(iCnt.value === 1.U){
         state := cal
+        needNewImg := 0.U
+        iQ.ready := 0.U
+        fQMuxIn.valid := 0.U
+        iQMuxIn.valid := 0.U
+      }.otherwise {
+        needNewImg := 0.U
+        fQMuxIn.valid := 0.U
+        // let img FIFO spit a data to trash
+        iQ.ready := 1.U
+        when(iQ.fire()) {
+          trash := iQ.bits
+        }
+        core.dontTouch(trash)
+        iQMuxIn <> io.img
+        newImgCnt.inc()
+        when(io.img.valid === 0.U) {
+          state := allDone
+        }.elsewhen(newImgCnt.value === iCnt.value - 2.U) {
+          newImgCnt.value := 0.U
+          state := cal
+        }
       }
     }
     is(allDone){
