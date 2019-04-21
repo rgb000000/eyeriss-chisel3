@@ -149,6 +149,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
         is(normal){
         }
         is(multiFilter){
+          io.oSum.valid := 0.U
           when(fQMuxIn.fire()){
             fCnt.inc()
           }
@@ -156,7 +157,11 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             iCnt.inc()
           }
           when(io.stateSW === cal){
-            state := cal
+            when(iCnt.value === 0.U | fCnt.value === 0.U){
+              state := allDone
+            }.otherwise{
+              state := cal
+            }
           }
         }
         is(multiChannel){
