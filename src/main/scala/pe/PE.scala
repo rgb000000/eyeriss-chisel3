@@ -121,7 +121,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 //    mode := normal
 //  }
 
-  val addr = Wire(UInt(16.W))
+  val addr = Wire(UInt(log2Ceil(pSumMemLen).W))
   val singleResultLen = configReg.singleImgLen - configReg.singleFilterLen + 1.U
   addr := fCalCnt.value
 //  when(mode === normal){

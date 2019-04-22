@@ -167,7 +167,7 @@ class PEArrayTester extends ChiselFlatSpec {
         "--backend-name", "verilator"),
       () => new PEArray((6, 7))
     ) {
-      c => new PEArrayTest(c, 100)
+      c => new PEArrayTest(c, 10)
     } should be(true)
     new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
 
