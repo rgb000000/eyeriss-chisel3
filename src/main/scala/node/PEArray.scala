@@ -83,9 +83,23 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
   require(io.oSum.length == shape._2)
   require(pes.length == shape._1)
   require(pes.head.length == shape._2)
+  val forTest = Wire(Vec(io.oSum.length, Vec(shape._1, io.oSum.head.bits.cloneType)))
+  forTest.foreach(_.foreach(core.dontTouch(_)))
+  for(i <- io.oSum.indices){
+    var j = 0
+    pes.map(_(i)).map(_.io.oSum.bits).foreach((x) => {forTest(i)(j) := x; j += 1})
+  }
   for(i <- io.oSum.indices){
     io.oSum(i).valid := pes.map(_(i)).map(_.io.oSum.valid).reduce(_ | _)
-    io.oSum(i).bits := pes.map(_(i)).map(_.io.oSum.bits).reduce(_ + _)
+    io.oSum(i).bits := pes.map(_(i)).map((x)=>{
+      val tmp = Wire(SInt(w.W))
+      when(x.io.oSum.valid === 1.U){
+        tmp := x.io.oSum.bits
+      }.otherwise{
+        tmp := 0.S
+      }
+      tmp
+    }).reduce(_ + _)
     pes.map(_(i)).foreach(_.io.oSum.ready := io.oSum(i).valid & io.oSum(i).ready)
   }
 

@@ -23,30 +23,29 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     var filterNum = 1
     var imgNum = 1
     var nchannel = 1
-    var mode = 1
     var maxLen = 0
+    var fLen = 0
+    var iLen = 0
     do {
       val random = scala.util.Random
       nchannel = random.nextInt(32) + 1
-      var fNum = random.nextInt(32) + 1
-      var iNum = random.nextInt(32) + 1
-      var fLen = random.nextInt(6) + 1
-      var iLen = random.nextInt(6) + fLen + 1
-      filter = DenseMatrix.fill(nchannel, fNum)(SW.randomMatrix((fLen, fLen)))
-      img = DenseMatrix.fill(nchannel, iNum)(SW.randomMatrix((iLen, iLen)))
-      filterNum = fNum
-      imgNum = iNum
+      filterNum = random.nextInt(32) + 1
+      imgNum = random.nextInt(32) + 1
+      fLen = random.nextInt(6) + 1
+      iLen = random.nextInt(16) +fLen + 1
+      filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
+      img = DenseMatrix.fill(nchannel, imgNum)(SW.randomMatrix((iLen, iLen)))
       maxLen = if (filterNum * fLen * nchannel > imgNum * iLen * nchannel) {
         filterNum * fLen * nchannel
       } else {
         imgNum * iLen * nchannel
       }
-    } while (maxLen > 255)
+    } while (maxLen > 255 | iLen > 7 + fLen - 1  | fLen > 6)
 
     //    val filterNum = filter.cols
-    val fLen = filter(0, 0).cols
+//    val fLen = filter(0, 0).cols
     //    val imgNum = img.cols
-    val iLen = img(0, 0).cols
+//    val iLen = img(0, 0).cols
     //    val nchannel = filter.rows
 
     val sw = SW.conv4d(filter, img)
@@ -57,20 +56,20 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     println(s"channel: ${nchannel}")
     println(s"fLen: ${fLen}")
     println(s"iLen: ${iLen}")
-//    filter2d.map((x) => {
-//      println(x.toString())
-//      println()
-//    })
-//    println("img2d: ")
-//    img2d.map((x) => {
-//      println(x.toString())
-//      println()
-//    })
-    //    println("sw: ")
-    //    sw.map((x) => {
-    //      println(x.toString());
-    //      println()
-    //    })
+    filter2d.map((x) => {
+      println(x.toString())
+      println()
+    })
+    println("img2d: ")
+    img2d.map((x) => {
+      println(x.toString())
+      println()
+    })
+        println("sw: ")
+        sw.map((x) => {
+          println(x.toString());
+          println()
+        })
 
     val sw1d = List[Int]().toBuffer
     val singLen = sw(0, 0).cols * sw.size
@@ -136,7 +135,7 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     })
     var error = 0
     var jj = List.fill(c.io.oSum.length)(0).toBuffer
-    for (i <- Range(0, 20000)) {
+    for (i <- Range(0, 40000)) {
       for (i <- c.io.oSum.indices) {
         if (peek(c.io.oSum(i).valid) == 1) {
           expect(c.io.oSum(i).bits, sw1d(i * singLen + jj(i)))
@@ -168,7 +167,7 @@ class PEArrayTester extends ChiselFlatSpec {
         "--backend-name", "verilator"),
       () => new PEArray((6, 7))
     ) {
-      c => new PEArrayTest(c, 10)
+      c => new PEArrayTest(c, 100)
     } should be(true)
     new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
 
