@@ -53,7 +53,8 @@ class PETest(c: PE) extends PeekPokeTester(c) {
   step(1)
   step(1)
   poke(c.io.filter.valid, 0)
-  poke(c.io.oSum.ready, 1)
+//  poke(c.io.oSumMEM.ready, 1)
+  poke(c.io.oSumSRAM.ready, 1)
 
 
   step(1)
@@ -201,18 +202,18 @@ class testModen(c: PETesterTop, var loop: Int)
     poke(c.io.stateSW, 2)
     step(1)
     var j = 0
-    poke(c.io.oSumMEM.ready, 1)
+//    poke(c.io.oSumMEM.ready, 1)
     poke(c.io.oSumSRAM.ready, 1)
     for (i <- Range(0, 40000)) {
       //    println("oSum.bits: " + peek(c.io.oSum.valid).toString())
       //    println("sw.cols: " + sw.cols.toString())
       //    println("sw.rows: " + sw.rows.toString)
-      if (peek(c.io.oSumMEM.valid) == 1) {
+      if (peek(c.io.oSumSRAM.valid) == 1) {
         //      println(peek(c.io.oSum.bits).toString())
-        expect(c.io.oSumMEM.bits, sw(j))
+//        expect(c.io.oSumMEM.bits, sw(j))
         expect(c.io.oSumSRAM.bits, sw(j))
-        print(sw(j).toString + " <---> " + peek(c.io.oSumMEM.bits).toString() + "   ")
-        if (sw(j) == peek((c.io.oSumMEM.bits))) {
+        print(sw(j).toString + " <---> " + peek(c.io.oSumSRAM.bits).toString() + "   ")
+        if (sw(j) == peek((c.io.oSumSRAM.bits))) {
           println("pass")
         } else {
           println("FAID")

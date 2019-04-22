@@ -30,8 +30,10 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       val filter = Flipped(DecoupledIO(SInt(w.W)))
       val img = Flipped(DecoupledIO(SInt(w.W)))
       val pSumIn = Flipped(DecoupledIO(SInt(w.W)))
-      val oSum = DecoupledIO(SInt(w.W))
-      val oSum2 = DecoupledIO(SInt(w.W))
+//      val oSumMEM = DecoupledIO(SInt(w.W))
+      val oSumSRAM = DecoupledIO(SInt(w.W))
+
+      val stateOut = Output(UInt(4.W))
     })
 
 //  override def desiredName: String = position.toString()
@@ -42,8 +44,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val configReg = Reg(new PEConfigReg(16))
 
   io.pSumIn.ready := 0.U
-  io.oSum.valid := 0.U
-  io.oSum.bits := 0.S
+//  io.oSumMEM.valid := 0.U
+//  io.oSumMEM.bits := 0.S
 
   val fCnt = Counter(256)             // input filter total length
   val iCnt = Counter(256)             // input img total length
@@ -73,6 +75,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   // data mean getData
   val idle :: data :: cal :: pDone :: newImg :: allDone:: Nil = Enum(6)
   val state = RegInit(idle)
+  io.stateOut := state
   val dodata = WireInit(state === data)
   val docal = WireInit(state === cal)
 
@@ -105,17 +108,17 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   }
   iQ.ready := (state === cal) & (fCalCnt.value === 0.U)
 
-  val pSumMem = Mem(pSumMemLen, SInt(w.W))
+//  val pSumMem = Mem(pSumMemLen, SInt(w.W))
   val pSumSRAM = Module(new SRAM()) // 256 16bits
   pSumSRAM.io.rstLowas := reset.asUInt() + 1.U
   pSumSRAM.io.din := 0.S
-  io.oSum2.bits := 0.S
+  io.oSumSRAM.bits := 0.S
 
   val trash = RegInit(0.S(w.W))
 
-  io.oSum.valid := 0.U
-  io.oSum2.valid := 0.U
-  core.dontTouch(io.oSum2)
+//  io.oSumMEM.valid := 0.U
+  io.oSumSRAM.valid := 0.U
+  core.dontTouch(io.oSumSRAM)
 
   val normal :: multiFilter :: multiChannel :: Nil = Enum(3)
   val mode = Wire(UInt(8.W))
@@ -139,8 +142,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 //    addr := pSumAddr.value
 //  }
 
-  val pResultCurrect = WireInit(fQ.bits * iQ.bits + pSumMem(addr))
-  val pResultLast = WireInit(fQ.bits * iQreg + pSumMem(addr))
+//  val pResultCurrect = WireInit(fQ.bits * iQ.bits + pSumMem(addr))
+//  val pResultLast = WireInit(fQ.bits * iQreg + pSumMem(addr))
 
   val pResultCurrentSRAM = WireInit(fQ.bits * iQ.bits + pSumSRAM.read(addr))
   val pResultLastSRAM = WireInit(fQ.bits * iQreg + pSumSRAM.read(addr))
@@ -159,8 +162,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
         is(normal){
         }
         is(multiFilter){
-          io.oSum.valid := 0.U
-          io.oSum2.valid := 0.U
+//          io.oSumMEM.valid := 0.U
+          io.oSumSRAM.valid := 0.U
           when(fQMuxIn.fire()){
             fCnt.inc()
           }
@@ -187,29 +190,29 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
         is(multiFilter){
           iQMuxIn.valid := 0.U
 
-          io.oSum.bits := 0.S
-          io.oSum2.bits := 0.S
+//          io.oSumMEM.bits := 0.S
+          io.oSumSRAM.bits := 0.S
           when(   (calCnt.value === configReg.singleFilterLen * configReg.nchannel)) {
-            io.oSum.valid := 1.U
-            io.oSum.bits := pResultLast
+//            io.oSumMEM.valid := 1.U
+//            io.oSumMEM.bits := pResultLast
 
-            io.oSum2.valid := 1.U
-            io.oSum2.bits := pResultLastSRAM
+            io.oSumSRAM.valid := 1.U
+            io.oSumSRAM.bits := pResultLastSRAM
             // io.oSum.bits := fQ.bits * iQreg + pSumMem(addr)
             //                           /*^*/
           }.elsewhen((calCnt.value ===   /*|*/ configReg.singleFilterLen * configReg.nchannel - 1.U) &
                                                                     (fCalCnt.value === 0.U)){ // 0 mean the last
-            io.oSum.valid := 1.U         /*v*/   // when the first result it use iQ.bits, else will use iQreg
-            io.oSum.bits := pResultCurrect
+//            io.oSumMEM.valid := 1.U         /*v*/   // when the first result it use iQ.bits, else will use iQreg
+//            io.oSumMEM.bits := pResultCurrect
 
-            io.oSum2.valid := 1.U
-            io.oSum2.bits := pResultCurrentSRAM
+            io.oSumSRAM.valid := 1.U
+            io.oSumSRAM.bits := pResultCurrentSRAM
             // io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
           }
 
           when(fQ.fire() & iQ.fire()){
             iQMuxIn.valid := 1.U
-            pSumMem(addr) := pResultCurrect
+//            pSumMem(addr) := pResultCurrect
             pSumSRAM.write(addr, pResultCurrentSRAM)
             iQreg := iQ.bits
             fCalCnt.inc()   // when configReg.fNum = 1 error!!! so change to next
@@ -228,7 +231,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             }
 
           }.elsewhen(fQ.fire()){
-            pSumMem(addr) := pResultLast
+//            pSumMem(addr) := pResultLast
             pSumSRAM.write(addr, pResultLastSRAM)
             when(fCalCnt.value === configReg.filterNum - 1.U){
               fCalCnt.value := 0.U
@@ -254,7 +257,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
     }
     is(pDone){
       for(i <- Range(0, pSumMemLen)){
-        pSumMem(i) := 0.S
+//        pSumMem(i) := 0.S
       }
       pSumSRAM.io.rstLowas := 0.U
       switch(mode){
@@ -323,8 +326,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       // then don't read data
       fQMuxIn.ready := 0.U
       iQMuxIn.ready := 0.U
-      io.oSum.valid := 0.U
-      io.oSum2.valid := 0.U
+//      io.oSumMEM.valid := 0.U
+      io.oSumSRAM.valid := 0.U
     }
   }
 

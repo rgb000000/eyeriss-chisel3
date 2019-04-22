@@ -138,7 +138,7 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     })
     var error = 0
     var jj = List.fill(c.io.oSumSRAM.length)(0).toBuffer
-    for (i <- Range(0, 40000)) {
+     while(peek(c.io.done) == 0){
       for (i <- c.io.oSumSRAM.indices) {
         if (peek(c.io.oSumSRAM(i).valid) == 1) {
           expect(c.io.oSumSRAM(i).bits, sw1d(i * singLen + jj(i)))
@@ -167,13 +167,13 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
 class PEArrayTester extends ChiselFlatSpec {
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
+      Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
         "--backend-name", "verilator"),
       () => new PEArray((6, 7))
     ) {
-      c => new PEArrayTest(c, 10)
+      c => new PEArrayTest(c, 100)
     } should be(true)
-    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
+//    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
 
   }
 }

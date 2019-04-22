@@ -36,7 +36,10 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     val peconfig = Input(new PEConfigReg(16))
 //    val oSumMEM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
     val oSumSRAM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
+    val done = Output(UInt(1.W))
   })
+  val doneReg = RegInit(0.U(1.W))
+  io.done := doneReg
 
   val NoC = List[List[Node]]().toBuffer
   val pes = List[List[PETesterTop]]().toBuffer
@@ -49,7 +52,7 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
         val pe = Module(new PETesterTop((i, j - 1)))
         pe.io.pSumIn.bits := 0.S
         pe.io.pSumIn.valid := 0.U
-        pe.io.oSumMEM.ready := 0.U
+//        pe.io.oSumMEM.ready := 0.U
         pe.io.oSumSRAM.ready := 0.U
         pe.io.stateSW := io.stateSW
         pe.io.peconfig := io.peconfig
@@ -120,5 +123,8 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     }).reduce(_ + _)
     pes.map(_(i)).foreach(_.io.oSumSRAM.ready := io.oSumSRAM(i).valid & io.oSumSRAM(i).ready)
   }
+
+  val idle :: data :: cal :: pDone :: newImg :: allDone:: Nil = Enum(6)
+  doneReg := pes.map(_.map(_.io.stateOut === allDone)).flatten.reduce(_ & _)
 
 }
