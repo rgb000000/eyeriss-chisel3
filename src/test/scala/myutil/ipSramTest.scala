@@ -21,6 +21,18 @@ class Test extends Module{
   ram.io.wr_addr := io.addr
   ram.io.data_in := io.din
   io.dout := ram.io.data_out
+
+  def read(addr: UInt):SInt = {
+    io.addr := addr
+    io.we := 1.U
+    ram.io.data_out
+  }
+  def write(addr:UInt, data: SInt): Unit ={
+    io.addr := addr
+    io.we := 0.U
+    io.din := data
+  }
+
 }
 
 object getVerilog extends App {
@@ -29,12 +41,26 @@ object getVerilog extends App {
 }
 
 class Tester(c: Test) extends PeekPokeTester(c) {
-  step(1)
-  step(1)
-  step(1)
-  step(1)
-  step(1)
-  step(1)
+  def read(a: Test, addr: UInt):SInt = {
+    poke(a.io.addr, addr)
+    poke(a.io.we, 1.U)
+    peek(a.ram.io.data_out).asSInt()
+  }
+  def write(a: Test, addr:UInt, data: SInt): Unit ={
+    poke(a.io.addr, addr)
+    poke(a.io.we, 0.U)
+    poke(a.io.din, data)
+  }
+  for(i <- Range(0, 256)){
+    write(c, i.asUInt(), (i + 1).asSInt())
+    step(1)
+  }
+  for(i <- Range(0, 256)){
+    poke(c.io.addr, i)
+    poke(c.io.we, 1.U)
+    expect(c.io.dout, i + 1)
+    step(1)
+  }
 }
 
 class TesterTester extends ChiselFlatSpec {
