@@ -34,7 +34,7 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
     val dataIn = Flipped(DecoupledIO(new dataPackage(w).cloneType))
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg(16))
-    val oSumMEM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
+//    val oSumMEM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
     val oSumSRAM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
   })
 
@@ -81,31 +81,32 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
   }
   io.dataIn.ready := NoC.map(_.head.io.dataPackageIn.ready).reduce(_ | _)
 
-  // error  shoule use cols to reduce instead of rows
-  require(io.oSumMEM.length == shape._2)
+//  require(io.oSumMEM.length == shape._2)
+//  require(pes.length == shape._1)
+//  require(pes.head.length == shape._2)
+//  val forTest = Wire(Vec(io.oSumMEM.length, Vec(shape._1, io.oSumMEM.head.bits.cloneType)))
+//  forTest.foreach(_.foreach(core.dontTouch(_)))
+//  for(i <- io.oSumMEM.indices){
+//    var j = 0
+//    pes.map(_(i)).map(_.io.oSumMEM.bits).foreach((x) => {forTest(i)(j) := x; j += 1})
+//  }
+//  for(i <- io.oSumMEM.indices){
+//    io.oSumMEM(i).valid := pes.map(_(i)).map(_.io.oSumMEM.valid).reduce(_ | _)
+//    io.oSumMEM(i).bits := pes.map(_(i)).map((x)=>{
+//      val tmp = Wire(SInt(w.W))
+//      when(x.io.oSumMEM.valid === 1.U){
+//        tmp := x.io.oSumMEM.bits
+//      }.otherwise{
+//        tmp := 0.S
+//      }
+//      tmp
+//    }).reduce(_ + _)
+//    pes.map(_(i)).foreach(_.io.oSumMEM.ready := io.oSumMEM(i).valid & io.oSumMEM(i).ready)
+//  }
+
   require(io.oSumSRAM.length == shape._2)
   require(pes.length == shape._1)
   require(pes.head.length == shape._2)
-  val forTest = Wire(Vec(io.oSumMEM.length, Vec(shape._1, io.oSumMEM.head.bits.cloneType)))
-  forTest.foreach(_.foreach(core.dontTouch(_)))
-  for(i <- io.oSumMEM.indices){
-    var j = 0
-    pes.map(_(i)).map(_.io.oSumMEM.bits).foreach((x) => {forTest(i)(j) := x; j += 1})
-  }
-  for(i <- io.oSumMEM.indices){
-    io.oSumMEM(i).valid := pes.map(_(i)).map(_.io.oSumMEM.valid).reduce(_ | _)
-    io.oSumMEM(i).bits := pes.map(_(i)).map((x)=>{
-      val tmp = Wire(SInt(w.W))
-      when(x.io.oSumMEM.valid === 1.U){
-        tmp := x.io.oSumMEM.bits
-      }.otherwise{
-        tmp := 0.S
-      }
-      tmp
-    }).reduce(_ + _)
-    pes.map(_(i)).foreach(_.io.oSumMEM.ready := io.oSumMEM(i).valid & io.oSumMEM(i).ready)
-  }
-
   for(i <- io.oSumSRAM.indices){
     io.oSumSRAM(i).valid := pes.map(_(i)).map(_.io.oSumSRAM.valid).reduce(_ | _)
     io.oSumSRAM(i).bits := pes.map(_(i)).map((x)=>{
