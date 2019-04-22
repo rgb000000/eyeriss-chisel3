@@ -5,48 +5,19 @@ import chisel3._
 import chisel3.util._
 import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
 
-class Test extends Module{
-  val io = IO(new Bundle{
-    val we = Input(UInt(1.W))
-    val addr = Input(UInt(8.W))
-    val din = Input(SInt(16.W))
-    val dout = Output(SInt(16.W))
-  })
-  val ram = Module(new DW_ram_r_w_s_dff())
-  ram.io.clk := clock
-  ram.io.rst_n := reset.asUInt() + 1.U
-  ram.io.cs_n := 0.U
-  ram.io.wr_n := io.we
-  ram.io.rd_addr := io.addr
-  ram.io.wr_addr := io.addr
-  ram.io.data_in := io.din
-  io.dout := ram.io.data_out
-
-  def read(addr: UInt):SInt = {
-    io.addr := addr
-    io.we := 1.U
-    ram.io.data_out
-  }
-  def write(addr:UInt, data: SInt): Unit ={
-    io.addr := addr
-    io.we := 0.U
-    io.din := data
-  }
-
-}
 
 object getVerilog extends App {
   println("generate pe.PE verilog")
-  chisel3.Driver.execute(Array("--target-dir", "test_run_dir"), () => new Test)
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir"), () => new SRAM)
 }
 
-class Tester(c: Test) extends PeekPokeTester(c) {
-  def read(a: Test, addr: UInt):SInt = {
+class Tester(c: SRAM) extends PeekPokeTester(c) {
+  def read(a: SRAM, addr: UInt):SInt = {
     poke(a.io.addr, addr)
     poke(a.io.we, 1.U)
     peek(a.ram.io.data_out).asSInt()
   }
-  def write(a: Test, addr:UInt, data: SInt): Unit ={
+  def write(a: SRAM, addr:UInt, data: SInt): Unit ={
     poke(a.io.addr, addr)
     poke(a.io.we, 0.U)
     poke(a.io.din, data)
@@ -68,7 +39,7 @@ class TesterTester extends ChiselFlatSpec {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_ram_vcd", "--top-name", "make_Test_vcd",
         "--backend-name", "verilator"),
-      () => new Test
+      () => new SRAM
     ) {
       c => new Tester(c)
     } should be(true)

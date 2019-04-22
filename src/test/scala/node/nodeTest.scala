@@ -130,17 +130,21 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     // finial let PE in cal state
     poke(c.io.stateSW, 2)
     step(1)
-    c.io.oSum.foreach((x) => {
+    c.io.oSumMEM.foreach((x) => {
+      poke(x.ready, 1)
+    })
+    c.io.oSumSRAM.foreach((x) => {
       poke(x.ready, 1)
     })
     var error = 0
-    var jj = List.fill(c.io.oSum.length)(0).toBuffer
+    var jj = List.fill(c.io.oSumMEM.length)(0).toBuffer
     for (i <- Range(0, 40000)) {
-      for (i <- c.io.oSum.indices) {
-        if (peek(c.io.oSum(i).valid) == 1) {
-          expect(c.io.oSum(i).bits, sw1d(i * singLen + jj(i)))
+      for (i <- c.io.oSumMEM.indices) {
+        if (peek(c.io.oSumMEM(i).valid) == 1) {
+          expect(c.io.oSumMEM(i).bits, sw1d(i * singLen + jj(i)))
+          expect(c.io.oSumSRAM(i).bits, sw1d(i * singLen + jj(i)))
           // println(peek(c.io.oSum(i).bits).toString())
-          if(peek(c.io.oSum(i).bits) != sw1d(i * singLen + jj(i))){
+          if(peek(c.io.oSumMEM(i).bits) != sw1d(i * singLen + jj(i))){
             error += 1
           }
           jj(i) += 1

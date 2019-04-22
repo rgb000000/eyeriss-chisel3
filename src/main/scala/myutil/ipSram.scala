@@ -16,19 +16,38 @@ class DW_ram_r_w_s_dff extends BlackBox with HasBlackBoxResource {
     val data_out = Output(SInt(16.W))
   })
   setResource("/DW_ram_r_w_s_dff.v")
-
-//  def write(addr:UInt, data:SInt): Unit ={
-//    io.wea := 1.U
-//    io.addra := addr
-//    io.dina := data
-//  }
-//  def read(addr:UInt): SInt = {
-//    io.wea := 0.U
-//    io.addra := addr
-//    io.douta
-//  }
 }
 
-//object mySram{
-//  def apply: mySram = new mySram()
-//}
+class SRAM extends Module{
+  val io = IO(new Bundle{
+    val we = Input(UInt(1.W))
+    val addr = Input(UInt(8.W))
+    val din = Input(SInt(16.W))
+    val dout = Output(SInt(16.W))
+    val rstLowas = Input(UInt(1.W))
+  })
+  val ram = Module(new DW_ram_r_w_s_dff())
+  ram.io.clk := clock
+  ram.io.rst_n := io.rstLowas
+  ram.io.cs_n := 0.U
+  ram.io.wr_n := io.we
+  ram.io.rd_addr := io.addr
+  ram.io.wr_addr := io.addr
+  ram.io.data_in := io.din
+  io.dout := ram.io.data_out
+
+  def read(addr: UInt):SInt = {
+    io.addr := addr
+    io.we := 1.U
+    io.dout
+  }
+  def write(addr:UInt, data: SInt): Unit ={
+    io.addr := addr
+    io.we := 0.U
+    io.din := data
+  }
+}
+
+object SRAM{
+  def apply: SRAM = new SRAM()
+}

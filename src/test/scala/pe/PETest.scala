@@ -201,16 +201,18 @@ class testModen(c: PETesterTop, var loop: Int)
     poke(c.io.stateSW, 2)
     step(1)
     var j = 0
-    poke(c.io.oSum.ready, 1)
+    poke(c.io.oSumMEM.ready, 1)
+    poke(c.io.oSumSRAM.ready, 1)
     for (i <- Range(0, 40000)) {
       //    println("oSum.bits: " + peek(c.io.oSum.valid).toString())
       //    println("sw.cols: " + sw.cols.toString())
       //    println("sw.rows: " + sw.rows.toString)
-      if (peek(c.io.oSum.valid) == 1) {
+      if (peek(c.io.oSumMEM.valid) == 1) {
         //      println(peek(c.io.oSum.bits).toString())
-        expect(c.io.oSum.bits, sw(j))
-        print(sw(j).toString + " <---> " + peek(c.io.oSum.bits).toString() + "   ")
-        if (sw(j) == peek((c.io.oSum.bits))) {
+        expect(c.io.oSumMEM.bits, sw(j))
+        expect(c.io.oSumSRAM.bits, sw(j))
+        print(sw(j).toString + " <---> " + peek(c.io.oSumMEM.bits).toString() + "   ")
+        if (sw(j) == peek((c.io.oSumMEM.bits))) {
           println("pass")
         } else {
           println("FAID")
@@ -343,7 +345,7 @@ class PETopModeTester extends ChiselFlatSpec {
         "--backend-name", "verilator"),
       () => new PETesterTop
     ) {
-      c => new testModen(c, 500)
+      c => new testModen(c, 100)
     } should be(true)
     //    new File("test_run_dir/make_PETOPmode0_vcd/PETesterTop.vcd").exists should be(true)
 

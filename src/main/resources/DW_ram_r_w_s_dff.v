@@ -48,7 +48,7 @@
 
    parameter data_width = 16;
    parameter depth = 256;
-   parameter rst_mode = 1;
+   parameter rst_mode = 0;
    
    
 `define DW_addr_width ((depth>256)?((depth>4096)?((depth>16384)?((depth>32768)?16:15):((depth>8192)?14:13)):((depth>1024)?((depth>2048)?12:11):((depth>512)?10:9))):((depth>16)?((depth>64)?((depth>128)?8:7):((depth>32)?6:5)):((depth>4)?((depth>8)?4:3):((depth>2)?2:1))))
