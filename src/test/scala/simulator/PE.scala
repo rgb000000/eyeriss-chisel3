@@ -556,3 +556,26 @@ object tempTest3 extends App {
   SW.conv4d(DenseMatrix.fill(3, 3)(SW.randomMatrix(3, 3)), DenseMatrix.fill(3, 3)(SW.randomMatrix(5, 5)))
   println(SW.fd2List(DenseMatrix.fill(1, 1)(filter), 0))
 }
+
+object MNIST extends App{
+  val pic = Data.pics
+//  println(pic)
+  val flt1 = Data.flts1
+//  println(flt1(5))
+  val flt2 = Data.flts2
+//  println(flt2(5))
+  val fc1 = Data.fc1
+//  println(fc1)
+  val fc2 = Data.fc2
+//  println(fc2)
+  val fc3 = Data.fc3
+//  println(fc3)
+
+  var img = DenseMatrix.fill(1, 1)(pic)
+  var f1 = DenseMatrix.fill(1, 6)(DenseMatrix.fill(5,5)(0))
+  for(x <- Range(0, 6)){
+    f1(0, x) = flt1(x)
+  }
+  println(SW.conv4d(f1, img))
+
+}
