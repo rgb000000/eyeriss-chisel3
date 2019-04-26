@@ -1,6 +1,8 @@
 package simulator
 
 import breeze.linalg._
+import sun.util.resources.cldr.ts.CalendarData_ts_ZA
+
 import scala.collection.mutable.ArrayBuffer
 
 object State extends scala.Enumeration {
@@ -247,7 +249,7 @@ object SW {
     result.map(_.toList).toList
   }
 
-  def conv2d(filter: DenseMatrix[Int], img: DenseMatrix[Int]): DenseMatrix[Int] = {
+  def conv2d(filter: DenseMatrix[Int], img: DenseMatrix[Int], activate:Boolean = false): DenseMatrix[Int] = {
     // only suppost  square 正方形 conv
     assert(filter.rows == filter.cols)
     assert(img.rows == img.cols)
@@ -262,7 +264,11 @@ object SW {
         result(i, j) = sum(img(i to i + fSize - 1, j to j + fSize - 1) *:* filter)
       }
     }
-    result
+    if(activate){
+      ConvTools.relu(result)
+    }else{
+      result
+    }
   }
 
   def convMode0(filter: List[Int], img: List[Int], sum: List[Int] = List.fill[Int](2000)(0)): List[Int] = conv1d(filter, img, sum)
@@ -418,7 +424,7 @@ object SW {
   }
 
   // DM(channel, num)(height, width)
-  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]]):
+  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]], activate: Boolean = false):
   DenseMatrix[DenseMatrix[Int]] = {
     assert(filter.rows == img.rows) // channelIn must ==
     val channelIn = filter.rows
@@ -432,12 +438,40 @@ object SW {
     for (i <- Range(0, channelOut)) {
       for (j <- Range(0, imgNum)) {
         //        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
-        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _)
+        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, true)).reduce(_ + _)
       }
     }
-    result
+    if (activate){
+      result.map(ConvTools.relu(_))
+    }else{
+      result
+    }
   }
 
+}
+
+object ConvTools {
+  def relu(array: DenseMatrix[Int]): DenseMatrix[Int] = {
+    array.map((x) => {
+      if (x > 0) {
+        x
+      } else {
+        0
+      }
+    })
+  }
+
+  def pooling(array: DenseMatrix[Int], size: Int = 2, activation:Int = 255): DenseMatrix[Int] = {
+    // aim to squene matrix
+    assert(array.cols % size == 0 & array.rows % size == 0 & array.rows == array.cols)
+    val temp = DenseMatrix.fill(array.rows / size, array.cols / size)(DenseMatrix.fill(size, size)(0))
+    for (i <- Range(0, (array.rows / size) * (array.rows / size))) {
+      val x = i / (array.rows / size)
+      val y = i % (array.rows / size)
+      temp(x, y) = array(x * size to (x + 1) * size - 1, y * size to (y + 1) * size - 1)
+    }
+    temp.map(max(_)) / activation
+  }
 }
 
 object Main extends App {
@@ -557,25 +591,49 @@ object tempTest3 extends App {
   println(SW.fd2List(DenseMatrix.fill(1, 1)(filter), 0))
 }
 
-object MNIST extends App{
+object MNIST extends App {
   val pic = Data.pics
-//  println(pic)
+  //  println(pic)
   val flt1 = Data.flts1
-//  println(flt1(5))
+  //  println(flt1(5))
   val flt2 = Data.flts2
-//  println(flt2(5))
-  val fc1 = Data.fc1
-//  println(fc1)
-  val fc2 = Data.fc2
-//  println(fc2)
-  val fc3 = Data.fc3
-//  println(fc3)
+  //  println(flt2(5))
+  val fc1W = Data.fc1
+  //  println(fc1)
+  val fc2W = Data.fc2
+  //  println(fc2)
+  val fc3W = Data.fc3
+  //  println(fc3)
 
   var img = DenseMatrix.fill(1, 1)(pic)
-  var f1 = DenseMatrix.fill(1, 6)(DenseMatrix.fill(5,5)(0))
-  for(x <- Range(0, 6)){
+  var f1 = DenseMatrix.fill(1, 6)(DenseMatrix.fill(5, 5)(0))
+  for (x <- Range(0, 6)) {
     f1(0, x) = flt1(x)
+    //    println(f1(0,x))
   }
-  println(SW.conv4d(f1, img))
+  var conv1out = SW.conv4d(f1, img, true)
+  conv1out = conv1out.map(ConvTools.pooling(_))
+  println(conv1out(0, 0))
+  println(conv1out.rows, conv1out.cols)
+  println(conv1out(0, 0).rows, conv1out(0, 0).cols)
 
+  var f2 = DenseMatrix.fill(6, 16)(DenseMatrix.fill(5, 5)(0))
+  for (x <- Range(0, 16)) {
+    for(y <- Range(0, 6)){
+      f2(y, x) = flt2(x)
+    }
+  }
+  var conv2out = SW.conv4d(f2, conv1out, true)
+  println(conv2out(0, 0))
+  conv2out = conv2out.map(ConvTools.pooling(_))
+  println(conv2out(0,0))
+
+  var fc1 = DenseMatrix(conv2out.toArray.toList.map(_.t.flatten().toArray.toList).reduce(_ ::: _)) * fc1W
+  fc1 = fc1.map(_ / 255)
+  println(fc1(0,27))
+
+  var fc2 = fc1 * fc2W
+  var fc3 = fc2 * fc3W
+  println(fc3)
+  println(argmax(fc3))
 }
