@@ -48,7 +48,7 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     //    val iLen = img(0, 0).cols
     //    val nchannel = filter.rows
 
-    val sw = SW.conv4d(filter, img)
+    val sw = SW.conv4d(filter, img, true)
     val filter2d = SW.fd2List(filter, 0)
     val img2d = SW.fd2List(img, 1)
     println(s"filterNum: ${filterNum}")
@@ -94,7 +94,7 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     poke(c.io.peconfig.imgNum, imgNum)
     poke(c.io.peconfig.singleImgLen, iLen)
     poke(c.io.peconfig.nchannel, nchannel)
-    poke(c.io.peconfig.relu, 0)
+    poke(c.io.peconfig.relu, 1)
     step(1) // PE buf basic infotmation after 1 clock
 
     // third put data in

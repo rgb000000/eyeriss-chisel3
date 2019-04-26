@@ -424,7 +424,8 @@ object SW {
   }
 
   // DM(channel, num)(height, width)
-  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]], activate: Boolean = false):
+  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]],
+             activate: Boolean = false, depthwise: Boolean = false):
   DenseMatrix[DenseMatrix[Int]] = {
     assert(filter.rows == img.rows) // channelIn must ==
     val channelIn = filter.rows
@@ -438,10 +439,14 @@ object SW {
     for (i <- Range(0, channelOut)) {
       for (j <- Range(0, imgNum)) {
         //        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
-        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, activate)).reduce(_ + _)
+        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, depthwise)).reduce(_ + _)
       }
     }
+    if(activate){
+      result.map(ConvTools.relu(_))
+    }else{
       result
+    }
   }
 
 }
@@ -619,7 +624,7 @@ object MNIST extends App {
       f2(y, x) = flt2(x)
     }
   }
-  var conv2out = SW.conv4d(f2, conv1out, true)
+  var conv2out = SW.conv4d(f2, conv1out, true, true)
   println(conv2out(0, 0))
   conv2out = conv2out.map(ConvTools.pooling(_))
   println(conv2out(0,0))
