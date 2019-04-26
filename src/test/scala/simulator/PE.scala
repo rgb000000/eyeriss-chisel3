@@ -438,14 +438,10 @@ object SW {
     for (i <- Range(0, channelOut)) {
       for (j <- Range(0, imgNum)) {
         //        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
-        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, true)).reduce(_ + _)
+        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, activate)).reduce(_ + _)
       }
     }
-    if (activate){
-      result.map(ConvTools.relu(_))
-    }else{
       result
-    }
   }
 
 }
@@ -630,10 +626,11 @@ object MNIST extends App {
 
   var fc1 = DenseMatrix(conv2out.toArray.toList.map(_.t.flatten().toArray.toList).reduce(_ ::: _)) * fc1W
   fc1 = fc1.map(_ / 255)
-  println(fc1(0,27))
-
+  println("fc1 \n", fc1)
   var fc2 = fc1 * fc2W
+  println("fc2 \n", fc2)
   var fc3 = fc2 * fc3W
-  println(fc3)
+  println("fc3 \n", fc3)
+
   println(argmax(fc3))
 }

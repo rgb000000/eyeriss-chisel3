@@ -40,12 +40,12 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
       } else {
         imgNum * iLen * nchannel
       }
-    } while (maxLen > 255 | iLen > 7 + fLen - 1  | fLen > 6)
+    } while (maxLen > 255 | iLen > 7 + fLen - 1 | fLen > 6)
 
     //    val filterNum = filter.cols
-//    val fLen = filter(0, 0).cols
+    //    val fLen = filter(0, 0).cols
     //    val imgNum = img.cols
-//    val iLen = img(0, 0).cols
+    //    val iLen = img(0, 0).cols
     //    val nchannel = filter.rows
 
     val sw = SW.conv4d(filter, img)
@@ -65,11 +65,11 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
       println(x.toString())
       println()
     })
-        println("sw: ")
-        sw.map((x) => {
-          println(x.toString());
-          println()
-        })
+    println("sw: ")
+    sw.map((x) => {
+      println(x.toString());
+      println()
+    })
 
     val sw1d = List[Int]().toBuffer
     val singLen = sw(0, 0).cols * sw.size
@@ -82,7 +82,7 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
         }
       }
     }
-//    println(sw1d.toString())
+    //    println(sw1d.toString())
 
 
     poke(c.io.stateSW, 0)
@@ -94,6 +94,7 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     poke(c.io.peconfig.imgNum, imgNum)
     poke(c.io.peconfig.singleImgLen, iLen)
     poke(c.io.peconfig.nchannel, nchannel)
+    poke(c.io.peconfig.relu, 0)
     step(1) // PE buf basic infotmation after 1 clock
 
     // third put data in
@@ -124,27 +125,27 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     step(1)
     // fourth let PE in getdata state
     poke(c.io.stateSW, 1)
-//    println(s"filter2d(0) len : ${filter2d(0).length}")
+    //    println(s"filter2d(0) len : ${filter2d(0).length}")
     step(filter2d(0).length + 1)
 
     // finial let PE in cal state
     poke(c.io.stateSW, 2)
     step(1)
-//    c.io.oSumMEM.foreach((x) => {
-//      poke(x.ready, 1)
-//    })
+    //    c.io.oSumMEM.foreach((x) => {
+    //      poke(x.ready, 1)
+    //    })
     c.io.oSumSRAM.foreach((x) => {
       poke(x.ready, 1)
     })
     var error = 0
     var jj = List.fill(c.io.oSumSRAM.length)(0).toBuffer
-     while(peek(c.io.done) == 0){
+    while (peek(c.io.done) == 0) {
       for (i <- c.io.oSumSRAM.indices) {
         if (peek(c.io.oSumSRAM(i).valid) == 1) {
           expect(c.io.oSumSRAM(i).bits, sw1d(i * singLen + jj(i)))
-//          expect(c.io.oSumMEM(i).bits, sw1d(i * singLen + jj(i)))
+          //          expect(c.io.oSumMEM(i).bits, sw1d(i * singLen + jj(i)))
           // println(peek(c.io.oSum(i).bits).toString())
-          if(peek(c.io.oSumSRAM(i).bits) != sw1d(i * singLen + jj(i))){
+          if (peek(c.io.oSumSRAM(i).bits) != sw1d(i * singLen + jj(i))) {
             error += 1
           }
           jj(i) += 1
@@ -164,16 +165,67 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
 
 }
 
+// aim to 5x7
+class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
+  val PEArrayRow = c.shape._1
+  val PEArrayCol = c.shape._2
+  val maxImgRow = PEArrayCol + PEArrayRow - 1
+  val pic = Data.pics
+  val flt1W = Data.flts1
+  val flt2W = Data.flts2
+  val fc1W = Data.fc1
+  val fc2W = Data.fc2
+  val fc3W = Data.fc3
+
+  def logicMapFltW(flts: DenseMatrix[DenseMatrix[Int]]): List[List[Int]] = {
+    SW.fd2List(flts, 0)
+  }
+
+  def logicMapImg(imgs: DenseMatrix[DenseMatrix[Int]]): List[List[Int]] = {
+    SW.fd2List(imgs, 1)
+  }
+
+  def phyMapFltW(flts: List[List[Int]]): List[List[Int]] = {
+    assert(flts.length < 6)
+    flts
+  }
+
+  def phyMapImgW(img: List[List[Int]]): List[List[List[Int]]] = {
+    var buf = List[List[List[Int]]]().toBuffer
+    var time = 0
+    while (buf.map(_.length).sum != (PEArrayRow + PEArrayCol - 1)) {
+      if (img.length <= (time + 1) * maxImgRow) {
+        buf.append(img.slice(time * maxImgRow, img.length))
+      } else {
+        buf.append(img.slice(time * maxImgRow, (time + 1) * maxImgRow))
+      }
+    }
+    buf.toList
+  }
+
+  val F1 = DenseMatrix.fill(1, 6)(DenseMatrix.fill(5, 5)(0))
+  for(x <- Range(0, flt1W.length)){
+    F1(0, x) = flt1W(x)
+  }
+  val F2 = DenseMatrix.fill(6, 16)(DenseMatrix.fill(5, 5)(0))
+  for(x <- Range(0, F2.cols)){
+    for(y <- Range(0, F2.rows)){
+      F2(y, x)= flt2W(x)
+    }
+  }
+
+}
+
 class PEArrayTester extends ChiselFlatSpec {
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
+      Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
         "--backend-name", "verilator"),
       () => new PEArray((6, 7))
     ) {
-      c => new PEArrayTest(c, 5)
+      c => new PEArrayTest(c, 50)
     } should be(true)
-//    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
+    //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
 
   }
 }
@@ -186,7 +238,7 @@ class MNISTTester extends ChiselFlatSpec {
         "--backend-name", "verilator"),
       () => new PEArray((5, 7))
     ) {
-      c => new PEArrayTest(c, 5)
+      c => new MNISTTest(c)
     } should be(true)
     //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
 
