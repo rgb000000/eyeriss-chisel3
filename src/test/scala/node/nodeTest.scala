@@ -169,7 +169,6 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
 class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
   val PEArrayRow = c.shape._1
   val PEArrayCol = c.shape._2
-  val maxImgRow = PEArrayCol + PEArrayRow - 1
   val pic = Data.pics
   val flt1W = Data.flts1
   val flt2W = Data.flts2
@@ -190,26 +189,32 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
     flts
   }
 
-  def phyMapImgW(img: DenseMatrix[DenseMatrix[Int]], filterRow:Int): List[DenseMatrix[DenseMatrix[Int]]] = {
+  def phyMapImgW(img: DenseMatrix[DenseMatrix[Int]], filterRow: Int):
+  (List[DenseMatrix[DenseMatrix[Int]]], List[Range]) = {
     var buf = List[DenseMatrix[DenseMatrix[Int]]]().toBuffer
     var time = 0
-    val step = maxImgRow - filterRow + 1
+    val step = PEArrayCol
+    val maxImgRow = filterRow + PEArrayCol - 1
     var flag = true
+    val sliceStrategy = List[Range]().toBuffer
     while (flag) {
-      if (img(0,0).rows <= time * step + maxImgRow) {
-        buf.append(img.map(_(time * step until img(0,0).rows, ::)))
-        println(s"time: ${time} from ${time * step} until ${img(0,0).rows}")
+      if (img(0, 0).rows <= time * step + maxImgRow) {
+        buf.append(img.map(_ (time * step until img(0, 0).rows, ::)))
+        sliceStrategy.append(time * step until img(0, 0).rows - filterRow + 1)
+        println(s"time: ${time} from ${time * step} until ${img(0, 0).rows}")
         flag = false
       } else {
-        buf.append(img.map(_(time * step until time * step + maxImgRow, ::)))
+        buf.append(img.map(_ (time * step until time * step + maxImgRow, ::)))
+        sliceStrategy.append(time * step until (time + 1) * step)
         println(s"time: ${time} from ${time * step} until ${time * step + maxImgRow}")
       }
       time += 1
     }
-    buf.toList
+    (buf.toList, sliceStrategy.toList)
   }
 
-  def conv(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]]): DenseMatrix[DenseMatrix[Int]] = {
+  def conv(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]], depthwise:Boolean = false):
+  DenseMatrix[DenseMatrix[Int]] = {
     val filterNum = filter.cols
     val imgNum = img.cols
     val nchannel = filter.rows
@@ -217,7 +222,7 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
     val fLen = filter(0, 0).cols
     val iLen = img(0, 0).cols
 
-    val sw = SW.conv4d(filter, img, true)
+    val sw = SW.conv4d(filter, img, true, depthwise)
     val filter2d = SW.fd2List(filter, 0)
     val img2d = SW.fd2List(img, 1)
     println(s"filterNum: ${filterNum}")
@@ -313,7 +318,7 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
         if (peek(c.io.oSumSRAM(i).valid) == 1) {
           expect(c.io.oSumSRAM(i).bits, sw1d(i * singLen + jj(i)))
           //          expect(c.io.oSumMEM(i).bits, sw1d(i * singLen + jj(i)))
-          // println(peek(c.io.oSum(i).bits).toString())
+//           println(peek(c.io.oSumSRAM(i).bits).toString() + s"<${i * singLen + jj(i)}>" + sw1d(i * singLen + jj(i)).toString)
           if (peek(c.io.oSumSRAM(i).bits) != sw1d(i * singLen + jj(i))) {
             error += 1
           }
@@ -331,6 +336,20 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
     sw
   }
 
+  def depthwiseConv(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]]):
+  DenseMatrix[DenseMatrix[Int]] = {
+    var result = DenseMatrix.fill(filter.cols, img.cols)(DenseMatrix.fill(3, 3)(0))
+    for (x <- Range(0, filter.cols)) {
+      for (y <- Range(0, img.cols)) {
+        result(x, y) = (filter(::, x).toArray, img(::, y).toArray).zipped.map((f, i)=>{
+          conv(DenseMatrix.fill(1,1)(f), DenseMatrix.fill(1,1)(i), true)(0, 0)
+          // SW.conv2d(_, _, true)
+        }).reduce(_ + _)
+      }
+    }
+    result
+  }
+
   val F1 = DenseMatrix.fill(1, 6)(DenseMatrix.fill(5, 5)(0))
   for (x <- Range(0, flt1W.length)) {
     F1(0, x) = flt1W(x)
@@ -343,12 +362,45 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
   }
   var img = DenseMatrix.fill(1, 1)(DenseMatrix.fill(32, 32)(0))
   img(0, 0) = pic
-  var imgs = phyMapImgW(logicMapImg(img), F1(0, 0).rows)
+  var (imgs, sliceStrategy) = phyMapImgW(logicMapImg(img), F1(0, 0).rows)
   println(F1(0, 0).toString())
-  for(x <- imgs){
-    conv(F1, x)
+  var conv1Out = DenseMatrix.fill(F1.cols, img.cols)(DenseMatrix.fill(img(0, 0).rows - F1(0, 0).rows + 1,
+    img(0, 0).cols - F1(0, 0).cols + 1)(0))
+  for (x <- imgs.indices) {
+    val temp = conv(F1, imgs(x))
+    for (i <- sliceStrategy(x)) {
+      for (j <- Range(0, conv1Out(0, 0).cols)) {
+        for (k <- Range(0, conv1Out.rows)) {
+          for (l <- Range(0, conv1Out.cols)) {
+            conv1Out(k, l)(i, j) = temp(k, l)(i - sliceStrategy(x).toList.head, j)
+          }
+        }
+      }
+    }
   }
-
+  conv1Out = conv1Out.map(ConvTools.pooling(_))
+  println(conv1Out(0, 0).toString())
+  var (conv1Outs, sliceStrategy2) = phyMapImgW(logicMapImg(conv1Out), F2(0,0).rows)
+  var conv2Out = DenseMatrix.fill(F2.cols, conv1Out.cols)(DenseMatrix.fill(conv1Out(0,0).rows - F2(0,0).rows + 1,
+    conv1Out(0, 0).cols - F2(0,0).cols + 1)(0))
+  for (x <- conv1Outs.indices) {
+    val temp = depthwiseConv(F2, conv1Outs(x))
+    for (i <- sliceStrategy2(x)) {
+      for (j <- Range(0, conv2Out(0, 0).cols)) {
+        for (k <- Range(0, conv2Out.rows)) {
+          for (l <- Range(0, conv2Out.cols)) {
+            conv2Out(k, l)(i, j) = temp(k, l)(i - sliceStrategy2(x).toList.head, j)
+          }
+        }
+      }
+    }
+  }
+  conv2Out = conv2Out.map(ConvTools.pooling(_))
+  var fc1 = DenseMatrix(conv2Out.toArray.toList.map(_.t.flatten().toArray.toList).reduce(_ ::: _)) * fc1W
+  fc1 = fc1.map(_ / 255)
+  var fc2 = fc1 * fc2W
+  var fc3 = fc2 * fc3W
+  println(argmax(fc3).toString())
 }
 
 class PEArrayTester extends ChiselFlatSpec {
