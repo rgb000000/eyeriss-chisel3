@@ -421,7 +421,7 @@ class PEArrayTester extends ChiselFlatSpec {
 class MNISTTester extends ChiselFlatSpec {
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
+      Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_MNIST_vcd", "--top-name", "make_MNIST_vcd",
         "--backend-name", "verilator"),
       () => new PEArray((5, 7))
     ) {
