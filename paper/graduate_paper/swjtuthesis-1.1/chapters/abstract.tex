@@ -1,27 +1,41 @@
 %!TEX root =  ../main.tex
 
 \begin{abstract}
-  摘要是论文内容的总结概括，应简要说明论文的研究目的、基本研究内容、 研究方法或
-  过程、结果和结论，突出论文的创新之处。摘要中不宜使用公式、图表，不引用文献。
-  博士论文中文摘要一般800～1000个汉字，硕士论文中文摘要一般600个汉字。英文摘要的
-  篇幅参照中文摘要。
+  图像识别技术是计算机视觉的一个重要组成部分，现已广泛用于国民经济、空间技术、国防领域。在深度学习普及之前
+  该领域已经积累了许多算法，然而大多数算法仅仅只是识别某一特定形状的图案。
 
-  关键词另起一行并隔写在摘要下方，一般3～8个词，中文关键词间空一字或用分号“；”隔
-  开。英文摘要的关键词与中文摘要的关键词应完全一致，中间用逗号“,”或分号“;”隔开。
+  近年随着微电子领域的快速发展，在摩尔定律的指导下，硬件计算水平已达到一个新的高峰，
+  这使得原本因无法得到足够算力而无法投入实际使用的神经网络技术再迎来新春，尤其是在模式识别领域，神经网络越来越受到人们的重视。
+  神经网络不但具有自适应学习能力，同时还可以对网络规模进行进行自定义调整来适应不同的应用领域，
+  而且神经网络对输入模式的不完备性或特征的缺损不太敏感，因而和传统的识别方法相比，神经网络具有更高的鲁棒性。
 
-  \keywords{西南交通大学；学位论文；\LaTeX{} 模板；学士；硕士；博士}
+  但神经网络中存在着巨大数量的参数，以及复杂的矩阵运算，这些参数的训练、拟合需要十分强大的算力支持，
+  这也是为什么90年代神经网络技术一度停滞不前的原因。目前业界普遍采用CPU+GPU(TPU)模式进行开发，CPU进行数据的调度，
+  GPU完成复杂的运算任务，此模式十分成功。但伴随着物联网技术对小型嵌入式设备的需求，
+  CPU+GPU模式由于较大的物理体积和功耗已经远远无法满足IoT领域的需求，这时AI芯片成为了极佳的解决方案。
+  时下，一些基于传统计算架构的芯片和各种软硬件加速方案相结合，在一些AI应用场景下已经取得了巨大成功。
+
+  本课题旨在针对小型嵌入式设备，综合考虑算力、能耗，开发一款CNN加速芯片。基于FPGA平台开发原型，利用异构处理器配合设计的DNN加速器完成计算加速，以此来获得较高的能效比。
+
+  \keywords{异构计算；敏捷型开发；机器学习；FPGA；Scala；Chisel3}
 \end{abstract}
 
 \begin{enabstract}
-  This is a sample document of SWJTU thesis \LaTeX{} template for bachelor,
-  master and doctor. The template is created by geosciman from zepinglee, which
-  orignate from the template created by ywg. The template meets the
-  equirements of SWJTU theiss writing standards.
+  Image recognition technology is an important part of computer vision and has been widely used in national economy, space technology, and national defense. Before deep learning
+  There are many algorithms in the field, but most algorithms only recognize patterns of a particular shape.
 
-  This document will show the usage of basic commands provided by \LaTeX{} and
-  some features provided by the template. For more information, please refer to
-  the template document swjtuthesis.pdf.
+  In recent years, with the rapid development of microelectronics, under the guidance of Moore's Law, the level of hardware computing has reached a new peak.
+  This makes the neural network technology, which could not be put into practical use due to insufficient computing power, usher in the new spring. Especially in the field of pattern recognition, neural networks have received more and more attention.
+  The neural network not only has adaptive learning ability, but also can customize the network scale to adapt to different application areas.
+  Moreover, the neural network is less sensitive to the incompleteness of the input mode or the defect of the feature, so the neural network is more robust than the traditional recognition method.
 
-  \enkeywords{Southwest Jiaotong University (SWJTU); Thesis;
-  \LaTeX{} Template; Bachelor; Master; PhD}
+  However, there are a huge number of parameters in the neural network, as well as complex matrix operations. The training and fitting of these parameters requires very powerful computational support.
+  This is why the neural network technology was stagnant in the 1990s. Currently, the industry generally adopts the CPU+GPU (TPU) mode for development, and the CPU performs data scheduling.
+  The GPU performs complex computing tasks and this mode is very successful. But with the demand for small embedded devices by IoT technology,
+  The CPU+GPU mode is far from meeting the needs of the IoT field due to its large physical size and power consumption. At this time, the AI chip has become an excellent solution.
+  Nowadays, some chips based on traditional computing architectures and various hardware acceleration schemes have been achieved with great success in an AI application scenario.
+
+  This project aims to develop a CNN acceleration chip for small embedded devices, taking into account computing power and energy consumption. Based on the FPGA platform to develop prototypes, the computational acceleration is achieved by using a heterogeneous processor with a designed DNN accelerator to achieve a higher energy efficiency ratio.
+
+  \enkeywords{Heterogeneous computing; Agile development; Machine learning; FPGA; Scsla; Chisel3}
 \end{enabstract}

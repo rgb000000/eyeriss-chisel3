@@ -486,14 +486,14 @@
 }
 \newenvironment{abstract}{%
     \if@swjtu@bachelor
-        \chapter{中文内容摘要}%
+        \chapter*{中文内容摘要}%
     \else
         \swjtu@chapter{摘要}%
     \fi
   }{}
 \newenvironment{enabstract}{%
     \if@swjtu@bachelor
-        \chapter[英文内容摘要]{Abstract}
+        \chapter*{Abstract}
     \else
         \swjtu@chapter[Abstract]{ABSTRACT}
     \fi}{}
@@ -502,7 +502,7 @@
   \textbf{关键词}：#1}
 \newcommand\enkeywords[1]{%
   \par\phantom{empty}\par\noindent\hangindent=5.3em\relax%
-  \textbf{Key Words}: #1}
+  \textbf{Keywords}: #1}
 \renewcommand\tableofcontents{%
     \cleardoublepage%
     \if@swjtu@bachelor\pagenumbering{arabic}\fi
