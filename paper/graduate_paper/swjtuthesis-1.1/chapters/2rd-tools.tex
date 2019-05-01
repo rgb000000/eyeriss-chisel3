@@ -2,7 +2,62 @@
 
 \section{开发工具介绍}
     \subsection{Scala}
+        Scala（Scalable Language）是一门多范式的编程语言，集成了面向对象编程、函数式编程和命令式编程的各种特性，同时该语言基于JVM，兼容Java编写的工具包，同时其内置的静态类型极大程度上降低了构建高性能系统的难度，是一门十分灵活、高级的编程语言。
+        Scala自2004年被设计出来以后不断发展壮大，截止2019年2月已经发展到2.12.8版本，社区十分活跃，功能十分强大，不断的被大厂应用于产品：
+        \begin{itemize}[topsep = 0 pt]
+            \setlength{\topsep}{0pt}
+            \setlength{\itemsep}{0pt}
+            \setlength{\parsep}{0pt}
+            \setlength{\parskip}{0pt}
+            \setlength{\partopsep}{0pt}
+            \item  Twitter宣布他们已经把大部分后端程序从Ruby迁移到Scala
+            \item  Wattzon已经公开宣称，其整个平台都已经是基于Scala基础设施编写的
+            \item  瑞银集团把Scala用于一般产品中
+            \item  Coursera把Scala作为服务器语言使用
+            \item  由UCB开发的大数据集群计算平台——Spark使用Scala开发的
+        \end{itemize}       
+        \begin{lstlisting}[title=Scala Hello world, frame=shadowbox]
+            object HelloWorld {
+                def main(args: Array[String]) {
+                    println("Hello, world!")
+                }
+            }
+        \end{lstlisting}
+
     \subsection{Chisel3}
+        Chisel是一款由UC Berkeley开发并开源的硬件描述语言，支持高度参数化的生成器和分层设计等高级设计方法进行硬件设计。
+        需要说明的是Chisel并不是将C转换成RTL（类似HLS），而是货真价实的硬件描述语言。其本身作为工具包内嵌于Scala中。 \\
+        Chisel主要特性归纳如下：
+        \begin{figure}[h]
+            \begin{itemize}[topsep = 0 pt]
+                \setlength{\topsep}{0pt}
+                \setlength{\itemsep}{0pt}
+                \setlength{\parsep}{0pt}
+                \setlength{\parskip}{0pt}
+                \setlength{\partopsep}{0pt}
+                \item 支持抽象的数据类型和接口
+                \item 批量连接
+                \item 层次化、面向对象、函数式构造
+                \item Scala元编程实现了高度参数化
+                \item 内置了可配置的标准单元库
+                \item 可生成Verilog
+                \item 多时钟域设计
+                \item 开源，完备的文档，活跃的社区
+            \end{itemize}       
+
+            \begin{lstlisting}[title=Chisel Example, frame=shadowbox]
+import chisel3._
+class MaxN(val n: Int, val w: Int) extends Module {
+    private def Max2(x: UInt, y: UInt) = Mux(x > y, x, y)
+    val io = IO(new Bundle {
+        val ins = Input(Vec(n, UInt(w.W)))
+        val out = Output(UInt(w.W))
+    })
+    io.out := io.ins.reduceLeft(Max2)
+}
+            \end{lstlisting}
+        \end{figure}
+
     \subsection{Verilator}
 
 \section{异构处理器技术}
