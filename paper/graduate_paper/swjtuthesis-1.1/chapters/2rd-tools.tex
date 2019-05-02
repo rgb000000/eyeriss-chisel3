@@ -14,14 +14,14 @@
             \item  Wattzon已经公开宣称，其整个平台都已经是基于Scala基础设施编写的
             \item  瑞银集团把Scala用于一般产品中
             \item  Coursera把Scala作为服务器语言使用
-            \item  由UCB开发的大数据集群计算平台——Spark使用Scala开发的
+            \item  由UCB开发的大数据集群计算平台——Spark使用Scala作为开发语言
         \end{itemize}       
         \begin{lstlisting}[title=Scala Hello world, frame=shadowbox]
-            object HelloWorld {
-                def main(args: Array[String]) {
-                    println("Hello, world!")
-                }
-            }
+object HelloWorld {
+    def main(args: Array[String]) {
+        println("Hello, world!")
+    }
+}
         \end{lstlisting}
 
     \subsection{Chisel3}
@@ -59,16 +59,106 @@ class MaxN(val n: Int, val w: Int) extends Module {
         \end{figure}
 
     \subsection{Verilator}
+Verilator是速度最快的Verilog HDL模拟器，性能优于大部分商用模拟器。其将Verilog转换为使用C++或SystemC编写的时序准确的模型。
+\begin{wrapfigure}{r}{4cm}%靠文字内容的左侧
+    \includegraphics[width=4cm]{../pdf/verilator.png}\
+    \caption{Verlator Logo}
+\end{wrapfigure}
+    Verilator专为需要快速仿真性能的大型项目而设计，尤其适用于为嵌入式软件设计团队生成可执行的CPU模型。其无法替代NC-Verilog，VCS等商业Verilog模拟器，但可以将可综合的Verilog迁移到C++或SystemC，并且是免费的。
+Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而是优化为更快的线程区分模型。单线程的Verilator模型比传统Verilog仿真器（例如Icarus Verilog）快100倍，多线程可以获得额外的2倍~10倍性能。
+目前Verilator已经用于仿真百万级门电路的设计中，并且被很多IP厂商支持，包括ARM和RISC-V。\\
+其中Verilator官方网站给出一些与主流仿真器速度比较参考。
+        \begin{itemize}[topsep = 0 pt]
+            \setlength{\topsep}{0pt}
+            \setlength{\itemsep}{0pt}
+            \setlength{\parsep}{0pt}
+            \setlength{\parskip}{0pt}
+            \setlength{\partopsep}{0pt}
+            \item Verilator比Icarus Verilog快90倍
+            \item Verilator比ModelSim SE快10至40倍
+            \item Verilator比NC-Verilog快3倍
+            \item Verilator比VCS快1.5倍
+        \end{itemize}
 
-\section{异构处理器技术}
+
+\section{异构处理器}
     \subsection{ZYNQ架构}
+    ZYNQ是Xilinx于2010年4月发布的可扩展架构平台，该平台基于流行的ARM处理器结合Xilinx 28nm 7系FPGA工艺打造的SoC实现了高度的灵活性、强大的配置性和高特性的统一。
+    其中可编程逻辑可由用户配置，并通过互联模块连接，可为用户提供自定义的逻辑，从而极大扩展了处理系统的性能和功能，不过和传统FPGA不同，ZYNQ不仅可以在开机时配置也可以根据需要实时进行配置。
+    \begin{figure}[h]
+        \centering
+        \includegraphics{../pdf/zynq.pdf}
+        \caption{ZYNQ架构示意图}
+        \label{}
+    \end{figure}
     \subsection{RISC-V}
+    RISC-V从伯克利大学诞生的一款开源指令集架构，引起业界的轰动，普遍认为RISC-V可能会改变现有的由ARM、x86主导的处理器市场竞争格局。
 
-\section{深度学习技术}
+    由于RISC-V是新的指令集架构，因此无需考虑向前兼容，没有像ARM、x86架构沉重的历史包袱，指令集的设计也更加精简。
+
+    \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
+        \centering
+        \caption{RISC-V与ARM/x86比较} %显示表格的标题  
+        \begin{tabular}{l|l|l} %设置了每一列的宽度，强制转换。  
+        \hline  
+        特性 & ARM/x86 & RISC-V \\
+        \hline %画一个横线，下面的就都是一样了，这里一共有4行内容  
+        架构篇幅 & 数千页  & 目前仅有300页 \\
+        \hline  
+        模块化 & 不支持  & 支持模块化可配置指令子集 \\
+        \hline  
+        可扩展性 & 不支持 & 支持扩展自定义指令 \\
+        \hline  
+        指令数目 & 指令多且不同分支不兼容 & 一套指令支持所有架构分支，基本指令仅40条 \\
+        % \hline  
+        % 易实现性 & 硬件实现十分复杂 &  \\
+        \hline  
+        \end{tabular}  
+    \end{table}
+
+    由伯克利大学维护的一款开源RISC-V芯片生成器Rocket-Chip-Generator，能够根据用户需要生成完整的、可综合的硬件电路，同时具备完整的工具链、准确的仿真器环境，目前已被各大厂商应用。
+
+
+\section{深度学习}
     \subsection{YOLO}
-    \subsection{MobieNet}
+    YOLO（You only look once）是一个端到端的实时目标检测算法，不像传统的目标识别CNN模型需要训练多个分类器之后在图像上使用滑动窗的形式进行检测，YOLO会在整张图片上进行卷积进行目标识别工作，就像它名字所说，YOLO只需看一次图片即可，
+    因此极大的缩短了计算时间，提高了实时性
+    目前YOLO已经推出了三个版本，因其识别效果十分显著，已经被各大厂商应用在各自领域。
+    \begin{figure}[h]
+        \centering
+        \includegraphics[scale=0.2]{../pdf/yolo.png}
+        \caption{YOLO效果图}
+        \label{}
+    \end{figure}
+    \subsection{LeNet-5}
+    LeNet-5是一种用于手写体识别的卷积神经网络，是CNN领域五大经典模型之一。该网络虽小，但包含了深度学习的基本模块，如卷积层、池化层、全连接层，是其他CNN模型的基础。
+    \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
+        \centering
+        \caption{LeNet-5 模型结构} %显示表格的标题  
+        \begin{tabular}{l|l} %设置了每一列的宽度，强制转换。  
+        \hline  
+        Lenet-5 layers & 描述 \\
+        \hline %画一个横线，下面的就都是一样了，这里一共有4行内容  
+        Layer1[Conv] & Input: $32*32*1$ \  Filter: $5*5*6, stride=1$ \  Output: $28*28*6$ \\
+        \hline  
+        Layer2[Pooling] & Input: $28*28*6$ \  Filter: $2*2*6, stride=2$ \  Output: $14*14*6$ \\
+        \hline  
+        Layer3[Conv] & Input: $14*14*6$ \  Filter: $5*5*16, stride=1$ \  Output: $10*10*16$ \\
+        \hline  
+        Layer4[Pooling] & Input: $10*10*16$ \  Filter: $2*2*16, stride=2$ \  Output: $5*5*16$ \\
+        \hline  
+        Layer5[Fully Connect] & $400*120$ \\
+        \hline  
+        Layer6[Fully Connect] & $120*84$ \\
+        \hline  
+        Layer7[Fully Connect] & $84*10$  \\
+        \hline  
+        \end{tabular}  
+    \end{table}
+
 
 \section{本章小结}
+本章首先对采用的开发工具进行了简要的阐述，其次举例介绍了目前使用较为广泛的异构处理器ZYNQ和RISC-V，最后介绍了利用CNN进行目标识别和图像识别的典型网络。
 
 % \subsection{二级节标题}
 
