@@ -91,6 +91,7 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
         \caption{ZYNQ架构示意图}
         \label{}
     \end{figure}
+    ZYNQ由于CPU+FPGA的架构十分契合异构计算的需求，同时PS与PL之间可以通过设计好的高带宽的AXI接口进行数据交互，开发者只需将精力集中在加速器设计和CPU数据调度上即可。
     \subsection{RISC-V}
     RISC-V从伯克利大学诞生的一款开源指令集架构，引起业界的轰动，普遍认为RISC-V可能会改变现有的由ARM、x86主导的处理器市场竞争格局。
 
@@ -117,6 +118,15 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
     \end{table}
 
     由伯克利大学维护的一款开源RISC-V芯片生成器Rocket-Chip-Generator，能够根据用户需要生成完整的、可综合的硬件电路，同时具备完整的工具链、准确的仿真器环境，目前已被各大厂商应用。
+
+    \begin{figure}[h]
+        \centering
+        \includegraphics{../pdf/rocc.pdf}
+        \caption{ZYNQ架构示意图}
+        \label{}
+    \end{figure}
+
+    Rocket-Chip原生支持自定义指令集扩展，其带有一RoCC（Rocket Custom Coprocessor）接口，其协议简单、功能强大，可以十分灵活的以自定义加速器进行协同工作。
 
 
 \section{深度学习}
