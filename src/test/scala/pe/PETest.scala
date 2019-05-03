@@ -135,11 +135,11 @@ class testModen(c: PETesterTop, var loop: Int)
     val random = scala.util.Random
     var mode = 1
     do {
-      nchannel = random.nextInt(32) + 1
-      var fNum = random.nextInt(32) + 1
-      var iNum = random.nextInt(32) + 1
-      var fLen = random.nextInt(32) + 1
-      var iLen = random.nextInt(32) + fLen
+      nchannel = random.nextInt(1) + 1
+      var fNum = random.nextInt(1) + 1
+      var iNum = random.nextInt(1) + 1
+      var fLen = random.nextInt(1) + 3
+      var iLen = random.nextInt(1) + 5
       var filter2d = DenseMatrix.fill[Int](fNum * nchannel, fLen)(random.nextInt(10) - 5)
       var img2d = DenseMatrix.fill[Int](iNum * nchannel, iLen)(random.nextInt(10) - 5)
       filter = filter2d.toArray.toList
@@ -346,7 +346,7 @@ class PETopModeTester extends ChiselFlatSpec {
         "--backend-name", "verilator"),
       () => new PETesterTop
     ) {
-      c => new testModen(c, 100)
+      c => new testModen(c, 1)
     } should be(true)
     //    new File("test_run_dir/make_PETOPmode0_vcd/PETesterTop.vcd").exists should be(true)
 

@@ -1,0 +1,38 @@
+// SRAM
+{
+  signal:[
+    {name: "clock", wave: "n...|...."},
+    {name: "addr", 	wave: "=.==|====", data:[0,1,2,255,0,1,2]},
+    {name: "din", 	wave: "====|==..", data: [0,1,2,3,256,0]},
+    {name: "dout", 	wave: "=...|.===", data: [0,1,2,3]},
+    {name: "we", 	wave: "01..|.0.."},
+    {name:"reset",	wave: "10..|...."}
+    
+  ]
+}
+
+// FIFO SHIFT
+{
+  signal:[
+    {name: "clock", 	wave: "n................."},
+    {name: "f_dep_valid", wave: "0.1..............."},
+    {name: "f_dep_bits", 	wave: "=.....===.===.===.", data: [0,2,-1,0,2,-1,0,2,-1,0], 			node: '.....abc'},
+    {name: "f_dep_ready", wave: "0....1..01..01..0."},
+    {name: "f_enq_valid", wave: "01..01..01..01..01"},
+    {name: "f_enq_bits", 	wave: "=5555====.===.===.", data: [0,0,2,-1,0,0,2,-1,0,2,-1,0,2,-1,0],	node: '.....def'},
+    {name: "f_enq_ready", wave: "1................."},
+    {name: "state",		wave: "=5...=..==..==..==", data: [0,1,2,3,2,3,2,3,5]},
+    {name: "trash",		wave: "=........=...=....", data: [0,4,-3], node: '.........g...h'},
+    {name: "i_dep_valid", wave: "0.1..............."},
+    {name: "i_dep_bits", 	wave: "=.=...=.==.==.====", data: [0,4,-3,4,-3,-1,-3,-1,-5,-3,-1], 			node: '.....'},
+    {name: "i_dep_ready", wave: "0....1...........0"},
+    {name: "i_enq_valid", wave: "01..01..........01"},
+    {name: "i_enq_bits", 	wave: "=55.5==.==.=======", data: [0,4,-3,-1,4,-3,-1,-3,-1,-5,-3,-1,-5,0,-1],	node: '.ij..'},
+    {name: "i_enq_ready", wave: "0.1..............."},
+    {name: "reset",		wave: "0................."}
+  ],
+  edge: [
+  	'a~d','b~e','c~f',
+    'g-~i', 'j~h'
+  ]
+}

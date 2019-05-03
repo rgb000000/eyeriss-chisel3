@@ -34,6 +34,26 @@ class Tester(c: Test) extends PeekPokeTester(c) {
   expect(c.io.out, -1)  //assert DUT output "out" as -1
 }
             \end{lstlisting}
+
+\section{基于FIFO的可变长移位寄存器仿真结果}
+% filters: DenseVector(0, 2, -1) __ 3
+% filterNum: 1
+% imgs: DenseVector(4, -3, -3, -1, -5) __ 5
+% imgNum: 1
+% nchannel: 1
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.7]{../pdf/shift_w.pdf}\\
+    \caption{SRAM IP波形图}
+\end{figure}
+
+\section{Designware SRAM IP仿真结果}
+\begin{figure}[h]
+    \centering
+    \includegraphics{../pdf/sram_w.pdf}\\
+    \caption{SRAM IP波形图}
+\end{figure}
+
 \section{PE单元仿真结果}
 
 \section{PE阵列仿真结果}
