@@ -1,9 +1,39 @@
 \chapter{功能仿真结果}
 
-\section{传统仿真方案与敏捷型仿真方案对比}
-    \subsection{传统仿真方案}
-    \subsection{敏捷型仿真方案}
-
+\section{利用Chisel3配套工具进行快速仿真}
+Chisel3在Github网站上有一套基于Scala体系的仿真工具，chisel-testers。
+使用该工具可以直接在Scala中实例化使用Chisel3开发的模块，并且产生激励进行模块的仿真。
+其主要提供了一个名为PeekPokeTester的类，该类提供了能够完成激励产生和信号断言的方法。
+\begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
+    \centering
+    \caption{PeekPokeTester中提供的方法} %显示表格的标题  
+    \begin{tabular}{l|l|c} %设置了每一列的宽度，强制转换。  
+    \hline  
+    \hline  
+    方法名 & 作用 & 使用举例 \\ %用&来分隔单元格的内容 \\表示进入下一行  
+    \hline %画一个横线，下面的就都是一样了，这里一共有4行内容  
+    poke & 设置DUT的输入信号 & poke(c.io.in.valid, 1) \\
+    \hline  
+    peek & 读取DUT的输出信号 & peek(c.io.out.bits) \\
+    \hline  
+    expect & 比较DUT的输出信号 & expect(c.io.out.bit, 0xff) \\
+    \hline  
+    step & 驱动DUT的时钟信号 & step(1) \\
+    \hline
+    reset & 驱动DUT的复位信号 & reset(1) \\
+    \hline  
+    \hline  
+    \end{tabular}  
+\end{table}
+同时，该工具支持使用Verilator作为仿真后端，大大降低了大规模电路的仿真时间，借助Verilator，可以产生仿真时的vcd仿真文件，通过GTKWave、Verdi等波形查看工具即可查看仿真波形，
+使用时十分便利。
+            \begin{lstlisting}[title=Chisel Test Example, frame=shadowbox]
+class Tester(c: Test) extends PeekPokeTester(c) {
+  poke(c.io.in, -1)     //Set DUT input "in" as -1
+  step(1)               //wait 1 clock
+  expect(c.io.out, -1)  //assert DUT output "out" as -1
+}
+            \end{lstlisting}
 \section{PE单元仿真结果}
 
 \section{PE阵列仿真结果}
