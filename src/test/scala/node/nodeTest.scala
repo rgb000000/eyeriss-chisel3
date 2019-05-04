@@ -28,11 +28,11 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     var iLen = 0
     do {
       val random = scala.util.Random
-      nchannel = random.nextInt(32) + 1
-      filterNum = random.nextInt(32) + 1
-      imgNum = random.nextInt(32) + 1
-      fLen = random.nextInt(6) + 1
-      iLen = random.nextInt(16) + fLen + 1
+      nchannel = random.nextInt(1) + 3
+      filterNum = random.nextInt(1) + 3
+      imgNum = random.nextInt(1) + 2
+      fLen = random.nextInt(1) + 3
+      iLen = random.nextInt(1) + 5
       filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
       img = DenseMatrix.fill(nchannel, imgNum)(SW.randomMatrix((iLen, iLen)))
       maxLen = if (filterNum * fLen * nchannel > imgNum * iLen * nchannel) {
@@ -406,11 +406,11 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
 class PEArrayTester extends ChiselFlatSpec {
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
+      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
         "--backend-name", "verilator"),
       () => new PEArray((6, 7))
     ) {
-      c => new PEArrayTest(c, 50)
+      c => new PEArrayTest(c, 1)
     } should be(true)
     //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
 

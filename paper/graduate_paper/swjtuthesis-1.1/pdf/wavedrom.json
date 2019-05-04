@@ -36,3 +36,61 @@
     'g-~i', 'j~h'
   ]
 }
+
+// PE
+{
+  signal:[
+    {name: "clock", 	wave: "p................."},
+    {name: "io_filter_valid", wave: "1...0............."},
+    {name: "io_filter_bits", 	wave: "=555=.............", data: [0,0,2,-1,0], 			node: ''},
+    {name: "io_filter_ready", wave: "01...0............"},
+    {name: "io_img_valid", wave: "1............0...."},
+    {name: "io_img_bits", 	wave: "=55.=...5=..5=....", data: [4,4,-3,-1,-1,-5,-5,0],	node: '.mn..'},
+    {name: "io_img_ready", wave: "01..0...10..10..10", node: '........j...k...l'},
+
+    {name: "io_oSum_valid", wave: "0......10..10..10.", node: '.......d...e...f'},
+    {name: "io_oSum_bits", 	wave: "=......==..==..==.", data: [0,-3,0,-5,0,3,0]},
+    {name: "io_oSum_ready", wave: "1................."},
+    {name: "io_stateSW", wave: "=...=.............", data: [1,2]},
+    {name: "state",		wave: "=5...=..==..==..==", data: [0,1,2,3,2,3,2,3,5], node: '.......ag..bh..ci'},
+    {name: "trash",		wave: "=........=...=....", data: [0,4,-3], node: '.........o...p'},
+    {name: "reset",		wave: "0................."}
+  ],
+  edge: [
+  	'a~d','b~e','c~f',
+    'g~j','h~k','i~l',
+    'm~-o','n~-p'
+  ]
+}
+
+// PEArray
+{
+  signal:[
+    {name: "clock", 				wave: "p...|.............."},
+    {name: "io_dataIn_valid",		wave: "1...|0............."},
+    {name: "io_dataIn_bits_type", 	wave: "0.1.|.............."},
+    {name: "io_dataIn_bits_data", 	wave: "=5==|=.............",		data: ['filter','filter','img','img']},
+    {name: "io_dataIn_bits_col", 	wave: "=5==|..............",		data: ['']},
+    {name: "io_dataIn_bits_row", 	wave: "=5==|.............."},
+    {name: "io_dataIn_ready", 		wave: "1...|.............."},
+    {name: "io_done", 				wave: "0...|............10"},
+    {name: "io_oSum0_valid", 		wave: "0...|...10..10..10."},
+    {name: "io_oSum0_bits", 		wave: "=...|...x=..x=..x=."},
+    {name: "io_oSum0_ready", 		wave: "0...|..1..........."},
+    {name: "io_oSum1_valid", 		wave: "0...|...10..10..10."},
+    {name: "io_oSum1_bits", 		wave: "=...|...x=..x=..x=."},
+    {name: "io_oSum1_ready", 		wave: "0...|..1..........."},
+    {name: "io_oSum2_valid", 		wave: "0...|...10..10..10."},
+    {name: "io_oSum2_bits", 		wave: "=...|...x=..x=..x=."},
+    {name: "io_oSum2_ready", 		wave: "0...|..1..........."},
+    {name: "io_stateSW", 			wave: "=...|=.=...........",		data: [0,1,2]},
+    {name: "io_filterNum", 			wave: "=...|.............."},
+    {name: "io_filterLen", 			wave: "=...|.............."},
+    {name: "io_imgNum", 			wave: "=...|.............."},
+    {name: "io_imgLen", 			wave: "=...|.............."},
+    {name: "io_nchannel", 			wave: "=...|.............."},
+    {name: "io_relu", 				wave: "1...|.............."},
+    {name: "reset",					wave: "0...|.............."}
+  ],
+
+}

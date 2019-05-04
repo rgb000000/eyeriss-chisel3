@@ -43,8 +43,10 @@ object HelloWorld {
                 \item 可生成Verilog
                 \item 多时钟域设计
                 \item 开源，完备的文档，活跃的社区
-            \end{itemize}       
-
+            \end{itemize}
+        \end{figure}
+        \begin{figure}[h]
+            \label{chisel_example}
             \begin{lstlisting}[title=Chisel Example, frame=shadowbox]
 import chisel3._
 class MaxN(val n: Int, val w: Int) extends Module {
@@ -62,7 +64,7 @@ class MaxN(val n: Int, val w: Int) extends Module {
 Verilator是速度最快的Verilog HDL模拟器，性能优于大部分商用模拟器。其将Verilog转换为使用C++或SystemC编写的时序准确的模型。
 \begin{wrapfigure}{r}{4cm}%靠文字内容的左侧
     \includegraphics[width=4cm]{../pdf/verilator.png}\
-    \caption{Verlator Logo}
+    \caption{Verilator Logo}
 \end{wrapfigure}
     Verilator专为需要快速仿真性能的大型项目而设计，尤其适用于为嵌入式软件设计团队生成可执行的CPU模型。其无法替代NC-Verilog，VCS等商业Verilog模拟器，但可以将可综合的Verilog迁移到C++或SystemC，并且是免费的。
 Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而是优化为更快的线程区分模型。单线程的Verilator模型比传统Verilog仿真器（例如Icarus Verilog）快100倍，多线程可以获得额外的2倍~10倍性能。
@@ -86,6 +88,7 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
     ZYNQ是Xilinx于2010年4月发布的可扩展架构平台，该平台基于流行的ARM处理器结合Xilinx 28nm 7系FPGA工艺打造的SoC实现了高度的灵活性、强大的配置性和高特性的统一。
     其中可编程逻辑可由用户配置，并通过互联模块连接，可为用户提供自定义的逻辑，从而极大扩展了处理系统的性能和功能，不过和传统FPGA不同，ZYNQ不仅可以在开机时配置也可以根据需要实时进行配置。
     \begin{figure}[h]
+        \label{zynq}
         \centering
         \includegraphics{../pdf/zynq.pdf}
         \caption{ZYNQ架构示意图}
@@ -98,6 +101,7 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
     由于RISC-V是新的指令集架构，因此无需考虑向前兼容，没有像ARM、x86架构沉重的历史包袱，指令集的设计也更加精简。
 
     \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
+        \label{riscv_compare}
         \centering
         \caption{RISC-V与ARM/x86比较} %显示表格的标题  
         \begin{tabular}{l|l|l} %设置了每一列的宽度，强制转换。  
@@ -120,9 +124,10 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
     由伯克利大学维护的一款开源RISC-V芯片生成器Rocket-Chip-Generator，能够根据用户需要生成完整的、可综合的硬件电路，同时具备完整的工具链、准确的仿真器环境，目前已被各大厂商应用。
 
     \begin{figure}[h]
+        \label{rocc}
         \centering
         \includegraphics{../pdf/rocc.pdf}
-        \caption{ZYNQ架构示意图}
+        \caption{RoCC接口信号示意图}
         \label{}
     \end{figure}
 
