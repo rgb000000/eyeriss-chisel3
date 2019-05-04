@@ -94,3 +94,15 @@
   ],
 
 }
+
+// Decoupled
+{signal: [
+  {name: 'clk', 			wave: 'p.........'},
+  {name: 'Output_valid', 	wave: '0.1.0.1.0.'},
+  {name: 'Output_bit', 		wave: '=..x=.x=..'},
+  {name: 'Input_ready', 	wave: '0..101.0..'},
+  {},
+  {name: 'Input_valid', 	wave: '0.1.0.1.0.'},
+  {name: 'Input_bit', 		wave: '=..x=.x=..'},
+  {name: 'Output_ready', 	wave: '0..101.0..'}
+]}

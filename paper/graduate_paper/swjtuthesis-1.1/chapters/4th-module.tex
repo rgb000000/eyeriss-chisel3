@@ -1,9 +1,40 @@
 \chapter{硬件模块介绍}
+\section{Chisel3集成的工具}
+Chisel3在进行硬件电路描述的同时也提供了一些常用的工具。参考表\ref{chisel-tool}。
+\begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
+    \centering
+    \caption{Chisel3提供的部分小工具} %显示表格的标题  
+    \begin{tabular}{l|l} %设置了每一列的宽度，强制转换。  
+    \hline  
+    \hline  
+    名称 & 描述 \\ %用&来分隔单元格的内容 \\表示进入下一行  
+    \hline %画一个横线，下面的就都是一样了，这里一共有4行内容  
+    Decoupled() & 用于将数据拓展成标准的ready-valid接口 \\  
+    \hline %画一个横线，下面的就都是一样了，这里一共有4行内容  
+    Flipped() & 用于接口的翻转，Input翻转为Output，Output翻转为Input \\  
+    \hline  
+    Queue & 输入为Flipped(Decoupled)输出为Decoupled接口类型的FIFO \\  
+    \hline  
+    MEM & 同步写、异步读的RAM \\  
+    \hline  
+    \hline  
+    \end{tabular}  
+    \label{chisel-tool}
+\end{table}  
+\begin{figure}[h]
+    \centering
+    \includegraphics{../pdf/decoupled.pdf}\\
+    \caption{Decoupled与Flipped(Decoupled)接口波形图}
+    \label{decoupled_w}
+\end{figure}
+
+本文大量使用了\emph{Decoupled}类型作为模块之间传递数据的接口。Chisel3中一个\emph{Decoupled}类型接口等效为三个信号，包括\emph{output valid;output bit;input ready}，
+通过\emph{Flipped}翻转之后的信号等效为\emph{input valid;input bits;input ready}，其波形图参考\ref{decoupled_w}，只有当\emph{ready}信号和\emph{valid}信号同时有效时才发生数据的交互。
 
 \section{基于FIFO的可变长移位寄存器设计}
 \begin{figure}[h]
     \centering
-    \includegraphics{../pdf/fifoshift.pdf}\\
+    \includegraphics[scale=1.1]{../pdf/fifoshift.pdf}\\
     \caption{基于FIFO构造的移位寄存器}
 \end{figure}
 \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
@@ -18,7 +49,7 @@
     \hline  
     bits 左 & Input & 1 & 来自生产者的数据 \\  
     \hline  
-    ready 左 & Output & w &输出至生产者的握手信号 \\  
+    ready 左 & Output & w\footnotemark[1] &输出至生产者的握手信号 \\  
     \hline  
     valid 右 & Output & 1 & 输出至消费者的握手信号 \\  
     \hline  
@@ -26,9 +57,12 @@
     \hline  
     ready 右 & Input & 1 & 来自消费者的握手信号\\  
     \hline  
+    control & Input & 1 & 来自外界的控制内嵌FIFO功能的信号\\  
+    \hline  
     \hline  
     \end{tabular}  
-\end{table}  
+\end{table}
+\footnotetext[1]{w表示该信号位宽可配置，下文意义相同}
 利用FIFO的先入先出特性，配合外部控制信号可以构造一个最大位宽为FIFO深度的移位寄存器。
 首先，模块中的Mux将FIFO接口入模块输入信号连接，此时数据被写入FIFO中，当数据输入过程完成之后，Mux将模块内的FIFO输入与输出对接，
 此时便形成了一个数据环路，FIFO输出的数据被输入给FIFO的输入，使数据一直保留在FIFO中。
@@ -126,7 +160,7 @@ Chisel3中构造存储器有两种方式，第一种通过VecInit构造ROM，FPG
 \end{figure}
 \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
     \centering
-    \caption{PE单元端口说明} %显示表格的标题  
+    \caption{简易NoC节点端口说明} %显示表格的标题  
     \begin{tabular}{l|l|c|l} %设置了每一列的宽度，强制转换。  
     \hline  
     \hline  

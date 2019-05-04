@@ -25,7 +25,7 @@ object HelloWorld {
         \end{lstlisting}
 
     \subsection{Chisel3}
-        Chisel是一款由UC Berkeley开发并开源的硬件描述语言，支持高度参数化的生成器和分层设计等高级设计方法进行硬件设计。
+        Chisel(Constructing Hardware In a Scala Embedded Language)是一款由UC Berkeley开发并开源的硬件描述语言，支持高度参数化的生成器和分层设计等高级设计方法进行硬件设计。
         需要说明的是Chisel并不是将C转换成RTL（类似HLS），而是货真价实的硬件描述语言。其本身作为工具包内嵌于Scala中。 \\
         Chisel主要特性归纳如下：
         \begin{figure}[h]
@@ -137,8 +137,8 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
 \section{深度学习}
     \subsection{YOLO}
     YOLO（You only look once）是一个端到端的实时目标检测算法，不像传统的目标识别CNN模型需要训练多个分类器之后在图像上使用滑动窗的形式进行检测，YOLO会在整张图片上进行卷积进行目标识别工作，就像它名字所说，YOLO只需看一次图片即可，
-    因此极大的缩短了计算时间，提高了实时性
-    目前YOLO已经推出了三个版本，因其识别效果十分显著，已经被各大厂商应用在各自领域。
+    因此极大的缩短了计算时间，提高了实时性。
+    目前YOLO已经推出了三个版本，因其识别效果显著，应用领域十分广泛，已经被各大厂商应用在各自领域。
     \begin{figure}[h]
         \centering
         \includegraphics[scale=0.2]{../pdf/yolo.png}
@@ -146,7 +146,7 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
         \label{}
     \end{figure}
     \subsection{LeNet-5}
-    LeNet-5是一种用于手写体识别的卷积神经网络，是CNN领域五大经典模型之一。该网络虽小，但包含了深度学习的基本模块，如卷积层、池化层、全连接层，是其他CNN模型的基础。
+    LeNet-5是一种用于手写体识别的卷积神经网络，是CNN领域五大经典模型之一。该网络虽小，但包含了深度学习的基本模块，如卷积层、池化层、全连接层，是其他CNN模型的基础，因此本文最后使用该模型进行测试。
     \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
         \centering
         \caption{LeNet-5 模型结构} %显示表格的标题  
