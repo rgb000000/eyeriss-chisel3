@@ -6,7 +6,7 @@
 %%
 %% swjtuthesis.dtx  (with options: `numerical')
 %% 
-%% Copyright (C) 2018-2018 by Changfu Chen <geosciman@163.com>
+%% Copyright (C) 2018-2018 by GeosciMan <geosciman@163.com>
 %% 
 %% This file may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either
@@ -1622,7 +1622,7 @@ FUNCTION {begin.bib}
   write$ newline$
   "\providecommand{\href}[2]{\url{#2}}"
   write$ newline$
-  "\providecommand{\doi}[1]{DOI: \href{http://dx.doi.org/#1}{#1}}"
+  "\providecommand{\doi}[1]{DOI: \href{https://doi.org/#1}{#1}}"
   write$ newline$
   "\expandafter\ifx\csname urlstyle\endcsname\relax\relax\else"
   write$ newline$
