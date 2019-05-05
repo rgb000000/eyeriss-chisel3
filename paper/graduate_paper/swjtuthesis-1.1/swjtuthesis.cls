@@ -495,14 +495,14 @@
 }
 \newenvironment{abstract}{%
     \if@swjtu@bachelor
-        \chapter{中文内容摘要}%
+        \chapter*{中文内容摘要}%
     \else
         \swjtu@chapter{摘要}%
     \fi
   }{}
 \newenvironment{enabstract}{%
     \if@swjtu@bachelor
-        \chapter[英文内容摘要]{Abstract}
+        \chapter*{Abstract}
     \else
         \swjtu@chapter[Abstract]{ABSTRACT}
     \fi}{}
