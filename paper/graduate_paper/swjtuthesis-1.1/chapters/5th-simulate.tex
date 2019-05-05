@@ -141,7 +141,32 @@ $[4,-3,-3,-1,-5] * [0,2,-1]$
 
 \section{系统性能}
     \subsection{资源占用}
+    使用Chisel3 MEM：
+    \begin{figure}[h]
+        \centering
+        \includegraphics[scale=0.5]{../pdf/old_resource.png}\\
+        \caption{使用MEM的资源报告}
+    \end{figure}
+    使用DW ip优化之后：
+    \begin{figure}[h]
+        \centering
+        \includegraphics[scale=0.5]{../pdf/new_resource.png}\\
+        \caption{使用DW ip的资源报告}
+    \end{figure}
+
     \subsection{时序报告}
+    使用Chisel3 MEM：
+    \begin{figure}[h]
+        \centering
+        \includegraphics[scale=0.4]{../pdf/old_time.png}\\
+        \caption{使用MEM的时序报告}
+    \end{figure}
+    使用DW ip优化之后：
+    \begin{figure}[h]
+        \centering
+        \includegraphics[scale=0.4]{../pdf/new_time.png}\\
+        \caption{使用DW ip的时序报告}
+    \end{figure}
 
 \section{本章小结}
 % \subsection{二级节标题}

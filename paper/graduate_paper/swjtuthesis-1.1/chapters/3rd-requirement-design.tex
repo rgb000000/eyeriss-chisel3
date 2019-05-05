@@ -1,7 +1,7 @@
 \chapter{系统功能需求分析与系统架构设计}
 
 \section{系统功能需求}
-文献X中表明，在一确定的CNN中，卷积的计算时间占据了至少85\%，因此若想制作一款CNN加速器，那么急需解决的问题就是如何加速图像的卷积计算。
+在一确定的CNN中，卷积的计算时间占据了至少85\%\cite{chen2017eyeriss}，因此若想制作一款CNN加速器，那么急需解决的问题就是如何加速图像的卷积计算。
 卷积计算虽然参数相比于CNN中全连接层少，但其计算量非常大，而且通常为简单的乘加操作。
     \subsection{传统架构}
         \subsubsection{CPU}
@@ -20,13 +20,17 @@
         相比于受限于冯诺依曼架构的CPU/GPU，FPGA和ASIC在设计时可以通过多核心、流水线等技术充分发挥并行计算的特性，大大提高数据吞吐量。
 
 \section{系统架构设计}
-    针对本章第一节的需求，本文通过调研当前硬件加速方案，参考论文X的思想设计了一套针对CNN计算加速的方案。
+    针对本章第一节的需求，本文通过调研当前硬件加速方案，参考文献\cite{chen2017eyeriss}、文献\cite{chen2016eyeriss}的思想和文献\cite{sun2018high}中的架构设计了一套针对CNN计算加速的方案。
     \begin{figure}[h]
         \centering
         \includegraphics{../pdf/system.pdf}
         \caption{CNN加速系统架构示意图}
-        \label{}
+        \label{sys}
     \end{figure}
+    工作时，CPU可以发挥自身强大的调度能力从外部存储器（硬盘，SD卡）读取数据，将数据放在约定好的DDR地址处如图\ref{sys}，1号箭头所示。
+    数据准备好之后CPU发出开始计算命令，如图\ref{sys}，2号箭头所示。
+    加速器接受到指令之后，从DDR约定好的位置拉取数据，如\ref{sys}，3号箭头，进行计算，结果写回DDR指定地址，如图\ref{sys}，4号箭头所示。
+    至此一轮计算完成，CPU可以通过读取DDR获得计算结果。
 
 \section{开发环境}
     \subsection{HLS}

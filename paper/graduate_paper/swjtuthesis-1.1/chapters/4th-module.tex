@@ -109,7 +109,7 @@ Chisel3在进行硬件电路描述的同时也提供了一些常用的工具。�
 \end{table}  
 Chisel3中构造存储器有两种方式，第一种通过VecInit构造ROM，FPGA实现时是通过线网。第二种通过MEM构造RAM，FPGA实现时是通过寄存器组。本文在设计过程中，首先通过MEM来构造片上RAM，但由于Chisel3 MEM自身的复杂度（其包含了Mask等附加功能），在实现一个6×7的PE阵列时，生成的代码量达到了16万行，通过Vivado综合一次需要90分钟，给调试工作带来了极大的不便利性，同时采用寄存器组的实现方式十分消耗资源。
 
-由于ASIC中RAM通常需要特殊对待，本文在实际开发时，采用了Designware中的xxx ip核。优化之后生成的代码量下降至4万行，Vivado综合实现时间下降至5分钟。同时Designware中提供了ip的仿真模型，可以通过Verilator仿真器进行准确的仿真。
+由于ASIC中RAM通常需要特殊对待，本文在实际开发时，采用了Designware中的\emph{DW\_ram\_r\_w\_s\_dff}ip核。优化之后生成的代码量由16万下降至4万行，Vivado综合实现时间由90分钟下降至5分钟。同时Designware中提供了ip的仿真模型，可以通过Verilator仿真器进行准确的仿真。
 
 % \section{基于Xilixn 7Series FPGA片上DSP的高性能乘法器}
 
