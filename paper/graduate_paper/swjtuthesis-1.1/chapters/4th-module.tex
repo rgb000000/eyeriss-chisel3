@@ -65,8 +65,13 @@ Chisel3在进行硬件电路描述的同时也提供了一些常用的工具。�
 \footnotetext[1]{w表示该信号位宽可配置，下文意义相同}
 利用FIFO的先入先出特性，配合外部控制信号可以构造一个最大位宽为FIFO深度的移位寄存器。
 首先，模块中的Mux将FIFO接口入模块输入信号连接，此时数据被写入FIFO中，当数据输入过程完成之后，Mux将模块内的FIFO输入与输出对接，
-此时便形成了一个数据环路，FIFO输出的数据被输入给FIFO的输入，使数据一直保留在FIFO中。
-
+此时便形成了一个数据环路，FIFO输出的数据被输入给FIFO的输入，使数据一直保留在FIFO中。该模块工作工程可参考图\ref{shift_k}。
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.8]{../pdf/shift_k.pdf}\\
+    \caption{基于FIFO的可变长移位寄存器工作示意图}
+    \label{shift_k}
+\end{figure}
 实际使用时，FIFO深度被配置为256，位宽为16bit。第一阶段，FIFO输入通过Mux与模块的输入对接，接受来自外部的图像或者卷积核信息，第一阶段取数完成后进入第二阶段——计算，此时FIFO的输入与FIFO的输出对接，吐出的数据再次被存入FIFO中，以达到移位寄存器的功能。
 
 需要说明的是，由于FIFO先入先出的特性，该移位构造，读数时每次只能读取最末端的数据，但相比与传统通过寄存器的构造，降低了资源占用率。
@@ -151,6 +156,7 @@ Chisel3中构造存储器有两种方式，第一种通过VecInit构造ROM，FPG
     \end{tabular}  
 \end{table}  
 利用本章第一节和第二节所述的两个模块，配合相应的控制单元可以十分完美的构造一个用于行静止思想卷积的PE（Process Engine）单元。
+
 
 \section{用于数据分发的简易NoC设计}
 \begin{figure}[h]

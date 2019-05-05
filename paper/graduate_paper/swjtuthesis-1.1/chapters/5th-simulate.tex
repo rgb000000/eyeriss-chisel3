@@ -52,12 +52,12 @@ class Tester(c: Test) extends PeekPokeTester(c) {
 \emph{state=1}时，模块内嵌的FIFO输入接口通过Mux与外部输入数据接口对接，此时开始存储外部数据，如图\ref{shift_w}阴影部分所示，此时filter FIFO中依次存入了0，-2，-1，img FIFO中依次存入了4，-3，-3。
 \emph{state=2}时，模块内嵌FIFO输入接口通过Mux与自身的输出接口对接，形成环路，此时被弹出的数据再次回到FIFO中以完成循环移位寄存器的功能，如图\ref{shift_w}，\emph{f\_dep}信号组中出现的连接线，弹出的0,2,-1同时又写回FIFO。
 \emph{state=3}时，模块中FIFO数据已经全部计算完成，根据卷积计算的特性，此时需要弹出部分数据之后接受等长的新数据，由于FIFO输入接口与输出接口互不干扰，因此可以弹出废弃数据的同时接受新的数据，如图\ref{shift_w}\emph{i\_enq}和\emph{i\_deq}信号组中的连接线，最开始存入的4，-3分别在两次中弹出，同时两次中分别接受了-1，-5两个新数据。
-\begin{figure}[h]
-    \centering
-    \includegraphics[scale=0.8]{../pdf/shift_k.pdf}\\
-    \caption{基于FIFO的可变长移位寄存器工作示意图}
-    \label{shift_k}
-\end{figure}
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[scale=0.8]{../pdf/shift_k.pdf}\\
+%     \caption{基于FIFO的可变长移位寄存器工作示意图}
+%     \label{shift_k}
+% \end{figure}
 该模块的工作示意图可以参考\ref{shift_k}。
 
 \section{Designware SRAM IP仿真结果}
