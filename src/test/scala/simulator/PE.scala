@@ -1,7 +1,6 @@
 package simulator
 
 import breeze.linalg._
-import sun.util.resources.cldr.ts.CalendarData_ts_ZA
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -588,10 +587,25 @@ object tempTest2 extends App {
 }
 
 object tempTest3 extends App {
-  val filter = DenseMatrix((1, 2, 3), (4, 5, 6), (7, 8, 9))
-  val img = DenseMatrix((1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5))
-  SW.conv4d(DenseMatrix.fill(3, 3)(SW.randomMatrix(3, 3)), DenseMatrix.fill(3, 3)(SW.randomMatrix(5, 5)))
-  println(SW.fd2List(DenseMatrix.fill(1, 1)(filter), 0))
+//  val filter = DenseMatrix((1, 2, 3), (4, 5, 6), (7, 8, 9))
+//  val img = DenseMatrix((1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5))
+//  SW.conv4d(DenseMatrix.fill(3, 3)(SW.randomMatrix(3, 3)), DenseMatrix.fill(3, 3)(SW.randomMatrix(5, 5)))
+//  println(SW.fd2List(DenseMatrix.fill(1, 1)(filter), 0))
+  val filter = DenseMatrix.fill(2,2)(DenseMatrix.fill(2,2)(0))
+  val img = DenseMatrix.fill(2,2)(DenseMatrix.fill(3,3)(0))
+  filter(0, 0) = DenseMatrix((3,-2),(1,2))
+  filter(0, 1) = DenseMatrix((1,2),(-3,-1))
+  filter(1, 0) = DenseMatrix((0,1),(2,-3))
+  filter(1, 1) = DenseMatrix((1,-1),(3,1))
+
+  img(0, 0) = DenseMatrix((2,1,0),(1,1,2),(2,0,-1))
+  img(0, 1) = DenseMatrix((-1,0,1),(2,1,3),(2,-3,0))
+  img(1, 0) = DenseMatrix((1,-2,2),(3,0,3),(2,1,3))
+  img(1, 1) = DenseMatrix((2,1,3),(1,1,1),(2,-1,3))
+
+  println(SW.conv4d(filter, img))
+  println(SW.fd2List(filter, 0))
+  println(SW.fd2List(img, 1))
 }
 
 object convNotSquene extends App{
