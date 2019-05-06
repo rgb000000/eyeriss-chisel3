@@ -128,6 +128,7 @@ Chisel3中构造存储器有两种方式，第一种通过VecInit构造ROM，FPG
     \centering
     \includegraphics{../pdf/pe_cal.pdf}\\
     \caption{PE计算流程图}
+    \label{pe_cal}
 \end{figure}
 \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
     \centering
@@ -161,6 +162,15 @@ Chisel3中构造存储器有两种方式，第一种通过VecInit构造ROM，FPG
     \end{tabular}  
 \end{table}  
 利用本章第一节和第二节所述的两个模块，配合相应的控制单元可以十分完美的构造一个用于行静止思想卷积的PE（Process Engine）单元。
+其计算流程可以参考图\ref{pe_cal}。当\emph{state=1}时，filter FIFO接受$fLen*fNum*nchannel$个数据，即所有的filter数据。
+img FIFO接受$iLen*nchannel$个数据，也即第一个img的第一行的所有通道数据。
+计算时，由总计算次数计数器、filter移位次数计数器、img读取新数据次数计数器等计数器互相配合以达到产生正确控制信号的目的，其主要思想为，
+首先img第一个数据分别与filter前$fNum$个数据进行相乘，结果分别写入不同SRAM地址，然后img第二个数据分别与filter第二组长度为$fNum$的数据相乘，结果与上次进行累加，这一阶段的移位计算方法可以参考图\ref{pe_cal}第1,2，3行。
+不断循环此过程，直到img数据全部计算完成，此时将得到的完整局部计算结果写出，其过程参考图\ref{pe_cal}第4，5行。
+img数据计算完成之后，img FIFO需要弹出$nchannel$个数据，并且从外部FIFO存储等长的新img数据，其过程可以参考图\ref{pe_cal}第6行。再次对新的img数据组进行第1,2,3行移位计算。
+当img读取新数据次数计数器值等于$iLen - fLen - 1$时，表示此次读取的第一张图片的所有数据均计算完成，需要一次性清空img FIFO并读取新一张img数据，其过程可以参考图\ref{pe_cal}第7行。
+不断循环上述过程即可按照计算完成行静止卷积法思想中的filter一行与img一行进行卷积的计算。
+
 
 
 \section{用于数据分发的简易NoC设计}
