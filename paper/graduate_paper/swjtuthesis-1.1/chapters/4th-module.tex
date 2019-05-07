@@ -159,12 +159,18 @@ endmodule
 \section{PE单元构造}
 \begin{figure}[h]
     \centering
+    \includegraphics[scale=0.8]{../pdf/data.pdf}\\
+    \caption{PE输入数据解析}
+    \label{pe_data}
+\end{figure}
+\begin{figure}[h]
+    \centering
     \includegraphics{../pdf/PE.pdf}\\
     \caption{PE结构图}
 \end{figure}
 \begin{figure}[h]
     \centering
-    \includegraphics{../pdf/pe_cal.pdf}\\
+    \includegraphics[scale=0.8]{../pdf/pe_cal.pdf}\\
     \caption{PE计算流程图}
     \label{pe_cal}
 \end{figure}
@@ -204,12 +210,6 @@ endmodule
 通过对filter、img数据进行排列组合，配合本节设计的PE单元即可实现多卷积核、多图片、多通道的通用性一维卷积操作，提高了本文设计的通用性，减少了控制信号的复杂度。
 数据的排列可以参考图\ref{pe_data},其思想为，filter数据按照filter、通道、行内数据的优先级进行排序，img数据按照通道、行内数据、img的优先级进行排序。最后，
 可以组成一个糅合了多个、多通道的filter或者img数据，配合图\ref{pe_cal}的计算流程可以实现通用性一维卷积。
-\begin{figure}[h]
-    \centering
-    \includegraphics{../pdf/data.pdf}\\
-    \caption{PE输入数据解析}
-    \label{pe_data}
-\end{figure}
 当\emph{state=1}时，filter FIFO接受$fLen*fNum*nchannel$个数据，即所有的filter数据。
 img FIFO接受$iLen*nchannel$个数据，也即第一个img的第一行的所有通道数据。
 计算时，由总计算次数计数器、filter移位次数计数器、img读取新数据次数计数器等计数器互相配合以达到产生正确控制信号的目的，其主要思想为，
@@ -254,7 +254,7 @@ img数据计算完成之后，img FIFO需要弹出$nchannel$个数据，并且�
 \end{table}  
 \begin{figure}[h]
     \centering
-    \includegraphics{../pdf/noc.pdf}\\
+    \includegraphics[scale=0.8]{../pdf/noc.pdf}\\
     \caption{简易NoC示意图}
     \label{nodes}
 \end{figure}
@@ -270,12 +270,41 @@ NoC（Network-on-Chip）及片上网络，是SoC的一种全新的通信方式�
 在代码编写时，每个NoC节点都分配了一个唯一的地址（row，col），Chisel3在处理的时候每一个参数不同的模块都会生成一个全新的Module，因此导致了生成代码量较大（一个6×7的阵列代码行数为48517），但这并不影响电路的逻辑功能。
 
 \section{PE阵列生成器}
+Chisel3敏捷的一方面就体现在其可以利用Scala中的数据结构来组织硬件电路。在构造PE阵列的时候，本文采用了List[List[]]的数据结构在组织PE阵列，其代码逻辑如下。
+            \begin{lstlisting}[title=Chisel 快速构建PE阵列, frame=shadowbox]
+val NoC = List[List[Node]]().toBuffer
+val pes = List[List[PETesterTop]]().toBuffer
+for (i <- Range(0, shape._1)) {
+  val tempNoC = List[Node]().toBuffer
+  val tempPE = List[PETesterTop]().toBuffer
+  for (j <- Range(0, shape._2 + 1)) {
+    val node = Module(new Node(j == 0, (i, j), w))
+    if (j != 0) { //not row NoC node need to contain a PE
+      val pe = Module(new PETesterTop((i, j - 1)))
+      pe.io.oSumSRAM.ready := 0.U
+      pe.io.stateSW := io.stateSW
+      pe.io.peconfig := io.peconfig
+      val ds = Module(new dataSwitch())
+      ds.io.dataIn <> node.io.dataPackageOut
+      pe.io.filter <> ds.io.filter
+      pe.io.img <> ds.io.img
+      tempPE.append(pe)
+    }
+    tempNoC.append(node)
+  }
+  NoC.append(tempNoC.toList)
+  pes.append(tempPE.toList)
+}
+            \end{lstlisting}
 \begin{figure}[h]
     \centering
     \includegraphics{../pdf/PEArray.pdf}\\
     \caption{一个3×3PE阵列示意图}
+    \label{33arr}
 \end{figure}
-Chisel3敏捷的一方面就体现在其可以利用Scala中的数据结构来组织硬件电路。在构造PE阵列的时候，本文采用了List。
+    程序主要靠两个\emph{for}循环对整个NoC进行行遍历和列遍历，通过\emph{if(col == 0)}来认定一个节点为用于行分发的节点，行分发的节点不需要包含PE计算单元，因此需要特殊对待。
+    一个3×3阵列可以参考图\ref{33arr}，从图中可以看出，NoC节点会比PE多一列，该列即为用于行分发的节点，不需要包含PE单元。
+
     \subsection{顶层接口设计}
 \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
     \centering
@@ -308,8 +337,14 @@ Chisel3敏捷的一方面就体现在其可以利用Scala中的数据结构来�
     \label{pearray_k}
 \end{figure}
 一个2×2阵列的计算2×2filter 和 3×3img卷积的示意图可以参考\ref{pearray_k}。
+图中每个乘加单元即为一个PE单元，可以接受外部数据，独立完成一次一维多卷积核、多通道、多图片的卷积计算。在一个PE阵列中，同一行的PE单元共享filter数据，img数据按照斜向上的方向进行分发，
+及图\ref{pearray_k}左下角的PE单元的img数据与右上角的PE单元的img数据相同。每个PE单元计算完成的结果通过加法树进行叠加，即可得到正确的卷积结果。
 
 \section{本章小结}
+本章首先介绍了Chisel3中集成的一些有用的工具，其次详细的介绍了本文所构造的一系列模块的端口说明、运行机制，包括基于FIFO的可变长移位寄存器、SRAM的优化、PE单元等，
+其中最为核心的模块是PE计算单元，由于设计时考虑到了CNN卷积层中，通常都包含多卷积核、多通道、多图片的情况，为了减少计算次数，本文构造的PE单元内部控制逻辑较为复杂，
+但通过框图的形式介绍了其中核心的逻辑。同时在PE阵列生成器中贴出了Chisel3代码，借助Scala中的数据结构可以十分便利的构造一个二维阵列，代码今有20行即可构造任意规模的阵列，
+这在Verilog中是无法轻易实现的。
 % \subsection{二级节标题}
 
 % \subsubsection{三级节标题}
