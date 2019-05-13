@@ -1,32 +1,45 @@
 \chapter{开发工具及相关技术介绍}
 
-\section{开发工具介绍}
-    \subsection{Scala}
-        Scala（Scalable Language）是一门多范式的编程语言，集成了面向对象编程、函数式编程和命令式编程的各种特性，同时该语言基于JVM，兼容Java编写的工具包，同时其内置的静态类型极大程度上降低了构建高性能系统的难度，是一门十分灵活、高级的编程语言。
-        Scala自2004年被设计出来以后不断发展壮大，截止2019年2月已经发展到2.12.8版本，社区十分活跃，功能十分强大，不断的被大厂应用于产品：
-        \begin{itemize}[topsep = 0 pt]
-            \setlength{\topsep}{0pt}
-            \setlength{\itemsep}{0pt}
-            \setlength{\parsep}{0pt}
-            \setlength{\parskip}{0pt}
-            \setlength{\partopsep}{0pt}
-            \item  Twitter宣布他们已经把大部分后端程序从Ruby迁移到Scala
-            \item  Wattzon已经公开宣称，其整个平台都已经是基于Scala基础设施编写的
-            \item  瑞银集团把Scala用于一般产品中
-            \item  Coursera把Scala作为服务器语言使用
-            \item  由UCB开发的大数据集群计算平台——Spark使用Scala作为开发语言
-        \end{itemize}       
-        \begin{lstlisting}[title=Scala Hello world, frame=shadowbox]
-object HelloWorld {
-    def main(args: Array[String]) {
-        println("Hello, world!")
-    }
-}
-        \end{lstlisting}
+\section{硬件描述语言介绍}
+    \subsection{Verilog}
+        Verilog与VHDL是目前世界上最流行的两种硬件描述语言（Hardware Describe Language, HDL），可实现对数字电路及其体系实施有效控制。
+        由于其简单易用，成为数字电路工程师学习首选语言。
+
+        但由于其代码组织类似C语言，因此编码效率并不高。例如文献\cite{deng2018wallace}中构造的Wallace树形乘法器，因其中间项目多，在源代码输入过程中容易产生错误，
+        而且随着乘法器的输入位宽增加，Verilog源码数量会急剧增加，因此采用手工输入Verilog源代码的方法并不高效，同时往往不同环境下需要不同位宽的乘法器。
+        针对以上情况文献\cite{deng2018wallace}作者编写了一款程序用于自动生成Wallace树形乘法器Verilog代码。
+
+        可见，Verilog HDL的代码效率并不高。针对一灵活性较高的项目，通常语言利用Perl或Python等脚本语言进行辅助设计。
+
+%     \subsection{Scala}
+%         Scala（Scalable Language）是一门多范式的编程语言，集成了面向对象编程、函数式编程和命令式编程的各种特性，同时该语言基于JVM，兼容Java编写的工具包，同时其内置的静态类型极大程度上降低了构建高性能系统的难度，是一门十分灵活、高级的编程语言。
+%         Scala自2004年被设计出来以后不断发展壮大，截止2019年2月已经发展到2.12.8版本，社区十分活跃，功能十分强大，不断的被大厂应用于产品：
+%         \begin{itemize}[topsep = 0 pt]
+%             \setlength{\topsep}{0pt}
+%             \setlength{\itemsep}{0pt}
+%             \setlength{\parsep}{0pt}
+%             \setlength{\parskip}{0pt}
+%             \setlength{\partopsep}{0pt}
+%             \item  Twitter宣布他们已经把大部分后端程序从Ruby迁移到Scala
+%             \item  Wattzon已经公开宣称，其整个平台都已经是基于Scala基础设施编写的
+%             \item  瑞银集团把Scala用于一般产品中
+%             \item  Coursera把Scala作为服务器语言使用
+%             \item  由UCB开发的大数据集群计算平台——Spark使用Scala作为开发语言
+%         \end{itemize}       
+%         \begin{lstlisting}[title=Scala Hello world, frame=shadowbox]
+% object HelloWorld {
+%     def main(args: Array[String]) {
+%         println("Hello, world!")
+%     }
+% }
+%         \end{lstlisting}
 
     \subsection{Chisel3}
         Chisel(Constructing Hardware In a Scala Embedded Language)是一款由UC Berkeley开发并开源的硬件描述语言，支持高度参数化的生成器和分层设计等高级设计方法进行硬件设计。
-        需要说明的是Chisel并不是将C转换成RTL（类似HLS），而是货真价实的硬件描述语言。其本身作为工具包内嵌于Scala中。 \\
+        需要说明的是Chisel并不是将C转换成RTL（类似HLS），而是货真价实的硬件描述语言。其本身作为工具包内嵌于Scala中。
+
+        若利用Chisel3进行文献\cite{deng2018wallace}的乘法器开发，即可减少用Verilog灵活性差带来的多余工作量。
+
         Chisel主要特性归纳如下：
         \begin{figure}[h]
             \begin{itemize}[topsep = 0 pt]
@@ -60,27 +73,27 @@ class MaxN(val n: Int, val w: Int) extends Module {
             \end{lstlisting}
         \end{figure}
 
-    \subsection{Verilator}
-Verilator是速度最快的Verilog HDL模拟器，性能优于大部分商用模拟器。其将Verilog转换为使用C++或SystemC编写的时序准确的模型。
-\begin{wrapfigure}{r}{4cm}%靠文字内容的左侧
-    \includegraphics[width=4cm]{../pdf/verilator.png}\
-    \caption{Verilator Logo}
-\end{wrapfigure}
-    Verilator专为需要快速仿真性能的大型项目而设计，尤其适用于为嵌入式软件设计团队生成可执行的CPU模型。其无法替代NC-Verilog，VCS等商业Verilog模拟器，但可以将可综合的Verilog迁移到C++或SystemC，并且是免费的。
-Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而是优化为更快的线程区分模型。单线程的Verilator模型比传统Verilog仿真器（例如Icarus Verilog）快100倍，多线程可以获得额外的2倍~10倍性能。
-目前Verilator已经用于仿真百万级门电路的设计中，并且被很多IP厂商支持，包括ARM和RISC-V。\\
-其中Verilator官方网站给出一些与主流仿真器速度比较参考。
-        \begin{itemize}[topsep = 0 pt]
-            \setlength{\topsep}{0pt}
-            \setlength{\itemsep}{0pt}
-            \setlength{\parsep}{0pt}
-            \setlength{\parskip}{0pt}
-            \setlength{\partopsep}{0pt}
-            \item Verilator比Icarus Verilog快90倍
-            \item Verilator比ModelSim SE快10至40倍
-            \item Verilator比NC-Verilog快3倍
-            \item Verilator比VCS快1.5倍
-        \end{itemize}
+%     \subsection{Verilator}
+% Verilator是速度最快的Verilog HDL模拟器，性能优于大部分商用模拟器。其将Verilog转换为使用C++或SystemC编写的时序准确的模型。
+% \begin{wrapfigure}{r}{4cm}%靠文字内容的左侧
+%     \includegraphics[width=4cm]{../pdf/verilator.png}\
+%     \caption{Verilator Logo}
+% \end{wrapfigure}
+%     Verilator专为需要快速仿真性能的大型项目而设计，尤其适用于为嵌入式软件设计团队生成可执行的CPU模型。其无法替代NC-Verilog，VCS等商业Verilog模拟器，但可以将可综合的Verilog迁移到C++或SystemC，并且是免费的。
+% Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而是优化为更快的线程区分模型。单线程的Verilator模型比传统Verilog仿真器（例如Icarus Verilog）快100倍，多线程可以获得额外的2倍~10倍性能。
+% 目前Verilator已经用于仿真百万级门电路的设计中，并且被很多IP厂商支持，包括ARM和RISC-V。\\
+% 其中Verilator官方网站给出一些与主流仿真器速度比较参考。
+%         \begin{itemize}[topsep = 0 pt]
+%             \setlength{\topsep}{0pt}
+%             \setlength{\itemsep}{0pt}
+%             \setlength{\parsep}{0pt}
+%             \setlength{\parskip}{0pt}
+%             \setlength{\partopsep}{0pt}
+%             \item Verilator比Icarus Verilog快90倍
+%             \item Verilator比ModelSim SE快10至40倍
+%             \item Verilator比NC-Verilog快3倍
+%             \item Verilator比VCS快1.5倍
+%         \end{itemize}
 
 
 \section{异构处理器}
@@ -150,18 +163,21 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
             相比于受限于冯诺依曼架构的CPU/GPU，FPGA和ASIC在设计时可以通过多核心、流水线等技术充分发挥并行计算的特性，大大提高数据吞吐量。
 
 \section{深度学习}
-    \subsection{YOLO}
-    YOLO（You only look once）是一个端到端的实时目标检测算法，不像传统的目标识别CNN模型需要训练多个分类器之后在图像上使用滑动窗的形式进行检测，YOLO会在整张图片上进行卷积进行目标识别工作，就像它名字所说，YOLO只需看一次图片即可，
-    因此极大的缩短了计算时间，提高了实时性。
-    目前YOLO已经推出了三个版本，因其识别效果显著，应用领域十分广泛，已经被各大厂商应用在各自领域。
+    \subsection{卷积神经网络}
+    卷积神经网络（\emph{Convolutional Neural Networks, CNN}）是一类包含卷积计算且具有深度结构的神经网络结构，是深度学习的代表算法之一\cite{gu2018recent}。
+    对卷积神经网络的研究始于二十世纪80年代，时间延时网络和LeNet-5是最早出现的卷积神经网络。当下，随着深度学习理论的深入以及计算设备的改进，卷积神经网络已经被大量的应用于计算机技术、自然语言处理等领域\cite{gu2018recent}。
     \begin{figure}[h]
         \centering
         \includegraphics[scale=0.2]{../pdf/yolo.png}
-        \caption{YOLO效果图}
+        \caption{基于卷积神经网络的目标识别算法YOLO效果图}
         \label{}
     \end{figure}
     \subsection{LeNet-5}
     LeNet-5是一种用于手写体识别的卷积神经网络，是CNN领域五大经典模型之一。该网络虽小，但包含了深度学习的基本模块，如卷积层、池化层、全连接层，是其他CNN模型的基础，因此本文最后使用该模型进行测试。
+
+    LeNet-5模型的结构图可以参考表\ref{lenet5}，主要由两个卷积层，两个下采样层，三个全连接层组成。
+
+    其中，卷积层是本文所需要进行加速的层。虽然卷积层在LeNet-5模型中只有两层，但由于图像卷积的计算特性，其计算量是同等规模的全连接层的数倍，因此一次推断过程中大部分时间耗费在卷积计算中。
     \begin{table}[h] %开始一个表格environment，表格的位置是h,here。  
         \centering
         \caption{LeNet-5 模型结构} %显示表格的标题  
@@ -183,7 +199,8 @@ Verilator的性能十分优秀，并不是将Verilog代码直接进行翻译而�
         \hline  
         Layer7[Fully Connect] & $84*10$  \\
         \hline  
-        \end{tabular}  
+        \end{tabular}
+        \label{lenet5}
     \end{table}
 
 
