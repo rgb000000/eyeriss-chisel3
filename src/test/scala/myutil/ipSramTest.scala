@@ -47,6 +47,6 @@ class TesterTester extends ChiselFlatSpec {
     ) {
       c => new Tester(c)
     } should be(true)
-    new File("test_run_dir/make_ram_vcd/Test.vcd").exists should be(true)
+    new File("test_run_dir/make_ram_vcd/SRAM.vcd").exists should be(true)
   }
 }
