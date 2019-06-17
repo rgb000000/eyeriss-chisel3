@@ -167,6 +167,12 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
 
 // aim to 5x7
 class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
+
+  var totalcnt = 0
+  var conv1cnt = 0
+  var conv2cnt = 0
+  var errorcnt = 0
+
   val PEArrayRow = c.shape._1
   val PEArrayCol = c.shape._2
   val pic = Data.pics
@@ -317,10 +323,12 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
       for (i <- c.io.oSumSRAM.indices) {
         if (peek(c.io.oSumSRAM(i).valid) == 1) {
           expect(c.io.oSumSRAM(i).bits, sw1d(i * singLen + jj(i)))
+          totalcnt += 1
           //          expect(c.io.oSumMEM(i).bits, sw1d(i * singLen + jj(i)))
 //           println(peek(c.io.oSumSRAM(i).bits).toString() + s"<${i * singLen + jj(i)}>" + sw1d(i * singLen + jj(i)).toString)
           if (peek(c.io.oSumSRAM(i).bits) != sw1d(i * singLen + jj(i))) {
             error += 1
+            errorcnt += 1
           }
           jj(i) += 1
         }
@@ -331,7 +339,7 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
     println(s"jj reduce: ${jj.reduce(_ + _)}")
     println(s"sw1d: ${sw1d.length}")
     assert(jj.reduce(_ + _) == sw1d.length)
-    reset(50)
+    reset(1)
     println(s"===============ERROR: ${error}======================")
     sw
   }
@@ -378,6 +386,7 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
       }
     }
   }
+  conv1cnt = totalcnt
   conv1Out = conv1Out.map(ConvTools.pooling(_))
   println(conv1Out(0, 0).toString())
   var (conv1Outs, sliceStrategy2) = phyMapImgW(logicMapImg(conv1Out), F2(0,0).rows)
@@ -395,12 +404,17 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
       }
     }
   }
+  conv2cnt = totalcnt - conv1cnt
   conv2Out = conv2Out.map(ConvTools.pooling(_))
   var fc1 = DenseMatrix(conv2Out.toArray.toList.map(_.t.flatten().toArray.toList).reduce(_ ::: _)) * fc1W
   fc1 = fc1.map(_ / 255)
   var fc2 = fc1 * fc2W
   var fc3 = fc2 * fc3W
   println(argmax(fc3).toString())
+  println("total cnt: " + totalcnt.toString)
+  println("error cnt: " + errorcnt.toString)
+  println("conv1 cnt: " + conv1cnt.toString)
+  println("conv2 cnt: " + conv2cnt.toString)
 }
 
 class PEArrayTester extends ChiselFlatSpec {
@@ -421,7 +435,7 @@ class PEArrayTester extends ChiselFlatSpec {
 class MNISTTester extends ChiselFlatSpec {
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_MNIST_vcd", "--top-name", "make_MNIST_vcd",
+      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_MNIST_vcd", "--top-name", "make_MNIST_vcd",
         "--backend-name", "verilator"),
       () => new PEArray((5, 7))
     ) {
