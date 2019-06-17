@@ -7,72 +7,69 @@ Eyeriss by Chisel3(under development)
 
 
 # Usage
-1. Clone and initial
+## 1. Clone and initial
 ```sh
 git clone https://github.com/s1104439112/eyeriss-chisel3
 cd eyeriss-chisel3
+git checkout MNIST
 git submodule update --init
 ```
-2. Test project
-### Did it work?
-run this, to check
+## 2. Test project
+run this, to check your environmrnt
 ```sh
-sbt 'testOnly gcd.GCDTester -- -z Basic'
-or
-sbt
-testOnly pe.PETopModeTester
+sbt 'testOnly node.MNISTTester'
 ```
+now can find *test_run_dir/make_MNIST_vcd* dir, use gtkwave or verdi to open *PEArray.vcd* in this dir
 
-
->This tells the test harness to only run the test in GCDTester that contains the word Basic
-There are a number of other examples of ways to run tests in there, but we just want to see that
-one works.
-
-You should see a whole bunch of output that ends with something like the following lines
+You should see the following lines
 ```
-[info] [0.001] SEED 1540570744913
-test GCD Success: 168 tests passed in 1107 cycles in 0.067751 seconds 16339.24 Hz
-[info] [0.050] RAN 1102 CYCLES PASSED
-[info] GCDTester:
-[info] GCD
-[info] Basic test using Driver.execute
-[info] - should be used as an alternative way to run specification
-[info] using --backend-name verilator
-[info] running with --is-verbose
+[info] [51.767] List(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+[info] [51.767] 
+[info] [51.767] sw: 
+[info] [51.767] 152  97   0    0   26  48   0    0    0    0  
+53   106  27   0   0   117  172  153  2    0  
+38   192  122  87  97  105  182  215  127  0  
+[info] [51.767] 
+[info] [51.856] jj reduce: 30
+[info] [51.856] sw1d: 30
+[info] [51.857] ===============ERROR: 0======================
+[info] [51.894] (0,2)
+[info] [51.894] total cnt: 14304
+[info] [51.894] error cnt: 0
+[info] [51.894] conv1 cnt: 4704
+[info] [51.894] conv2 cnt: 9600
+Enabling waves..
+Exit Code: 0
+[info] [59.453] RAN 94524 CYCLES PASSED
+[info] MNISTTester:
 [info] running with --generate-vcd-output on
-[info] running with --generate-vcd-output off
+[info] - should create a vcd file from your test
 [info] ScalaTest
-[info] Run completed in 3 seconds, 184 milliseconds.
+[info] Run completed in 1 minute, 50 seconds.
 [info] Total number of tests run: 1
 [info] Suites: completed 1, aborted 0
 [info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0
 [info] All tests passed.
 [info] Passed: Total 1, Failed 0, Errors 0, Passed 1
-[success] Total time: 5 s, completed Oct 26, 2018 9:19:07 AM
+[success] Total time: 113 s, completed 2019-6-17 15:18:59
 ```
 If you see the above then...
 
 ### It worked!
-You are ready to go. We have a few recommended practices and things to do.
-* Use packages and following conventions for [structure](http://www.scala-sbt.org/0.13/docs/Directories.html) and [naming](http://docs.scala-lang.org/style/naming-conventions.html)
-* Package names should be clearly reflected in the testing hierarchy
-* Build tests for all your work.
-* This template includes a dependency on the Chisel3 IOTesters, this is a reasonable starting point for most tests
-* You can remove this dependency in the build.sbt file if necessary
-* Change the name of your project in the build.sbt file
-* Change your README.md
 
-There are [instructions for generating Verilog](https://github.com/freechipsproject/chisel3/wiki/Frequently-Asked-Questions#get-me-verilog) on the Chisel wiki.
+# TODO
+- [x] 硬件功能模块开发
+- [x] 硬件功能模块测试
+- [ ] 硬件上板测试
+- [x] 运行MNIST仿真测试(手动调度,硬件只负责卷积计算)在MNIST分支中
+- [ ] 添加对fc，pooling支持
+- [ ] global buffer功能开发
+- [ ] 软件调度算法
 
-Some backends (verilator for example) produce VCD files by default, while other backends (firrtl and treadle) do not.
-You can control the generation of VCD files with the `--generate-vcd-output` flag.
 
-To run the simulation and generate a VCD output file regardless of the backend:
-```bash
-sbt 'test:runMain gcd.GCDMain --generate-vcd-output on'
-```
+# Welcome to join Hardcore Player
+A man walks fast, and a group goes far
 
-To run the simulation and suppress the generation of a VCD output file:
-```bash
-sbt 'test:runMain gcd.GCDMain --generate-vcd-output off'
-```
+欢迎入群交流
+
+![qq group](https://raw.githubusercontent.com/s1104439112/eyeriss-chisel3/MNIST/img/qqgroup.png)
