@@ -22,6 +22,10 @@ class Tester(c: SRAM) extends PeekPokeTester(c) {
     poke(a.io.we, 0.U)
     poke(a.io.din, data)
   }
+  poke(c.io.rstLowas, 0.U)
+  step(1)
+  poke(c.io.rstLowas, 1.U)
+  step(1)
   for(i <- Range(0, 256)){
     write(c, i.asUInt(), (i + 1).asSInt())
     step(1)
