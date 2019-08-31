@@ -1,95 +1,54 @@
-import sbt.complete._
-import sbt.complete.DefaultParsers._
-import xerial.sbt.pack._
-import sys.process._
+name := "eyeriss-chisel3"
 
-enablePlugins(PackPlugin)
+version := "0.0.1"
 
-lazy val commonSettings = Seq(
-  organization := "edu.berkeley.cs",
-  version      := "1.2-SNAPSHOT",
-  scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.12.4"),
-  parallelExecution in Global := false,
-  traceLevel   := 15,
-  scalacOptions ++= Seq("-deprecation","-unchecked","-Xsource:2.11"),
-  libraryDependencies ++= Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value),
-  libraryDependencies ++= Seq("org.json4s" %% "json4s-jackson" % "3.6.1"),
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-  publishMavenStyle := true,
-  publishArtifact in Test := false,
-  pomIncludeRepository := { x => false },
-  pomExtra := <url>https://github.com/freechipsproject/rocket-chip</url>
-  <licenses>
-    <license>
-      <name>Apache 2</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-    <license>
-      <name>BSD-style</name>
-        <url>http://www.opensource.org/licenses/bsd-license.php</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
-    <scm>
-      <url>https://github.com/freechipsproject/rocketchip.git</url>
-      <connection>scm:git:github.com/freechipsproject/rocketchip.git</connection>
-    </scm>,
+organization := "gate"
 
-  publishTo := {
-    val v = version.value
-    val nexus = "https://oss.sonatype.org/"
-    if (v.trim.endsWith("SNAPSHOT")) {
-      Some("snapshots" at nexus + "content/repositories/snapshots")
+scalaVersion := "2.12.4"
+
+crossScalaVersions := Seq("2.12.6", "2.11.12")
+
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-language:reflectiveCalls")
+
+// Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
+// The following are the current "release" versions.
+val defaultVersions = Map(
+  "chisel3" -> "3.1.+",
+  "chisel-iotesters" -> "1.2.+"
+  )
+
+libraryDependencies ++= (Seq("chisel3","chisel-iotesters").map {
+  dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep)) })
+
+libraryDependencies ++= Seq("org.json4s" %% "json4s-jackson" % "3.6.1")
+
+libraryDependencies += "edu.berkeley.cs" %% "dsptools" % "1.1.6"
+
+def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
+  Seq() ++ {
+    // If we're building with Scala > 2.11, enable the compile option
+    //  switch to support our anonymous Bundle definitions:
+    //  https://github.com/scala/bug/issues/10047
+    CrossVersion.partialVersion(scalaVersion) match {
+      case Some((2, scalaMajor: Long)) if scalaMajor < 12 => Seq()
+      case _ => Seq("-Xsource:2.11")
     }
-    else {
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-    }
-  }
-)
-
-lazy val chisel = (project in file("chisel3")).settings(commonSettings)
-
-def dependOnChisel(prj: Project) = {
-  if (sys.props.contains("ROCKET_USE_MAVEN")) {
-    prj.settings(
-      libraryDependencies ++= Seq("edu.berkeley.cs" %% "chisel3" % "3.2-SNAPSHOT")
-    )
-  } else {
-    prj.dependsOn(chisel)
   }
 }
 
-lazy val hardfloat  = dependOnChisel(project).settings(commonSettings)
-  .settings(crossScalaVersions := Seq("2.12.4"))
-lazy val testers = (project in file("chisel-testers")).settings(commonSettings).dependsOn(chisel)
-lazy val `rocket-macros` = (project in file("macros")).settings(commonSettings)
-lazy val rocketchip = dependOnChisel(project in file("."))
-  .settings(commonSettings, chipSettings)
-  .dependsOn(testers, `rocket-macros`)
-  .dependsOn(hardfloat, `rocket-macros`)
-  .aggregate(hardfloat, `rocket-macros`) // <-- means the running task on rocketchip is also run by aggregate tasks
-
-lazy val addons = settingKey[Seq[String]]("list of addons used for this build")
-lazy val make = inputKey[Unit]("trigger backend-specific makefile command")
-val setMake = NotSpace ~ ( Space ~> NotSpace )
-
-lazy val chipSettings = Seq(
-  addons := {
-    val a = sys.env.getOrElse("ROCKETCHIP_ADDONS", "")
-    println(s"Using addons: $a")
-    a.split(" ")
-  },
-  unmanagedSourceDirectories in Compile ++= addons.value.map(baseDirectory.value / _ / "src/main/scala"),
-  mainClass in (Compile, run) := Some("rocketchip.Generator"),
-  make := {
-    val jobs = java.lang.Runtime.getRuntime.availableProcessors
-    val (makeDir, target) = setMake.parsed
-    (run in Compile).evaluated
-    s"make -C $makeDir  -j $jobs $target".!
+def javacOptionsVersion(scalaVersion: String): Seq[String] = {
+  Seq() ++ {
+    // Scala 2.12 requires Java 8. We continue to generate
+    //  Java 7 compatible code for Scala 2.11
+    //  for compatibility with old clients.
+    CrossVersion.partialVersion(scalaVersion) match {
+      case Some((2, scalaMajor: Long)) if scalaMajor < 12 =>
+        Seq("-source", "1.7", "-target", "1.7")
+      case _ =>
+        Seq("-source", "1.8", "-target", "1.8")
+    }
   }
-)
+}
 
 libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze" % "0.13.2",
@@ -97,4 +56,20 @@ libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze-viz" % "0.13.2"
 )
 
-resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.sonatypeRepo("releases")
+)
+
+// Recommendations from http://www.scalatest.org/user_guide/using_scalatest_with_sbt
+logBuffered in Test := false
+
+// Disable parallel execution when running tests.
+//  Running tests in parallel on Jenkins currently fails.
+parallelExecution in Test := false
+
+scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
+
+javacOptions ++= javacOptionsVersion(scalaVersion.value)
+
+trapExit := false
