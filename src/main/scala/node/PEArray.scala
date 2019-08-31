@@ -29,7 +29,7 @@ class dataSwitch(w: Int = 16) extends Module {
   }
 }
 
-class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
+class PEArray(val shape: (Int, Int), w: Int = 16) extends Module {
   val io = IO(new Bundle {
     val dataIn = Flipped(DecoupledIO(new dataPackage(w).cloneType))
     val stateSW = Input(UInt(2.W))
@@ -112,7 +112,7 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
   require(pes.head.length == shape._2)
   for(i <- io.oSumSRAM.indices){
     io.oSumSRAM(i).valid := pes.map(_(i)).map(_.io.oSumSRAM.valid).reduce(_ | _)
-    io.oSumSRAM(i).bits := pes.map(_(i)).map((x)=>{
+    val temp = pes.map(_(i)).map((x)=>{
       val tmp = Wire(SInt(w.W))
       when(x.io.oSumSRAM.valid === 1.U){
         tmp := x.io.oSumSRAM.bits
@@ -121,6 +121,11 @@ class PEArray(shape: (Int, Int), w: Int = 16) extends Module {
       }
       tmp
     }).reduce(_ + _)
+    when(io.peconfig.relu === 1.U & temp < 0.S){
+      io.oSumSRAM(i).bits := 0.S
+    }.otherwise{
+      io.oSumSRAM(i).bits := temp
+    }
     pes.map(_(i)).foreach(_.io.oSumSRAM.ready := io.oSumSRAM(i).valid & io.oSumSRAM(i).ready)
   }
 

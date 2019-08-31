@@ -251,16 +251,18 @@ object SW {
   def conv2d(filter: DenseMatrix[Int], img: DenseMatrix[Int], activate:Boolean = false): DenseMatrix[Int] = {
     // only suppost  square 正方形 conv
     assert(filter.rows == filter.cols)
-    assert(img.rows == img.cols)
+//    assert(img.rows == img.cols)
 
-    val fSize = filter.rows
-    val iSize = img.rows
+    val fRow = filter.rows
+    val fCol = filter.cols
+    val iRow = img.rows
+    val iCol = img.cols
 
-    val result = DenseMatrix.fill[Int](iSize - fSize + 1, iSize - fSize + 1)(0)
+    val result = DenseMatrix.fill[Int](iRow - fRow + 1, iCol - fCol + 1)(0)
 
-    for (i <- Range(0, iSize - fSize + 1)) {
-      for (j <- Range(0, iSize - fSize + 1)) {
-        result(i, j) = sum(img(i to i + fSize - 1, j to j + fSize - 1) *:* filter)
+    for (i <- Range(0, iRow - fRow + 1)) {
+      for (j <- Range(0, iCol - fCol + 1)) {
+        result(i, j) = sum(img(i to i + fRow - 1, j to j + fCol - 1) *:* filter)
       }
     }
     if(activate){
@@ -403,7 +405,7 @@ object SW {
       val singleLen = data(0, 0).cols
       var rows = data(0, 0).rows
       val list = List[Int]().toBuffer
-      for (l <- Range(0, singleLen)) {
+      for (l <- Range(0, rows)) {
         for (i <- Range(0, num)) {
           for (j <- Range(0, singleLen)) {
             for (k <- Range(0, channel)) {
@@ -423,13 +425,14 @@ object SW {
   }
 
   // DM(channel, num)(height, width)
-  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]], activate: Boolean = false):
+  def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]],
+             activate: Boolean = false, depthwise: Boolean = false):
   DenseMatrix[DenseMatrix[Int]] = {
     assert(filter.rows == img.rows) // channelIn must ==
     val channelIn = filter.rows
     val channelOut = filter.cols
     val imgNum = img.cols
-    val result = DenseMatrix.fill(channelOut, imgNum)(DenseMatrix.fill(img(0, 0).cols - filter(0, 0).cols + 1,
+    val result = DenseMatrix.fill(channelOut, imgNum)(DenseMatrix.fill(img(0, 0).rows - filter(0, 0).rows + 1,
       img(0, 0).cols - filter(0, 0).cols + 1)(0))
     println(s"channelIn: ${channelIn}")
     println(s"channelOut: ${channelOut}")
@@ -437,10 +440,10 @@ object SW {
     for (i <- Range(0, channelOut)) {
       for (j <- Range(0, imgNum)) {
         //        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
-        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, true)).reduce(_ + _)
+        result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, depthwise)).reduce(_ + _)
       }
     }
-    if (activate){
+    if(activate){
       result.map(ConvTools.relu(_))
     }else{
       result
@@ -584,10 +587,36 @@ object tempTest2 extends App {
 }
 
 object tempTest3 extends App {
-  val filter = DenseMatrix((1, 2, 3), (4, 5, 6), (7, 8, 9))
-  val img = DenseMatrix((1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5))
-  SW.conv4d(DenseMatrix.fill(3, 3)(SW.randomMatrix(3, 3)), DenseMatrix.fill(3, 3)(SW.randomMatrix(5, 5)))
-  println(SW.fd2List(DenseMatrix.fill(1, 1)(filter), 0))
+//  val filter = DenseMatrix((1, 2, 3), (4, 5, 6), (7, 8, 9))
+//  val img = DenseMatrix((1, 2, 3, 4, 5), (6, 7, 8, 9, 10), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5), (1, 2, 3, 4, 5))
+//  SW.conv4d(DenseMatrix.fill(3, 3)(SW.randomMatrix(3, 3)), DenseMatrix.fill(3, 3)(SW.randomMatrix(5, 5)))
+//  println(SW.fd2List(DenseMatrix.fill(1, 1)(filter), 0))
+  val filter = DenseMatrix.fill(2,2)(DenseMatrix.fill(2,2)(0))
+  val img = DenseMatrix.fill(2,2)(DenseMatrix.fill(3,3)(0))
+  filter(0, 0) = DenseMatrix((3,-2),(1,2))
+  filter(0, 1) = DenseMatrix((1,2),(-3,-1))
+  filter(1, 0) = DenseMatrix((0,1),(2,-3))
+  filter(1, 1) = DenseMatrix((1,-1),(3,1))
+
+  img(0, 0) = DenseMatrix((2,1,0),(1,1,2),(2,0,-1))
+  img(0, 1) = DenseMatrix((-1,0,1),(2,1,3),(2,-3,0))
+  img(1, 0) = DenseMatrix((1,-2,2),(3,0,3),(2,1,3))
+  img(1, 1) = DenseMatrix((2,1,3),(1,1,1),(2,-1,3))
+
+  println(SW.conv4d(filter, img))
+  println(SW.fd2List(filter, 0))
+  println(SW.fd2List(img, 1))
+}
+
+object convNotSquene extends App{
+  val filter = DenseMatrix.fill(1, 6)(DenseMatrix.fill(5, 5)(0))
+  for(i <- Range(0, 6)){
+    filter(0, i) = Data.flts1(i)
+  }
+  val img = DenseMatrix.fill(1, 1)(DenseMatrix.fill(11,32)(0))
+  img(0, 0) = Data.pics(0 to 11, ::)
+
+  println(SW.conv4d(filter, img))
 }
 
 object MNIST extends App {
@@ -622,17 +651,18 @@ object MNIST extends App {
       f2(y, x) = flt2(x)
     }
   }
-  var conv2out = SW.conv4d(f2, conv1out, true)
+  var conv2out = SW.conv4d(f2, conv1out, true, true)
   println(conv2out(0, 0))
   conv2out = conv2out.map(ConvTools.pooling(_))
   println(conv2out(0,0))
 
   var fc1 = DenseMatrix(conv2out.toArray.toList.map(_.t.flatten().toArray.toList).reduce(_ ::: _)) * fc1W
   fc1 = fc1.map(_ / 255)
-  println(fc1(0,27))
-
+  println("fc1 \n", fc1)
   var fc2 = fc1 * fc2W
+  println("fc2 \n", fc2)
   var fc3 = fc2 * fc3W
-  println(fc3)
+  println("fc3 \n", fc3)
+
   println(argmax(fc3))
 }
