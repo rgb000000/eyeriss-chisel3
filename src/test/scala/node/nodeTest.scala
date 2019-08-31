@@ -6,7 +6,6 @@ import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
 import breeze.linalg._
 import java.io.File
 
-import firrtl.annotations.TargetToken.Reset
 import simulator._
 
 object getVerilog extends App {
