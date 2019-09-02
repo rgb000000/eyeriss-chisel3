@@ -66,7 +66,7 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     })
     println("sw: ")
     sw.map((x) => {
-      println(x.toString());
+      println(x.toString())
       println()
     })
 
@@ -441,6 +441,5 @@ class MNISTTester extends ChiselFlatSpec {
       c => new MNISTTest(c)
     } should be(true)
     //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
-
   }
 }

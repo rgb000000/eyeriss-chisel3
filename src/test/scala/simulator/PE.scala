@@ -375,8 +375,8 @@ object SW {
     a
   }
 
-  def fd2List(data: DenseMatrix[DenseMatrix[Int]], t: Int): List[List[Int]] = {
-    if (t == 0) {
+  def fd2List(data: DenseMatrix[DenseMatrix[Int]], filter_0_Img_1: Int): List[List[Int]] = {
+    if (filter_0_Img_1 == 0) {
       // filter
       val channel = data.rows
       val num = data.cols
