@@ -666,3 +666,21 @@ object MNIST extends App {
 
   println(argmax(fc3))
 }
+
+object dataSplit extends App{
+  val a:ArrayBuffer[ArrayBuffer[Int]] = ArrayBuffer.fill(3)(ArrayBuffer.fill(256)(0))
+  for (i <- Range(0, 3)){
+    for(j <- Range(0, 256)){
+      a(i)(j) = j
+    }
+  }
+  val b = a.map(_.grouped(32).toList.toBuffer)
+  var cnt = 0
+  for(i <- Range(0, 256/32 - 1)){
+    b.foreach((x)=>{
+      println(x(cnt))
+    })
+    cnt += 1
+  }
+
+}

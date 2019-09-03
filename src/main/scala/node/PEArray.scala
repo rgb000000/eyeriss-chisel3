@@ -41,6 +41,10 @@ class PEArray(val shape: (Int, Int), w: Int = 16) extends Module {
   val doneReg = RegInit(0.U(1.W))
   io.done := doneReg
 
+  val dataInQ = Queue(io.dataIn, 73984)
+  val colLen = WireInit(io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U)
+  val rowLen = WireInit(io.peconfig.singleFilterLen)
+
   val NoC = List[List[Node]]().toBuffer
   val pes = List[List[PETesterTop]]().toBuffer
   for (i <- Range(0, shape._1)) {
@@ -62,6 +66,8 @@ class PEArray(val shape: (Int, Int), w: Int = 16) extends Module {
         pe.io.img <> ds.io.img
         tempPE.append(pe)
       }
+      node.io.colLen := colLen
+      node.io.rowLen := rowLen
       tempNoC.append(node)
     }
     NoC.append(tempNoC.toList)
@@ -79,10 +85,10 @@ class PEArray(val shape: (Int, Int), w: Int = 16) extends Module {
   // NoC ready
   for (i <- NoC) {
     i.head.io.dataPackageOut.ready := i.tail.map(_.io.dataPackageIn.ready).reduce(_ | _)
-    i.head.io.dataPackageIn.valid := io.dataIn.valid
-    i.head.io.dataPackageIn.bits := io.dataIn.bits
+    i.head.io.dataPackageIn.valid := dataInQ.valid
+    i.head.io.dataPackageIn.bits := dataInQ.bits
   }
-  io.dataIn.ready := NoC.map(_.head.io.dataPackageIn.ready).reduce(_ | _)
+  dataInQ.ready := NoC.map(_.head.io.dataPackageIn.ready).reduce(_ | _)
 
 //  require(io.oSumMEM.length == shape._2)
 //  require(pes.length == shape._1)
