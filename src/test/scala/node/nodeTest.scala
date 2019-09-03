@@ -431,7 +431,7 @@ class PEArrayTester extends ChiselFlatSpec {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_PEArray_vcd", "--top-name", "make_PEArray_vcd",
         "--backend-name", "verilator"),
-      () => new PEArray((6, 7))
+      () => new PEArray((6, 7), 8)
     ) {
       c => new PEArrayTest(c, 100)
     } should be(true)

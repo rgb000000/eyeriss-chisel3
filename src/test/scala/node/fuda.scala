@@ -12,7 +12,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   var img = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
   var filterNum = 1
   var imgNum = 1
-  var nchannel = 64
+  var nchannel = 3
   var fLen = 3
   var iLen = 34 // padding = 1
   var maxLen = 0

@@ -29,7 +29,7 @@ class dataSwitch(w: Int = 16) extends Module {
   }
 }
 
-class PEArray(val shape: (Int, Int), w: Int = 16) extends Module {
+class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   val io = IO(new Bundle {
     val dataIn = Flipped(DecoupledIO(new dataPackage(w).cloneType))
     val stateSW = Input(UInt(2.W))
@@ -53,7 +53,7 @@ class PEArray(val shape: (Int, Int), w: Int = 16) extends Module {
     for (j <- Range(0, shape._2 + 1)) {
       val node = Module(new Node(j == 0, (i, j), w))
       if (j != 0) {
-        val pe = Module(new PETesterTop((i, j - 1)))
+        val pe = Module(new PETesterTop((i, j - 1), w))
         pe.io.pSumIn.bits := 0.S
         pe.io.pSumIn.valid := 0.U
 //        pe.io.oSumMEM.ready := 0.U

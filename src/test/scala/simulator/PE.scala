@@ -371,7 +371,7 @@ object SW {
 
   def randomMatrix(shape: (Int, Int)): DenseMatrix[Int] = {
     val random = scala.util.Random
-    val a = DenseMatrix.fill(shape._1, shape._2)(random.nextInt(10) - 5)
+    val a = DenseMatrix.fill(shape._1, shape._2)(random.nextInt(6) - 3)
     a
   }
 

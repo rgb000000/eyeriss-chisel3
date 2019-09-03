@@ -3,7 +3,7 @@ package pe
 import chisel3._
 import chisel3.util._
 
-class PETesterTop(position: (Int, Int) = (0,0), w:Int=16) extends Module{
+class PETesterTop(position: (Int, Int) = (0,0), w:Int=8) extends Module{
   val io = IO(new Bundle{
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg())
@@ -14,7 +14,7 @@ class PETesterTop(position: (Int, Int) = (0,0), w:Int=16) extends Module{
     val oSumSRAM = Decoupled(SInt(w.W))
     val stateOut = Output(UInt(4.W))
   })
-  val pe = Module(new PE( 256, 256, 256, 16, position))
+  val pe = Module(new PE( 256, 256, 256, w, position))
   val fIn = Queue(io.filter, 256)
   val iIn = Queue(io.img, 256)
 //  val oSumOut = Queue(pe.io.oSumMEM, 256)
