@@ -12,6 +12,13 @@ class dataPackage(val w: Int) extends Bundle {
   val data = SInt(w.W)
   val dataType = UInt(1.W)
   val positon = new Positon(8)
+  val cnt = UInt(5.W)
+}
+
+class dataPackageSmall(val w: Int) extends Bundle {
+  val data = SInt(w.W)
+  val dataType = UInt(1.W)
+  val positon = new Positon(8)
 }
 
 class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
@@ -69,5 +76,64 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
   val whichRow = WireInit(positon._2.S(8.W) + positon._1.S - 1.S)
   core.dontTouch(test)
   core.dontTouch(whichRow)
+
+}
+
+class Q2Q(big: Int = 280, small: Int = 8) extends Module {
+  val io = IO(new Bundle {
+    val bigIn = Flipped(DecoupledIO(new dataPackage(big)))
+    val smallOut = DecoupledIO(new dataPackageSmall(small))
+  })
+
+  val tmp = Reg(Vec(big / small, new dataPackage(small).data.cloneType))
+  val cnt_reg = Reg(UInt(5.W))
+  val dataType_reg = Reg(UInt(1.W))
+  val positon_reg = Reg(new Positon(8).cloneType)
+  val cnt = Counter(64)
+  val doing = RegInit(false.B)
+
+  val QIn = Wire(io.smallOut.cloneType)
+  val Q = Queue(QIn, 40)
+
+  QIn.valid := 0.U
+  QIn.bits.data := 0.S
+  QIn.bits.positon.row := 0.S
+  QIn.bits.positon.col := 0.S
+  QIn.bits.dataType := 0.U
+
+  io.smallOut <> Q
+
+  io.bigIn.ready := doing === false.B
+
+  when(io.bigIn.fire()) {
+    doing := true.B
+    cnt.value := 1.U
+    for (i <- tmp.indices) {
+      tmp(i) := io.bigIn.bits.data((i + 1) * small - 1, i * small).asSInt()
+    }
+    cnt_reg := io.bigIn.bits.cnt
+    positon_reg := io.bigIn.bits.positon
+    dataType_reg := io.bigIn.bits.dataType
+
+    QIn.bits.data := io.bigIn.bits.data(small - 1, 0).asSInt()
+    QIn.bits.positon := io.bigIn.bits.positon
+    QIn.bits.dataType := io.bigIn.bits.dataType
+    QIn.valid := 1.U
+  }
+
+  when(doing === true.B){
+    when((cnt.value === cnt_reg - 1.U) & QIn.fire()){
+      doing := false.B
+      cnt.value := 0.U
+    }.elsewhen(QIn.fire()){
+      cnt.inc()
+    }.otherwise{
+
+    }
+    QIn.bits.data := tmp(cnt.value)
+    QIn.bits.positon := io.bigIn.bits.positon
+    QIn.bits.dataType := io.bigIn.bits.dataType
+    QIn.valid := 1.U
+  }
 
 }
