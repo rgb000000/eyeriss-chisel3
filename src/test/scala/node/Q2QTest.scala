@@ -8,7 +8,9 @@ class Q2QTest(c: Q2Q) extends PeekPokeTester(c) {
 
   poke(c.io.bigIn.valid, 1)
   poke(c.io.bigIn.bits.dataType, 1)
-  poke(c.io.bigIn.bits.data, 0xF1F2F3F4F5F6F7F8L)
+  for (i <- Range(0, 8)){
+    poke(c.io.bigIn.bits.data(i), 0xF0 + i)
+  }
   poke(c.io.bigIn.bits.cnt, 8)
   poke(c.io.bigIn.bits.positon.col, 0)
   poke(c.io.bigIn.bits.positon.row, 0)
@@ -16,6 +18,7 @@ class Q2QTest(c: Q2Q) extends PeekPokeTester(c) {
   poke(c.io.smallOut.ready, 1)
 
   step(1)
+  poke(c.io.bigIn.valid, 0)
 
   step(1)
   step(1)
@@ -36,12 +39,18 @@ class Q2QTest(c: Q2Q) extends PeekPokeTester(c) {
   step(1)
   poke(c.io.smallOut.ready, 1)
   step(1)
-  step(1)
-  step(1)
-  step(1)
-  step(1)
-  step(1)
-  step(1)
+  Range(0, 50).foreach((x) => {step(1)})
+
+  poke(c.io.bigIn.valid, 1)
+  poke(c.io.bigIn.bits.dataType, 1)
+  for (i <- Range(0, 8)){
+    poke(c.io.bigIn.bits.data(i), 0xA0 + i)
+  }
+  poke(c.io.bigIn.bits.cnt, 1)
+  poke(c.io.bigIn.bits.positon.col, 0)
+  poke(c.io.bigIn.bits.positon.row, 0)
+
+  poke(c.io.smallOut.ready, 1)
   step(1)
   step(1)
   step(1)

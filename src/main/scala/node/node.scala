@@ -8,15 +8,15 @@ class Positon(val w: Int) extends Bundle {
   val col = SInt(w.W)
 }
 
-class dataPackage(val w: Int) extends Bundle {
-  val data = SInt(w.W)
+class dataPackage(val w: Int = 8, val n:Int = 35) extends Bundle {
+  val data = Vec(n, SInt(w.W))
   val dataType = UInt(1.W)
   val positon = new Positon(8)
-  val cnt = UInt(5.W)
+  val cnt = UInt(8.W)
 }
 
-class dataPackageSmall(val w: Int) extends Bundle {
-  val data = SInt(w.W)
+class dataPackageSmall(val w: Int = 8, val n:Int = 1) extends Bundle {
+  val data = Vec(n, SInt(w.W))
   val dataType = UInt(1.W)
   val positon = new Positon(8)
 }
@@ -79,14 +79,14 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
 
 }
 
-class Q2Q(big: Int = 280, small: Int = 8) extends Module {
+class Q2Q(big: Int = 35, small: Int = 1) extends Module {
   val io = IO(new Bundle {
-    val bigIn = Flipped(DecoupledIO(new dataPackage(big)))
-    val smallOut = DecoupledIO(new dataPackageSmall(small))
+    val bigIn = Flipped(DecoupledIO(new dataPackage(n = big)))
+    val smallOut = DecoupledIO(new dataPackageSmall(8))
   })
 
-  val tmp = Reg(Vec(big / small, new dataPackage(small).data.cloneType))
-  val cnt_reg = Reg(UInt(5.W))
+  val tmp = Reg(Vec((big / small), new dataPackageSmall(n = small).data(0).cloneType))
+  val cnt_reg = Reg(UInt(8.W))
   val dataType_reg = Reg(UInt(1.W))
   val positon_reg = Reg(new Positon(8).cloneType)
   val cnt = Counter(64)
@@ -96,7 +96,7 @@ class Q2Q(big: Int = 280, small: Int = 8) extends Module {
   val Q = Queue(QIn, 40)
 
   QIn.valid := 0.U
-  QIn.bits.data := 0.S
+  QIn.bits.data(0) := 0.S
   QIn.bits.positon.row := 0.S
   QIn.bits.positon.col := 0.S
   QIn.bits.dataType := 0.U
@@ -106,16 +106,19 @@ class Q2Q(big: Int = 280, small: Int = 8) extends Module {
   io.bigIn.ready := doing === false.B
 
   when(io.bigIn.fire()) {
-    doing := true.B
-    cnt.value := 1.U
-    for (i <- tmp.indices) {
-      tmp(i) := io.bigIn.bits.data((i + 1) * small - 1, i * small).asSInt()
+    when(io.bigIn.bits.cnt === 1.U){
+      doing := false.B
+      cnt.value := 0.U
+    }.otherwise{
+      doing := true.B
+      cnt.value := 1.U
     }
+    (tmp, io.bigIn.bits.data).zipped.foreach(_ := _)
     cnt_reg := io.bigIn.bits.cnt
     positon_reg := io.bigIn.bits.positon
     dataType_reg := io.bigIn.bits.dataType
 
-    QIn.bits.data := io.bigIn.bits.data(small - 1, 0).asSInt()
+    QIn.bits.data(0) := io.bigIn.bits.data(0)
     QIn.bits.positon := io.bigIn.bits.positon
     QIn.bits.dataType := io.bigIn.bits.dataType
     QIn.valid := 1.U
@@ -130,9 +133,9 @@ class Q2Q(big: Int = 280, small: Int = 8) extends Module {
     }.otherwise{
 
     }
-    QIn.bits.data := tmp(cnt.value)
-    QIn.bits.positon := io.bigIn.bits.positon
-    QIn.bits.dataType := io.bigIn.bits.dataType
+    QIn.bits.data(0) := tmp(cnt.value)
+    QIn.bits.positon := positon_reg
+    QIn.bits.dataType := dataType_reg
     QIn.valid := 1.U
   }
 

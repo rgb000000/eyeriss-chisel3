@@ -8,7 +8,7 @@ import pe._
 @chiselName
 class dataSwitch(w: Int = 16) extends Module {
   val io = IO(new Bundle {
-    val dataIn = Flipped(DecoupledIO(new dataPackage(w)))
+    val dataIn = Flipped(DecoupledIO(new dataPackageSmall(w)))
     val filter = DecoupledIO(SInt(w.W))
     val img = DecoupledIO(SInt(w.W))
     //    val pSum = DecoupledIO(SInt(w.W))
@@ -19,11 +19,11 @@ class dataSwitch(w: Int = 16) extends Module {
   io.img.valid := 0.U
   io.dataIn.ready := 0.U
   when(io.dataIn.bits.dataType === 0.U) {
-    io.filter.bits := io.dataIn.bits.data
+    io.filter.bits := io.dataIn.bits.data(0)
     io.filter.valid := io.dataIn.valid
     io.dataIn.ready := io.filter.ready
   }.otherwise {
-    io.img.bits := io.dataIn.bits.data
+    io.img.bits := io.dataIn.bits.data(0)
     io.img.valid := io.dataIn.valid
     io.dataIn.ready := io.img.ready
   }
@@ -31,11 +31,11 @@ class dataSwitch(w: Int = 16) extends Module {
 
 class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   val io = IO(new Bundle {
-    val dataIn = Flipped(DecoupledIO(new dataPackage(w).cloneType))
+    val dataIn = Flipped(DecoupledIO(new dataPackage(8).cloneType))
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg(16))
 //    val oSumMEM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
-    val oSumSRAM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
+    val oSumSRAM = Vec(shape._2, DecoupledIO(SInt(8.W)))
     val done = Output(UInt(1.W))
   })
   val doneReg = RegInit(0.U(1.W))
@@ -61,7 +61,9 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
         pe.io.stateSW := io.stateSW
         pe.io.peconfig := io.peconfig
         val ds = Module(new dataSwitch())
-        ds.io.dataIn <> node.io.dataPackageOut
+        val q2q = Module(new Q2Q())
+        q2q.io.bigIn <> node.io.dataPackageOut
+        q2q.io.smallOut <> ds.io.dataIn
         pe.io.filter <> ds.io.filter
         pe.io.img <> ds.io.img
         tempPE.append(pe)

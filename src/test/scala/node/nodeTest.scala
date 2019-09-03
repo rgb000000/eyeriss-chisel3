@@ -101,20 +101,22 @@ class PEArrayTest(c: PEArray, /*filter:DenseMatrix[DenseMatrix[Int]],img:DenseMa
     for (i <- filter2d.indices) {
       for (j <- filter2d(0).indices) {
         poke(c.io.dataIn.valid, 1)
-        poke(c.io.dataIn.bits.data, filter2d(i)(j))
+        poke(c.io.dataIn.bits.data(0), filter2d(i)(j))
         poke(c.io.dataIn.bits.dataType, 0)
         poke(c.io.dataIn.bits.positon.row, i)
         poke(c.io.dataIn.bits.positon.col, -1)
+        poke(c.io.dataIn.bits.cnt, 1)
         step(1)
       }
     }
     for (i <- img2d.indices) {
       for (j <- img2d(0).indices) {
         poke(c.io.dataIn.valid, 1)
-        poke(c.io.dataIn.bits.data, img2d(i)(j))
+        poke(c.io.dataIn.bits.data(0), img2d(i)(j))
         poke(c.io.dataIn.bits.dataType, 1)
         poke(c.io.dataIn.bits.positon.row, i)
         poke(c.io.dataIn.bits.positon.col,  1) //because cols 0  is  row controller
+        poke(c.io.dataIn.bits.cnt, 1)
         step(1)
       }
     }
@@ -291,7 +293,7 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
     for (i <- filter2d.indices) {
       for (j <- filter2d(0).indices) {
         poke(c.io.dataIn.valid, 1)
-        poke(c.io.dataIn.bits.data, filter2d(i)(j))
+//        poke(c.io.dataIn.bits.data, filter2d(i)(j))
         poke(c.io.dataIn.bits.dataType, 0)
         poke(c.io.dataIn.bits.positon.row, i)
         poke(c.io.dataIn.bits.positon.col, -1)
@@ -302,7 +304,7 @@ class MNISTTest(c: PEArray) extends PeekPokeTester(c) {
       for (j <- Range(0, img2d.length - filter2d.length + 1)) { // col = iLen - fLen + 1
         for (k <- img2d(0).indices) {
           poke(c.io.dataIn.valid, 1)
-          poke(c.io.dataIn.bits.data, img2d(i + j)(k))
+//          poke(c.io.dataIn.bits.data, img2d(i + j)(k))
           poke(c.io.dataIn.bits.dataType, 1)
           poke(c.io.dataIn.bits.positon.row, i)
           poke(c.io.dataIn.bits.positon.col, j + 1) //because cols 0  is  row controller
