@@ -6,7 +6,7 @@ import chisel3.util._
 import pe._
 
 @chiselName
-class dataSwitch(w: Int = 16) extends Module {
+class dataSwitch(w: Int = 8) extends Module {
   val io = IO(new Bundle {
     val dataIn = Flipped(DecoupledIO(new dataPackageSmall(w)))
     val filter = DecoupledIO(SInt(w.W))

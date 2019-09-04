@@ -8,14 +8,14 @@ class Positon(val w: Int) extends Bundle {
   val col = SInt(w.W)
 }
 
-class dataPackage(val w: Int = 8, val n:Int = 35) extends Bundle {
+class dataPackage(val w: Int = 8, val n: Int = 35) extends Bundle {
   val data = Vec(n, SInt(w.W))
   val dataType = UInt(1.W)
   val positon = new Positon(8)
   val cnt = UInt(8.W)
 }
 
-class dataPackageSmall(val w: Int = 8, val n:Int = 1) extends Bundle {
+class dataPackageSmall(val w: Int = 8, val n: Int = 1) extends Bundle {
   val data = Vec(n, SInt(w.W))
   val dataType = UInt(1.W)
   val positon = new Positon(8)
@@ -92,8 +92,41 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
   val cnt = Counter(64)
   val doing = RegInit(false.B)
 
+  val cnt_in = Counter(4096)
+  val cnt_out = Counter(4096)
+  val cnt_all_in = RegInit(0.U(12.W))
+  val cnt_one_in = RegInit(0.U(12.W))
+  val cnt_one_in_2 = RegInit(0.U(12.W))
+  val zin = WireInit(cnt_in.value)
+  val zout = WireInit(cnt_out.value)
+
   val QIn = Wire(io.smallOut.cloneType)
-  val Q = Queue(QIn, 40)
+  val Q = Queue(QIn, 35)
+
+  core.dontTouch(zin)
+  core.dontTouch(zout)
+  core.dontTouch(cnt_all_in)
+  core.dontTouch(cnt_one_in)
+  core.dontTouch(cnt_one_in_2)
+
+  when((doing === true.B) & QIn.fire()) {
+    cnt_one_in := cnt_one_in + 1.U
+  }
+  when((doing === false.B) & QIn.fire()) {
+    cnt_one_in := 1.U
+    cnt_one_in_2 := cnt_one_in
+  }
+
+  when(io.bigIn.fire() & io.bigIn.bits.dataType === 1.U) {
+    cnt_all_in := cnt_all_in + io.bigIn.bits.cnt
+  }
+  when(QIn.fire() & QIn.bits.dataType === 1.U) {
+    cnt_in.inc()
+  }
+  when(Q.fire() & Q.bits.dataType === 1.U) {
+    cnt_out.inc()
+  }
+
 
   QIn.valid := 0.U
   QIn.bits.data(0) := 0.S
