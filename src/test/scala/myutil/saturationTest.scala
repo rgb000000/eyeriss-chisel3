@@ -39,7 +39,7 @@ class SaturationTester extends ChiselFlatSpec {
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_saturation_vcd",
-        "--top-name", "make_saturation__vcd", "--backend-name", "verilator"),
+        "--top-name", "make_saturation_vcd", "--backend-name", "verilator"),
       () => new Saturation()
     ) {
       c => new SaturationTest(c)
