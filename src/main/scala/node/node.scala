@@ -27,6 +27,7 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
     val dataPackageOut = DecoupledIO(new dataPackage(w))
     val colLen = Input(UInt(w.W))
     val rowLen = Input(UInt(w.W))
+    val stop = Output(Bool())
   })
 
   val x = WireInit(positon._1.asUInt(8.W))
@@ -35,13 +36,13 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
   core.dontTouch(y)
 
   val qIn = Wire(io.dataPackageIn.cloneType)
-  val q = Queue(qIn, 5)
+  val q = Queue(qIn, 64)
 
   qIn <> io.dataPackageIn
   q <> io.dataPackageOut
 
   val boardcast = Wire(Bool())
-
+  io.stop := false.B
   // if row means this node is use to row distrube and doesn't have PE
   if (row) {
     boardcast := (io.dataPackageIn.bits.positon.row === (-1).S)
@@ -59,6 +60,15 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
           & (io.dataPackageIn.bits.positon.row < positon._1.S + io.colLen.asSInt()))
           & (io.dataPackageIn.bits.dataType === 1.U) & (io.rowLen > positon._1.U))
         )
+    when((qIn.ready === 0.U) &
+      (boardcast |
+        ((io.dataPackageIn.bits.positon.row === positon._1.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        (((io.dataPackageIn.bits.positon.row >= positon._1.S)
+          & (io.dataPackageIn.bits.positon.row < positon._1.S + io.colLen.asSInt()))
+          & (io.dataPackageIn.bits.dataType === 1.U) & (io.rowLen > positon._1.U))
+        )) {
+      io.stop := true.B
+    }
   } else {
     boardcast := (io.dataPackageIn.bits.positon.col === (-1).S)
     io.dataPackageIn.ready := qIn.ready &
@@ -71,6 +81,14 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
         ((io.dataPackageIn.bits.positon.col === positon._2.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
         ((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U))
         )
+    when((qIn.ready === 0.U) &
+      (boardcast |
+        ((io.dataPackageIn.bits.positon.col === positon._2.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        ((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U))
+        )
+    ){
+      io.stop := true.B
+    }
   }
   val test = WireInit(((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U)))
   val whichRow = WireInit(positon._2.S(8.W) + positon._1.S - 1.S)
@@ -139,10 +157,10 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
   io.bigIn.ready := doing === false.B
 
   when(io.bigIn.fire()) {
-    when(io.bigIn.bits.cnt === 1.U){
+    when(io.bigIn.bits.cnt === 1.U) {
       doing := false.B
       cnt.value := 0.U
-    }.otherwise{
+    }.otherwise {
       doing := true.B
       cnt.value := 1.U
     }
@@ -157,13 +175,13 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
     QIn.valid := 1.U
   }
 
-  when(doing === true.B){
-    when((cnt.value === cnt_reg - 1.U) & QIn.fire()){
+  when(doing === true.B) {
+    when((cnt.value === cnt_reg - 1.U) & QIn.fire()) {
       doing := false.B
       cnt.value := 0.U
-    }.elsewhen(QIn.fire()){
+    }.elsewhen(QIn.fire()) {
       cnt.inc()
-    }.otherwise{
+    }.otherwise {
 
     }
     QIn.bits.data(0) := tmp(cnt.value)

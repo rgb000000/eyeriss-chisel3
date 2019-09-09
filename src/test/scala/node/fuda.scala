@@ -8,6 +8,21 @@ import simulator._
 
 class Fudan(c: PEArray) extends PeekPokeTester(c) {
 
+  def saturationSW(x: Int): Int = {
+    val tmp = if (x >= 0) {
+      x / 4.0 + 0.5
+    } else {
+      x / 4.0 - 0.5
+    }
+    if (tmp >= 127) {
+      127
+    } else if (tmp <= -128) {
+      -128
+    } else {
+      tmp.toInt
+    }
+  }
+
   var filter = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
   var img = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
   var filterNum = 1
@@ -23,18 +38,21 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   } else {
     imgNum * iLen * nchannel
   }
-  println(maxLen.toString)
-  //  require(maxLen < 255)
-  println(filter(0, 0).toString)
-  println(img(0, 0).toString)
 
-  val sw = SW.conv4d(filter, img, true)
+  var sw1 = SW.conv4d(filter, img, true)
   val filter2d = SW.fd2List(filter, 0)
   val img2d = SW.fd2List(img, 1)
 
+  sw1.map((x)=>{
+    print(x.toString())
+    println()
+  })
   println("sw: ")
-  sw.map((x) => {
-    println(x.toString())
+  val sw = sw1.map((x) => {
+    x.map(saturationSW(_))
+  })
+  sw.map((x)=>{
+    print(x.toString())
     println()
   })
 
@@ -76,10 +94,10 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
     }
   }
 
-  val img2d_group  = img2d.map(_.grouped(35).toList)
-  for(i <- img2d_group(0).indices){
-    for(j <- img2d_group.indices){
-      for(k <- img2d_group(j)(i).indices){
+  val img2d_group = img2d.map(_.grouped(35).toList)
+  for (i <- img2d_group(0).indices) {
+    for (j <- img2d_group.indices) {
+      for (k <- img2d_group(j)(i).indices) {
         poke(c.io.dataIn.bits.data(k), img2d_group(j)(i)(k))
       }
       poke(c.io.dataIn.valid, 1)
@@ -110,13 +128,16 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   })
   var error = 0
   var jj = List.fill(c.io.oSumSRAM.length)(0).toBuffer
+  var row = 0
   while (peek(c.io.done) == 0) {
+    row += 1
     for (i <- c.io.oSumSRAM.indices) {
       if (peek(c.io.oSumSRAM(i).valid) == 1) {
         expect(c.io.oSumSRAM(i).bits, sw1d(i * singLen + jj(i)))
         //          expect(c.io.oSumMEM(i).bits, sw1d(i * singLen + jj(i)))
         // println(peek(c.io.oSum(i).bits).toString())
         if (peek(c.io.oSumSRAM(i).bits) != sw1d(i * singLen + jj(i))) {
+          println(s"${row} - ${i} : "  + peek(c.io.oSumSRAM(i).bits).toString() + " --- " + sw1d(i * singLen + jj(i)).toString)
           error += 1
         }
         jj(i) += 1
@@ -127,7 +148,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   step(1)
   println(s"jj reduce: ${jj.reduce(_ + _)}")
   println(s"sw1d: ${sw1d.length}")
-//  assert(jj.reduce(_ + _) == sw1d.length)
+  //  assert(jj.reduce(_ + _) == sw1d.length)
   reset(50)
   println(s"===============ERROR: ${error}======================")
 
