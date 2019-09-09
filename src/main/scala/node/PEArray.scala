@@ -33,6 +33,7 @@ class dataSwitch(w: Int = 8) extends Module {
 class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   val io = IO(new Bundle {
     val dataIn = Flipped(DecoupledIO(new dataPackage(8).cloneType))
+    val bias = Input(SInt(w.W))
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg(16))
     //    val oSumMEM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
@@ -130,7 +131,7 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
         tmp := 0.S
       }
       tmp
-    }).reduce(_ + _)
+    }).reduce(_ + _) + io.bias
     saturation.io.dataIn := temp
     when(io.peconfig.relu === 1.U & saturation.io.dataOut < 0.S) {
       io.oSumSRAM(i).bits := 0.S

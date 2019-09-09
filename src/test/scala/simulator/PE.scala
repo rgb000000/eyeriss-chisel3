@@ -426,7 +426,7 @@ object SW {
 
   // DM(channel, num)(height, width)
   def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]],
-             activate: Boolean = false, depthwise: Boolean = false):
+             activate: Boolean = false, depthwise: Boolean = false, bias: DenseMatrix[Int] = DenseMatrix.fill(1, 1)(0)):
   DenseMatrix[DenseMatrix[Int]] = {
     assert(filter.rows == img.rows) // channelIn must ==
     val channelIn = filter.rows
@@ -441,6 +441,12 @@ object SW {
       for (j <- Range(0, imgNum)) {
         //        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
         result(i, j) := (filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _, depthwise)).reduce(_ + _)
+      }
+    }
+    for (i <- Range(0, channelOut)) {
+      for (j <- Range(0, imgNum)) {
+        //        println((filter(::, i).toArray, img(::, j).toArray).zipped.map(conv2d(_, _)).reduce(_ + _))
+        result(i, j) := result(i, j) + bias(0, i)
       }
     }
     if (activate) {
@@ -713,7 +719,7 @@ object mapTest extends App {
   println(1.6.toInt)
 }
 
-object conv4dTest extends App{
+object conv4dTest extends App {
   var filter = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
   var img = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
   var filterNum = 1

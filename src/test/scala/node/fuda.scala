@@ -31,6 +31,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   var fLen = 3
   var iLen = 34 // padding = 1
   var maxLen = 0
+  var bias = 3
   filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
   img = DenseMatrix.fill(nchannel, imgNum)(SW.randomMatrix((iLen, iLen)))
   maxLen = if (filterNum * fLen * nchannel > imgNum * iLen * nchannel) {
@@ -39,7 +40,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
     imgNum * iLen * nchannel
   }
 
-  var sw1 = SW.conv4d(filter, img, true)
+  var sw1 = SW.conv4d(filter, img, true, bias=DenseMatrix.fill[Int](1, filter.cols )(bias))
   val filter2d = SW.fd2List(filter, 0)
   val img2d = SW.fd2List(img, 1)
 
@@ -49,7 +50,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   })
   println("sw: ")
   val sw = sw1.map((x) => {
-    x.map(saturationSW(_))
+    x.map((num)=>{saturationSW(num)})
   })
   sw.map((x)=>{
     print(x.toString())
@@ -69,6 +70,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   }
 
   poke(c.io.stateSW, 0)
+  poke(c.io.bias, bias)
   step(100) // because PE buf state, so need 1 clock
 
   // second send basic infotmation to PE, include filterNum, singleFilterLen, imgNum, singleImgLen, nchannel
