@@ -22,7 +22,7 @@ class SRAM extends Module{
   val io = IO(new Bundle{
     val we = Input(UInt(1.W))
     val addr = Input(UInt(8.W))
-    val din = Input(SInt(26.W))
+    val din = Input(SInt(16.W))
     val dout = Output(SInt(16.W))
     val rstLowas = Input(UInt(1.W))
   })
