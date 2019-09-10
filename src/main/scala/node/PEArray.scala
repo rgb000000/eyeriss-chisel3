@@ -39,6 +39,7 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
     //    val oSumMEM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
     val oSumSRAM = Vec(shape._2, DecoupledIO(SInt(8.W)))
     val done = Output(UInt(1.W))
+    val dataDone = Output(Bool())
   })
   val doneReg = RegInit(0.U(1.W))
   io.done := doneReg
@@ -143,5 +144,6 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
 
   val idle :: data :: cal :: pDone :: newImg :: allDone :: Nil = Enum(6)
   doneReg := pes.map(_.map(_.io.stateOut === allDone)).flatten.reduce(_ & _)
+  io.dataDone := pes.map(_.map(_.io.dataDone).reduce(_ & _)).reduce(_ & _)
 
 }

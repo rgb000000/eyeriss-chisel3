@@ -35,6 +35,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
     val oSumSRAM = DecoupledIO(SInt((16).W))
 
     val stateOut = Output(UInt(4.W))
+    val dataDone = Output(Bool())
   })
 
   //  override def desiredName: String = position.toString()
@@ -98,11 +99,13 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val iQreg = Reg(iQ.bits.cloneType)
   io.img.ready := 0.U
   iQ.ready := 0.U
+  io.dataDone := false.B
   when(dodata) {
     iQMuxIn <> io.img
     when(iCnt.value === configReg.singleFilterLen * configReg.nchannel) {
       iQMuxIn.valid := 0.U
       io.img.ready := 0.U
+      io.dataDone := true.B
     }
   }.otherwise {
     iQMuxIn <> iQ

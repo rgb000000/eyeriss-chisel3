@@ -13,6 +13,7 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
     //    val oSumMEM = Decoupled(SInt(w.W))
     val oSumSRAM = Decoupled(SInt((16).W))
     val stateOut = Output(UInt(4.W))
+    val dataDone = Output(Bool())
   })
   val pe = Module(new PE(256, 256, 256, w, position))
   val fIn = Queue(io.filter, 256)
@@ -34,4 +35,5 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
   pe.io.stateSW := io.stateSW
 
   io.stateOut := pe.io.stateOut
+  io.dataDone := pe.io.dataDone
 }

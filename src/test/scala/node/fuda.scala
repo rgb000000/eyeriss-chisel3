@@ -82,6 +82,8 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   poke(c.io.peconfig.relu, 1)
   step(1) // PE buf basic infotmation after 1 clock
 
+  poke(c.io.stateSW, 1)
+
   // third put data in
   poke(c.io.dataIn.valid, 0)
   for (i <- filter2d.indices) {
@@ -96,7 +98,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
     }
   }
 
-  val img2d_group = img2d.map(_.grouped(35).toList)
+  val img2d_group = img2d.map(_.grouped(iLen).toList)
   for (i <- img2d_group(0).indices) {
     for (j <- img2d_group.indices) {
       for (k <- img2d_group(j)(i).indices) {
@@ -108,20 +110,18 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
       poke(c.io.dataIn.bits.positon.col, 1) //because cols 0  is  row controller
       poke(c.io.dataIn.bits.cnt, img2d_group(j)(i).length)
       step(1)
+      if(peek(c.io.dataDone) == 1){
+        poke(c.io.stateSW, 2)
+      }
     }
   }
 
   poke(c.io.dataIn.valid, 0)
   step(1)
   // fourth let PE in getdata state
-  poke(c.io.stateSW, 1)
   //    println(s"filter2d(0) len : ${filter2d(0).length}")
   //  step(filter2d(0).length + 1)
-  step(256)
-
   // finial let PE in cal state
-  poke(c.io.stateSW, 2)
-  step(1)
   //    c.io.oSumMEM.foreach((x) => {
   //      poke(x.ready, 1)
   //    })
