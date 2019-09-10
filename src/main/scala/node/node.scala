@@ -36,7 +36,7 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
   core.dontTouch(y)
 
   val qIn = Wire(io.dataPackageIn.cloneType)
-  val q = Queue(qIn, 64)
+  val q = Queue(qIn, 8)
 
   qIn <> io.dataPackageIn
   q <> io.dataPackageOut

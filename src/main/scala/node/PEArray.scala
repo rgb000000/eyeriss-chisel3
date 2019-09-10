@@ -79,6 +79,11 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
     pes.append(tempPE.toList)
   }
 
+  val stop = WireInit(NoC.map(_.head.io.stop).reduce(_ | _))
+
+  val handleStop = Module(new handleStop())
+  handleStop.io.dataIn <> dataInQ
+
   // NoC valid and bits
   for (i <- Range(0, shape._1)) {
     for (j <- Range(1, shape._2 + 1)) {
@@ -90,10 +95,11 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   // NoC ready
   for (i <- NoC) {
     i.head.io.dataPackageOut.ready := i.tail.map(_.io.dataPackageIn.ready).reduce(_ | _)
-    i.head.io.dataPackageIn.valid := dataInQ.valid
-    i.head.io.dataPackageIn.bits := dataInQ.bits
+    i.head.io.dataPackageIn.valid := handleStop.io.dataOut.valid
+    i.head.io.dataPackageIn.bits := handleStop.io.dataOut.bits
   }
-  dataInQ.ready := NoC.map(_.head.io.dataPackageIn.ready).reduce(_ | _)
+  handleStop.io.dataOut.ready := NoC.map(_.head.io.dataPackageIn.ready).reduce(_ | _)
+  handleStop.io.stop := stop
 
   //  require(io.oSumMEM.length == shape._2)
   //  require(pes.length == shape._1)
