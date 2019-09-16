@@ -97,6 +97,9 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
 
 }
 
+// Q2Q 有bug！！ TODO
+// 当读取新的一组数据时，此时如果FIFO正好满了，会导致改组数据的第一个数据丢失
+// 目前在tb中的解决方法是一次只传输iLen的长度，让其刚好在psum周期读取完
 class Q2Q(big: Int = 35, small: Int = 1) extends Module {
   val io = IO(new Bundle {
     val bigIn = Flipped(DecoupledIO(new dataPackage(n = big)))
