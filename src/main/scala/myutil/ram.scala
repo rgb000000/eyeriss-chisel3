@@ -18,7 +18,7 @@ class ram_sim(val aw: Int, val dw: Int) extends BlackBox(Map("aw" -> aw, "dw" ->
   //  setResource("/ram.mem")
 }
 
-class RAM(val aw: Int = 32, val dw: Int=280) extends Module {
+class RAM(val aw: Int = 20, val dw: Int=280) extends Module {
   val io = IO(new Bundle {
     val we = Input(Bool())
     val raddr = Input(UInt(aw.W))

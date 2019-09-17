@@ -6,7 +6,7 @@ import node.dataPackage
 import chisel3.experimental._
 import chisel3.util._
 
-class RAMInterface(val aw:Int, val dw:Int) extends Bundle{
+class RAMInterface(val aw:Int=20, val dw:Int=280) extends Bundle{
   val we = Input(Bool())
   val raddr = Input(UInt(aw.W))
   val waddr = Input(UInt(aw.W))
@@ -14,14 +14,15 @@ class RAMInterface(val aw:Int, val dw:Int) extends Bundle{
   val dout = Output(Vec(dw / 8, SInt(8.W)))
 }
 
-class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=32, dw:Int=280, w:Int = 8) extends Module{
+class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=20, dw:Int=280, w:Int = 8) extends Module{
   val io = IO(new Bundle{
     val ram = Flipped(new RAMInterface(aw, dw))
 //    val config = Input(new PEConfigReg)
     val dout = Decoupled(new dataPackage(w))
     val bias = Output(SInt(w.W))
-//    val stateSW = Output(UInt(2.W))
+    val stateSW = Output(UInt(2.W))
     val readGo = Input(Bool())
+    val dataDone = Input(Bool())
   })
   val faddr_reg = RegInit(faddr.asUInt(16.W))
   val iaddr_reg = RegInit(iaddr.asUInt(16.W))
@@ -39,6 +40,9 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=32, dw:Int=280, w
   io.dout <> q
 
   io.bias := 0.S
+
+  val stateSW = RegInit(0.asUInt(2.W))
+  io.stateSW := stateSW
 
   val total_filter = RegInit(576.asUInt())
   val total_img = RegInit(2176.asUInt())
@@ -61,6 +65,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=32, dw:Int=280, w
       data_cnt := 0.U
       when(io.readGo){
         state := filter
+        stateSW := 1.U  // pearray get data
       }
     }
     is(filter){
@@ -89,6 +94,9 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=32, dw:Int=280, w
       }
     }
     is(img){
+      when(io.dataDone){
+        stateSW := 2.U    //pearray start cal
+      }
       qin.valid := 1.U
       io.ram.raddr := iaddr_reg
       when(qin.fire()){

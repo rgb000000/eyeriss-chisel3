@@ -31,7 +31,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   var fLen = 3
   var iLen = 34 // padding = 1
   var maxLen = 0
-  var bias = 3
+  var bias = 0
   filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
   img = DenseMatrix.fill(nchannel, imgNum)(SW.randomMatrix((iLen, iLen)))
   maxLen = if (filterNum * fLen * nchannel > imgNum * iLen * nchannel) {
