@@ -12,11 +12,12 @@ class Top extends Module{
     val peconfig = Input(new PEConfigReg(16))
     val ram = Flipped(new RAMInterface())
     val done = Output(Bool())
-    val oSumSRAM = Vec(32, DecoupledIO(SInt(8.W)))
+    val oSumSRAM = Vec(32/2, DecoupledIO(SInt(8.W)))
     val readGo = Input(Bool())
   })
   val pea = Module(new PEArray((3, 32)))
   val ctrl = Module(new Controller())
+  val pool = Module(new maxPooling())
   pea.io.dataIn <> ctrl.io.dout
   pea.io.bias := ctrl.io.bias
   pea.io.stateSW := ctrl.io.stateSW
@@ -26,14 +27,15 @@ class Top extends Module{
   ctrl.io.readGo := io.readGo
 
   io.done := pea.io.done
-  io.oSumSRAM <> pea.io.oSumSRAM
+  pea.io.oSumSRAM <> pool.io.din
+  io.oSumSRAM <> pool.io.dout
 }
 
 class TB extends Module{
   val io = IO(new Bundle{
     val peconfig = Input(new PEConfigReg(16))
     val done = Output(Bool())
-    val oSumSRAM = Vec(32, DecoupledIO(SInt(8.W)))
+    val oSumSRAM = Vec(32/2, DecoupledIO(SInt(8.W)))
     val readGo = Input(Bool())
   })
   val top = Module(new Top)

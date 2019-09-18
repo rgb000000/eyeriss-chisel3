@@ -2,6 +2,7 @@ package simulator
 
 import breeze.linalg._
 import java.io._
+import simulator._
 
 object DM2fileOnce extends App {
   var filter = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
@@ -118,14 +119,17 @@ object GenTestData{
       print(x.toString())
       println()
     })
+    //  do maxPooling
+    val after_pool = sw.map(ConvTools.pooling2(_))
+    println(after_pool)
 
     val sw1d = List[Int]().toBuffer
-    val singLen = sw(0, 0).cols * sw.size
-    for (k <- Range(0, sw(0, 0).rows)) {
-      for (i <- Range(0, sw.cols)) {
-        for (l <- Range(0, sw(0, 0).cols)) {
-          for (j <- Range(0, sw.rows)) {
-            sw1d.append(sw(j, i)(k, l))
+    val singLen = after_pool(0, 0).cols * after_pool.size
+    for (k <- Range(0, after_pool(0, 0).rows)) {
+      for (i <- Range(0, after_pool.cols)) {
+        for (l <- Range(0, after_pool(0, 0).cols)) {
+          for (j <- Range(0, after_pool.rows)) {
+            sw1d.append(after_pool(j, i)(k, l))
           }
         }
       }
@@ -137,4 +141,8 @@ object GenTestData{
       "nchannel"->nchannel, "singLen"->singLen, "bias"->bias
     ), sw1d.toList)
   }
+}
+
+object app extends App{
+  GenTestData()
 }

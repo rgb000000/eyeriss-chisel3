@@ -480,6 +480,18 @@ object ConvTools {
     }
     temp.map(max(_)) / activation
   }
+
+  def pooling2(array: DenseMatrix[Int], size: Int = 2, activation: Int = 255): DenseMatrix[Int] = {
+    // aim to squene matrix
+    assert(array.cols % size == 0 & array.rows % size == 0 & array.rows == array.cols)
+    val temp = DenseMatrix.fill(array.rows / size, array.cols / size)(DenseMatrix.fill(size, size)(0))
+    for (i <- Range(0, (array.rows / size) * (array.rows / size))) {
+      val x = i / (array.rows / size)
+      val y = i % (array.rows / size)
+      temp(x, y) = array(x * size to (x + 1) * size - 1, y * size to (y + 1) * size - 1)
+    }
+    temp.map(max(_))
+  }
 }
 
 object Main extends App {
