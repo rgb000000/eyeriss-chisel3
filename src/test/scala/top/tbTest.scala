@@ -49,6 +49,7 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
   println(s"jj reduce: ${jj.reduce(_ + _)}")
   println(s"sw1d: ${sw1d.length}")
   //  assert(jj.reduce(_ + _) == sw1d.length)
+  step(50)
   reset(50)
   println(s"===============ERROR: ${error}======================")
 }

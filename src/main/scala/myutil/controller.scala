@@ -14,7 +14,8 @@ class RAMInterface(val aw:Int=20, val dw:Int=280) extends Bundle{
   val dout = Output(Vec(dw / 8, SInt(8.W)))
 }
 
-class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=20, dw:Int=280, w:Int = 8) extends Module{
+class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
+                 aw:Int=20, dw:Int=280, w:Int = 8) extends Module{
   val io = IO(new Bundle{
     val ram = Flipped(new RAMInterface(aw, dw))
 //    val config = Input(new PEConfigReg)
@@ -23,6 +24,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=20, dw:Int=280, w
     val stateSW = Output(UInt(2.W))
     val readGo = Input(Bool())
     val dataDone = Input(Bool())
+    val oSumSRAM = Vec(32/2, Flipped(DecoupledIO(SInt(8.W))))
   })
   val faddr_reg = RegInit(faddr.asUInt(16.W))
   val iaddr_reg = RegInit(iaddr.asUInt(16.W))
@@ -50,7 +52,19 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=20, dw:Int=280, w
   io.ram.raddr := 0.U
   io.ram.waddr := 0.U
   io.ram.din.foreach(_ := 0.S)
+  io.oSumSRAM.map(_.ready).foreach(_ := 1.U)
+  val waddr_reg = RegInit(waddr.asUInt(16.W))
+  // write logic
+  when(io.oSumSRAM.map(_.fire()).reduce(_ & _)){
+    io.ram.we := 1.U
+    io.ram.waddr := waddr_reg
+    (io.ram.din, io.oSumSRAM).zipped.foreach(_ := _.bits)
+    waddr_reg := waddr_reg + 1.U
+  }
 
+
+
+  // read logic
   val fcnt = Counter(192)
   val icnt = Counter(192)
   val data_cnt = Reg(UInt(8.W))

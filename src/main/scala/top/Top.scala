@@ -29,6 +29,7 @@ class Top extends Module{
   io.done := pea.io.done
   pea.io.oSumSRAM <> pool.io.din
   io.oSumSRAM <> pool.io.dout
+  ctrl.io.oSumSRAM <> pool.io.dout
 }
 
 class TB extends Module{
@@ -37,6 +38,7 @@ class TB extends Module{
     val done = Output(Bool())
     val oSumSRAM = Vec(32/2, DecoupledIO(SInt(8.W)))
     val readGo = Input(Bool())
+    val dataCheck = Vec(32/2, Output(SInt(8.W)))
   })
   val top = Module(new Top)
   val ram  = Module(new RAM)
@@ -46,5 +48,23 @@ class TB extends Module{
   top.io.readGo := io.readGo
   io.oSumSRAM <> top.io.oSumSRAM
   io.done := top.io.done
+
+  val cnt = RegInit(0.U)
+  val raddr = RegInit(0x8000.asUInt())
+  when(io.done === true.B){
+    cnt := 16.U
+  }
+  for (i <- 0 until io.dataCheck.length){
+    io.dataCheck(i) := 0.S
+  }
+  when(cnt =/= 0.U){
+    ram.io.raddr := raddr
+    raddr := raddr + 1.U
+    cnt := cnt - 1.U
+    for (i <- 0 until io.dataCheck.length){
+      io.dataCheck(i) := ram.io.dout(i)
+    }
+  }
+
 
 }
