@@ -426,7 +426,7 @@ object SW {
 
   // DM(channel, num)(height, width)
   def conv4d(filter: DenseMatrix[DenseMatrix[Int]], img: DenseMatrix[DenseMatrix[Int]],
-             activate: Boolean = false, depthwise: Boolean = false, bias: DenseMatrix[Int] = DenseMatrix.fill(1, 1)(0)):
+             activate: Boolean = false, depthwise: Boolean = false, bias: DenseMatrix[Int] = DenseMatrix.fill(1, 128)(0)):
   DenseMatrix[DenseMatrix[Int]] = {
     assert(filter.rows == img.rows) // channelIn must ==
     val channelIn = filter.rows

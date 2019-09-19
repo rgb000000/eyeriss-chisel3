@@ -3,7 +3,7 @@ package myutil
 import chisel3._
 import chisel3.util._
 
-class Saturation(inw: Int = 26, outw: Int = 8, low: Int = 2) extends Module {
+class Saturation(inw: Int = 26, outw: Int = 8, low: Int = 4) extends Module {
   val io = IO(new Bundle {
     val dataIn = Input(SInt(inw.W))
     val dataOut = Output(SInt(outw.W))

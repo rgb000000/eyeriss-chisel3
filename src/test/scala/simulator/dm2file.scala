@@ -43,16 +43,25 @@ object DM2fileOnce extends App {
 }
 
 object DM2file extends {
-  def apply(filter2d:List[List[Int]], img2d:List[List[Int]],
+  def apply(filter2d:List[List[Int]], img2d:List[List[Int]], bias:Int = 0,
             path:String="/home/SW/PRJ/eyeriss-chisel3/src/main/resources/ram.mem"): Unit ={
     val w = new PrintWriter(new File(path))
-    filter2d.foreach((l)=>{
-      l.foreach(
-        (num) => {
-          w.write(f"${num.toByte}%02x".toUpperCase() + "\n")
+//    filter2d.foreach((l)=>{
+//      l.foreach(
+//        (num) => {
+//          w.write(f"${num.toByte}%02x".toUpperCase() + "\n")
+//        }
+//      )
+//    })
+    for (i <- filter2d.indices){
+      for(j <- filter2d(0).indices){
+        if((i == filter2d.length - 1) & (j == filter2d(0).length - 1)){
+          w.write(f"${bias.toByte}%02x".toUpperCase() + f"${filter2d(i)(j).toByte}%068x".toUpperCase() + "\n")
+        }else{
+          w.write(f"${filter2d(i)(j).toByte}%02x".toUpperCase() + "\n")
         }
-      )
-    })
+      }
+    }
 
     val img2d_group = img2d.map(_.grouped(34).toList)
     for(i <- img2d_group(0).indices){
@@ -71,11 +80,11 @@ object DM2file extends {
 
 object GenTestData{
   def apply(): (Map[String, Int], List[Int])={
-    def saturationSW(x: Int): Int = {
+    def saturationSW(x: Int, scale:Int = 4): Int = {
       val tmp = if (x >= 0) {
-        x / 4.0 + 0.5
+        x / ((1<<scale)*1.0) + 0.5
       } else {
-        x / 4.0 - 0.5
+        x / ((1<<scale)*1.0)  - 0.5
       }
       if (tmp >= 127) {
         127
@@ -94,7 +103,7 @@ object GenTestData{
     var fLen = 3
     var iLen = 34 // padding = 1
     var maxLen = 0
-    var bias = 0
+    var bias = util.Random.nextInt(64) - 32
     filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
     img = DenseMatrix.fill(nchannel, imgNum)(SW.randomMatrix((iLen, iLen)))
     maxLen = if (filterNum * fLen * nchannel > imgNum * iLen * nchannel) {
@@ -135,7 +144,7 @@ object GenTestData{
       }
     }
 
-    DM2file(filter2d, img2d)
+    DM2file(filter2d, img2d, bias)
 
     (Map("filterNum"->filterNum, "fLen"->fLen, "imgNum"->imgNum, "iLen"->iLen,
       "nchannel"->nchannel, "singLen"->singLen, "bias"->bias
