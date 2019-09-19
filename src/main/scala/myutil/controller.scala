@@ -39,7 +39,6 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=20, dw:Int=280, w
   val q = Queue(qin, 4)
   io.dout <> q
 
-  io.bias := 0.S
 
   val stateSW = RegInit(0.asUInt(2.W))
   io.stateSW := stateSW
@@ -57,6 +56,9 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=20, dw:Int=280, w
   val data_cnt = Reg(UInt(8.W))
   val row_reg = Reg(SInt(8.W))
   val col_reg = Reg(SInt(8.W))
+
+  val bias = Reg(SInt(8.W))
+  io.bias := bias
 
   switch(state){
     is(idle){
@@ -87,6 +89,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, aw:Int=20, dw:Int=280, w
           row_reg := 0.S
           col_reg := 0.S
           fcnt.value := 0.U
+          bias := qin.bits.data(34)
         }.otherwise{
           row_reg := row_reg + 1.S
           fcnt.value := 0.U

@@ -9,6 +9,7 @@ class Controller2RAM() extends Module {
   val io = IO(new Bundle {
     val dout = Decoupled(new dataPackage())
     val go = Input(Bool())
+    val bias = Output(SInt(8.W))
   })
   val ctrl = Module(new Controller())
   val ram = Module(new RAM(20, 280))
@@ -20,6 +21,8 @@ class Controller2RAM() extends Module {
   //  ctrl.io.dout.ready := io.dout.ready
 //  ctrl.io.bias := 0.S
   ctrl.io.readGo := io.go
+  ctrl.io.dataDone := 0.U
+  io.bias := ctrl.io.bias
 }
 
 class ControllerTest(c: Controller2RAM) extends PeekPokeTester(c) {
