@@ -66,3 +66,7 @@ class tbTester extends ChiselFlatSpec {
     //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
   }
 }
+
+object getTopVerilog extends App{
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_TOP_verilog"), () => new Top)
+}
