@@ -16,17 +16,31 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
   val bias = info("bias")
   val singLen = info("singLen")
 
-  poke(c.io.peconfig.filterNum, filterNum)
-  poke(c.io.peconfig.singleFilterLen, fLen)
-  poke(c.io.peconfig.imgNum, imgNum)
-  poke(c.io.peconfig.singleImgLen, iLen)
-  poke(c.io.peconfig.nchannel, nchannel)
-  poke(c.io.peconfig.relu, 1)
+  def writeReg(addr:Int, data:Int): Unit ={
+    poke(c.io.regfile.we, 1)
+    poke(c.io.regfile.waddr, addr)
+    poke(c.io.regfile.din, data)
+    step(1)
+    poke(c.io.regfile.we, 0)
+  }
+  writeReg(0, filterNum)
+  writeReg(1, fLen)
+  writeReg(2, imgNum)
+  writeReg(3, iLen)
+  writeReg(4, nchannel)
+  writeReg(5, 1)
+//  poke(c.io.peconfig.filterNum, filterNum)
+//  poke(c.io.peconfig.singleFilterLen, fLen)
+//  poke(c.io.peconfig.imgNum, imgNum)
+//  poke(c.io.peconfig.singleImgLen, iLen)
+//  poke(c.io.peconfig.nchannel, nchannel)
+//  poke(c.io.peconfig.relu, 1)
   c.io.oSumSRAM.foreach((x) => {
     poke(x.ready, 1)
   })
   step(1) // PE buf basic information after 1 clock
-  poke(c.io.readGo, 1)
+  writeReg(7, 1)
+//  poke(c.io.readGo, 1)
 
   var error = 0
   var jj = List.fill(c.io.oSumSRAM.length)(0).toBuffer
