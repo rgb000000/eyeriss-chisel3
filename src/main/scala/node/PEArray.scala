@@ -35,14 +35,15 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
     val dataIn = Flipped(DecoupledIO(new dataPackage(8).cloneType))
     val bias = Input(SInt(w.W))
     val stateSW = Input(UInt(2.W))
-    val peconfig = Input(new PEConfigReg(16))
+    val peconfig = Input(new PEConfigReg(8))
     //    val oSumMEM = Vec(shape._2, DecoupledIO(dataIn.bits.data.cloneType))
     val oSumSRAM = Vec(shape._2, DecoupledIO(SInt(8.W)))
     val done = Output(UInt(1.W))
     val dataDone = Output(Bool())
   })
   val doneReg = RegInit(0.U(1.W))
-  io.done := doneReg
+  val doneRegReg = RegNext(doneReg)
+  io.done := doneRegReg       // wait pooling done
 
   val dataInQ = Queue(io.dataIn, 4)
   val colLen = WireInit(io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U)
