@@ -113,8 +113,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   iQ.ready := (state === cal) & (fCalCnt.value === 0.U)
 
   //  val pSumMem = Mem(pSumMemLen, SInt(w.W))
-  val pSumSRAM = Module(new SRAM()) // 256 16bits
-  pSumSRAM.io.rstLowas := reset.asUInt() + 1.U
+  val pSumSRAM = Module(new MySRAM) // 256 16bits
+  pSumSRAM.io.rstLowas := reset
   pSumSRAM.io.din := 0.S
   io.oSumSRAM.bits := 0.S
 
@@ -263,7 +263,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       for (i <- Range(0, pSumMemLen)) {
         //        pSumMem(i) := 0.S
       }
-      pSumSRAM.io.rstLowas := 0.U
+      pSumSRAM.io.rstLowas := 1.U
       switch(mode) {
         is(normal) {
         }

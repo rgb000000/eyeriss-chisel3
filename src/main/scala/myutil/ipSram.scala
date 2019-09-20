@@ -4,8 +4,10 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental._
 
+import scala.collection.script.Reset
+
 class DW_ram_r_w_s_dff extends BlackBox with HasBlackBoxResource {
-  val io = IO(new Bundle{
+  val io = IO(new Bundle {
     val clk = Input(Clock())
     val rst_n = Input(UInt(1.W))
     val cs_n = Input(UInt(1.W))
@@ -18,8 +20,39 @@ class DW_ram_r_w_s_dff extends BlackBox with HasBlackBoxResource {
   setResource("/DW_ram_r_w_s_dff.v")
 }
 
-class SRAM extends Module{
-  val io = IO(new Bundle{
+class MySRAM(len: Int = 8) extends Module {
+  val io = IO(new Bundle {
+    val we = Input(UInt(1.W))
+    val addr = Input(UInt(8.W))
+    val din = Input(SInt(16.W))
+    val dout = Output(SInt(16.W))
+    val rstLowas = Input(Bool())
+  })
+  withReset(io.rstLowas) {
+    val regfile = RegInit(VecInit(Seq.fill(len)(0.S(16.W))))
+    // read
+    io.dout := regfile(io.addr)
+    when(io.we === 0.U) {
+      // write
+      regfile(io.addr) := io.din
+    }
+  }
+
+  def read(addr: UInt): SInt = {
+    io.addr := addr
+    io.we := 1.U
+    io.dout
+  }
+
+  def write(addr: UInt, data: SInt): Unit = {
+    io.addr := addr
+    io.we := 0.U
+    io.din := data
+  }
+}
+
+class SRAM extends Module {
+  val io = IO(new Bundle {
     val we = Input(UInt(1.W))
     val addr = Input(UInt(8.W))
     val din = Input(SInt(16.W))
@@ -36,18 +69,19 @@ class SRAM extends Module{
   ram.io.data_in := io.din
   io.dout := ram.io.data_out
 
-  def read(addr: UInt):SInt = {
+  def read(addr: UInt): SInt = {
     io.addr := addr
     io.we := 1.U
     io.dout
   }
-  def write(addr:UInt, data: SInt): Unit ={
+
+  def write(addr: UInt, data: SInt): Unit = {
     io.addr := addr
     io.we := 0.U
     io.din := data
   }
 }
 
-object SRAM{
+object SRAM {
   def apply: SRAM = new SRAM()
 }
