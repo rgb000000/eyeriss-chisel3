@@ -14,6 +14,7 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
     val oSumSRAM = Decoupled(SInt((16).W))
     val stateOut = Output(UInt(4.W))
     val dataDone = Output(Bool())
+    val totalFilterNum = Input(UInt(16.W))
   })
   val pe = Module(new PE(256, 256, 256, w, position))
   val fIn = Queue(io.filter, 8)
@@ -21,6 +22,8 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
   //  val oSumOut = Queue(pe.io.oSumMEM, 256)
   val oSumOut2 = Queue(pe.io.oSumSRAM, 8)
   //  core.dontTouch(pe.io.oSumMEM.ready)
+
+  pe.io.totalFilterNum := io.totalFilterNum
 
   //  override def desiredName: String = position.toString()
 

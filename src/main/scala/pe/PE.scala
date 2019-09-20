@@ -6,7 +6,7 @@ import chisel3.util._
 import myutil._
 
 
-class PEConfigReg(val w: Int = 16) extends Bundle {
+class PEConfigReg(val w: Int = 8) extends Bundle {
   val filterNum = UInt(w.W)
   val singleFilterLen = UInt(w.W)
   val imgNum = UInt(w.W)
@@ -26,7 +26,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
     // 01 -> getData
     // 10 -> cal
     val stateSW = Input(UInt(2.W))
-    val regConfig = Input(new PEConfigReg(16))
+    val regConfig = Input(new PEConfigReg())
 
     val filter = Flipped(DecoupledIO(SInt(w.W)))
     val img = Flipped(DecoupledIO(SInt(w.W)))
@@ -36,6 +36,8 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 
     val stateOut = Output(UInt(4.W))
     val dataDone = Output(Bool())
+
+    val totalFilterNum = Input(UInt(16.W))
   })
 
   //  override def desiredName: String = position.toString()
@@ -43,7 +45,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val y = WireInit(position._2.U(8.W))
   core.dontTouch(x)
   core.dontTouch(y)
-  val configReg = Reg(new PEConfigReg(16))
+  val configReg = Reg(new PEConfigReg(8))
 
   io.pSumIn.ready := 0.U
   //  io.oSumMEM.valid := 0.U
@@ -102,7 +104,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   io.dataDone := false.B
   when(dodata) {
     iQMuxIn <> io.img
-    when(iCnt.value === configReg.singleFilterLen * configReg.nchannel) {
+    when(iCnt.value === io.totalFilterNum) {
       iQMuxIn.valid := 0.U
       io.img.ready := 0.U
       io.dataDone := true.B
@@ -196,7 +198,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 
           //          io.oSumMEM.bits := 0.S
           io.oSumSRAM.bits := 0.S
-          when((calCnt.value === configReg.singleFilterLen * configReg.nchannel)) {
+          when((calCnt.value === io.totalFilterNum)) {
             //            io.oSumMEM.valid := 1.U
             //            io.oSumMEM.bits := pResultLast
 
@@ -204,7 +206,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             io.oSumSRAM.bits := pResultLastSRAM
             // io.oSum.bits := fQ.bits * iQreg + pSumMem(addr)
             //                           /*^*/
-          }.elsewhen((calCnt.value === /*|*/ configReg.singleFilterLen * configReg.nchannel - 1.U) &
+          }.elsewhen((calCnt.value === /*|*/ io.totalFilterNum - 1.U) &
             (fCalCnt.value === 0.U)) { // 0 mean the last
             //            io.oSumMEM.valid := 1.U         /*v*/   // when the first result it use iQ.bits, else will use iQreg
             //            io.oSumMEM.bits := pResultCurrect
@@ -227,7 +229,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             }
 
             calCnt.inc()
-            when((configReg.filterNum === 1.U) & (calCnt.value === configReg.singleFilterLen * configReg.nchannel - 1.U) &
+            when((configReg.filterNum === 1.U) & (calCnt.value === io.totalFilterNum - 1.U) &
               (fCalCnt.value === 0.U)) {
               calCnt.value := 0.U
               pSumAddr.inc()
@@ -244,7 +246,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             }
 
             //            calCnt.inc()
-            when((calCnt.value === configReg.singleFilterLen * configReg.nchannel) &
+            when((calCnt.value === io.totalFilterNum) &
               (fCalCnt.value === configReg.filterNum - 1.U)) {
               calCnt.value := 0.U
               pSumAddr.inc()

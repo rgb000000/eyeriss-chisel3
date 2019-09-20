@@ -48,6 +48,8 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   val colLen = WireInit(io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U)
   val rowLen = WireInit(io.peconfig.singleFilterLen)
 
+  val totalFilterNum = RegNext(io.peconfig.singleFilterLen * io.peconfig.nchannel)
+
   val NoC = List[List[Node]]().toBuffer
   val pes = List[List[PETesterTop]]().toBuffer
   for (i <- Range(0, shape._1)) {
@@ -57,6 +59,7 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
       val node = Module(new Node(j == 0, (i, j), w))
       if (j != 0) {
         val pe = Module(new PETesterTop((i, j - 1), w))
+        pe.io.totalFilterNum := totalFilterNum
         pe.io.pSumIn.bits := 0.S
         pe.io.pSumIn.valid := 0.U
         //        pe.io.oSumMEM.ready := 0.U
