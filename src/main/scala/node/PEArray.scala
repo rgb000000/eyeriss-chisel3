@@ -44,7 +44,7 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   val doneReg = RegInit(0.U(1.W))
   io.done := doneReg
 
-  val dataInQ = Queue(io.dataIn, 73984)
+  val dataInQ = Queue(io.dataIn, 4)
   val colLen = WireInit(io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U)
   val rowLen = WireInit(io.peconfig.singleFilterLen)
 

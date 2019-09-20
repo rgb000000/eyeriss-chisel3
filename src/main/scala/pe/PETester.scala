@@ -16,10 +16,10 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
     val dataDone = Output(Bool())
   })
   val pe = Module(new PE(256, 256, 256, w, position))
-  val fIn = Queue(io.filter, 256)
-  val iIn = Queue(io.img, 256)
+  val fIn = Queue(io.filter, 8)
+  val iIn = Queue(io.img, 8)
   //  val oSumOut = Queue(pe.io.oSumMEM, 256)
-  val oSumOut2 = Queue(pe.io.oSumSRAM, 256)
+  val oSumOut2 = Queue(pe.io.oSumSRAM, 8)
   //  core.dontTouch(pe.io.oSumMEM.ready)
 
   //  override def desiredName: String = position.toString()
