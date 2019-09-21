@@ -30,7 +30,7 @@ class Top(val aw:Int = 3, val dw:Int = 8) extends Module{
   val pool = Module(new maxPooling())
   val regfile = Module(new RegFile())
   pea.io.dataIn <> ctrl.io.dout
-  pea.io.bias := ctrl.io.bias
+  pea.io.bias <> ctrl.io.bias
   pea.io.stateSW := ctrl.io.stateSW
 
   regfile.io.we := io.regfile.we

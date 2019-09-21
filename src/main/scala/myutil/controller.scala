@@ -15,12 +15,14 @@ class RAMInterface(val aw:Int=20, val dw:Int=280) extends Bundle{
 }
 
 class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
-                 aw:Int=20, dw:Int=280, w:Int = 8) extends Module{
+                 aw:Int=20, dw:Int=280, w:Int = 8,
+                 singleFilterNum:Int = 3*64 -1
+                ) extends Module{
   val io = IO(new Bundle{
     val ram = Flipped(new RAMInterface(aw, dw))
 //    val config = Input(new PEConfigReg)
     val dout = Decoupled(new dataPackage(w))
-    val bias = Output(SInt((w*2).W))
+    val bias = DecoupledIO(SInt((w*2).W))
     val stateSW = Output(UInt(2.W))
     val readGo = Input(Bool())
     val dataDone = Input(Bool())
@@ -72,7 +74,11 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
   val col_reg = Reg(SInt(8.W))
 
   val bias = Reg(SInt((2*w).W))
-  io.bias := bias
+  val biasqIn = Wire(DecoupledIO(SInt((2*w).W)))
+  val biasq = Queue(biasqIn, 8)
+  io.bias <> biasq
+  biasqIn.bits := 0.S
+  biasqIn.valid := 0.U
 
   switch(state){
     is(idle){
@@ -97,7 +103,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
       qin.bits.cnt := 1.U
       qin.bits.positon.col := (-1).S
       qin.bits.positon.row := row_reg
-      when(fcnt.value === 191.U){
+      when(fcnt.value === singleFilterNum.asUInt()){
         when(row_reg === 2.S){
           state := img
           row_reg := 0.S
@@ -109,7 +115,8 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
           })
           tmp.high := qin.bits.data(34).asUInt()
           tmp.low := qin.bits.data(33).asUInt()
-          bias := tmp.asUInt().asSInt()
+          biasqIn.bits := tmp.asUInt().asSInt()
+          biasqIn.valid := 1.U
         }.otherwise{
           row_reg := row_reg + 1.S
           fcnt.value := 0.U

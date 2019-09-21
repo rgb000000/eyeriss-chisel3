@@ -70,7 +70,7 @@ class Fudan(c: PEArray) extends PeekPokeTester(c) {
   }
 
   poke(c.io.stateSW, 0)
-  poke(c.io.bias, bias)
+//  poke(c.io.bias, bias)
   step(100) // because PE buf state, so need 1 clock
 
   // second send basic infotmation to PE, include filterNum, singleFilterLen, imgNum, singleImgLen, nchannel
