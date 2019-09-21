@@ -56,7 +56,7 @@ object DM2file extends {
     for (i <- filter2d.indices){
       for(j <- filter2d(0).indices){
         if((i == filter2d.length - 1) & (j == filter2d(0).length - 1)){
-          w.write(f"${bias.toByte}%02x".toUpperCase() + f"${filter2d(i)(j).toByte}%068x".toUpperCase() + "\n")
+          w.write(f"${bias.toByte}%04x".toUpperCase() + f"${filter2d(i)(j).toByte}%066x".toUpperCase() + "\n")
         }else{
           w.write(f"${filter2d(i)(j).toByte}%02x".toUpperCase() + "\n")
         }

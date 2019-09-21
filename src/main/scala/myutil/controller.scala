@@ -20,7 +20,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
     val ram = Flipped(new RAMInterface(aw, dw))
 //    val config = Input(new PEConfigReg)
     val dout = Decoupled(new dataPackage(w))
-    val bias = Output(SInt(w.W))
+    val bias = Output(SInt((w*2).W))
     val stateSW = Output(UInt(2.W))
     val readGo = Input(Bool())
     val dataDone = Input(Bool())
@@ -71,7 +71,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
   val row_reg = Reg(SInt(8.W))
   val col_reg = Reg(SInt(8.W))
 
-  val bias = Reg(SInt(8.W))
+  val bias = Reg(SInt((2*w).W))
   io.bias := bias
 
   switch(state){
@@ -103,7 +103,13 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
           row_reg := 0.S
           col_reg := 0.S
           fcnt.value := 0.U
-          bias := qin.bits.data(34)
+          val tmp = Wire(new Bundle{
+            val high = UInt(w.W)
+            val low = UInt(w.W)
+          })
+          tmp.high := qin.bits.data(34).asUInt()
+          tmp.low := qin.bits.data(33).asUInt()
+          bias := tmp.asUInt().asSInt()
         }.otherwise{
           row_reg := row_reg + 1.S
           fcnt.value := 0.U
