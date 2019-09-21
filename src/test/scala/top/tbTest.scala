@@ -13,7 +13,6 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
   val nchannel = info("nchannel")
   val fLen = info("fLen")
   val iLen = info("iLen")
-  val bias = info("bias")
   val singLen = info("singLen")
 
   def writeReg(addr:Int, data:Int): Unit ={

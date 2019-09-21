@@ -3,6 +3,7 @@ package node
 import chisel3._
 import chisel3.internal.naming.chiselName
 import chisel3.util._
+import chisel3.experimental._
 import pe._
 import myutil._
 
@@ -46,15 +47,16 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   val biasQ = Queue(biasqIn, 8)
   val dobias = Wire(UInt(1.W))
   dobias := 0.U
+  dontTouch(dobias)
   biasQ.ready := 0.U
   io.bias.ready := 0.U
   when(io.stateSW === 1.U){
     biasqIn <> io.bias
   }.otherwise{
     biasqIn.bits := biasQ.bits
-    biasqIn.valid := biasQ.valid
-    biasqIn.ready := dobias
+    dobias := io.oSumSRAM(0).valid
     biasQ.ready := dobias
+    biasqIn.valid := dobias
   }
 
   val doneReg = RegInit(0.U(1.W))
@@ -160,7 +162,6 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
       }
       tmp
     }).reduce(_ + _) + biasQ.bits
-    dobias := io.oSumSRAM(i).valid
     saturation.io.dataIn := temp
     when(io.peconfig.relu === 1.U & saturation.io.dataOut < 0.S) {
       io.oSumSRAM(i).bits := 0.S

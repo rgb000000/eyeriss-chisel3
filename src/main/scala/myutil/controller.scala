@@ -14,9 +14,9 @@ class RAMInterface(val aw:Int=20, val dw:Int=280) extends Bundle{
   val dout = Output(Vec(dw / 8, SInt(8.W)))
 }
 
-class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
+class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
                  aw:Int=20, dw:Int=280, w:Int = 8,
-                 singleFilterNum:Int = 3*64 -1
+                 singleFilterNum:Int = 3*64
                 ) extends Module{
   val io = IO(new Bundle{
     val ram = Flipped(new RAMInterface(aw, dw))
@@ -27,7 +27,9 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
     val readGo = Input(Bool())
     val dataDone = Input(Bool())
     val oSumSRAM = Vec(32/2, Flipped(DecoupledIO(SInt(8.W))))
+    val peconfig = Input(new PEConfigReg())
   })
+
   val faddr_reg = RegInit(faddr.asUInt(16.W))
   val iaddr_reg = RegInit(iaddr.asUInt(16.W))
 
@@ -68,6 +70,10 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
 
   // read logic
   val fcnt = Counter(192)
+  val fchannel = Counter(256)
+  val fNum = Counter(256)
+  val fLen = Counter(256)
+
   val icnt = Counter(192)
   val data_cnt = Reg(UInt(8.W))
   val row_reg = Reg(SInt(8.W))
@@ -97,18 +103,33 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
         faddr_reg := faddr_reg + 1.U
         total_filter := total_filter - 1.U
         fcnt.inc()
-      }
-      qin.bits.dataType := 0.U
-      qin.bits.data := io.ram.dout
-      qin.bits.cnt := 1.U
-      qin.bits.positon.col := (-1).S
-      qin.bits.positon.row := row_reg
-      when(fcnt.value === singleFilterNum.asUInt()){
-        when(row_reg === 2.S){
-          state := img
-          row_reg := 0.S
-          col_reg := 0.S
-          fcnt.value := 0.U
+        when(fNum.value === io.peconfig.filterNum - 1.U){
+          fNum.value := 0.U
+          when(fchannel.value === io.peconfig.nchannel - 1.U){
+            fchannel.value := 0.U
+            when(fLen.value === io.peconfig.singleFilterLen - 1.U){
+              fLen.value := 0.U
+              when(row_reg === 2.S){
+                state := img
+                row_reg := 0.S
+                col_reg := 0.S
+                fcnt.value := 0.U
+              }.otherwise{
+                row_reg := row_reg + 1.S
+                fcnt.value := 0.U
+              }
+            }.otherwise{
+              fLen.inc()
+            }
+          }.otherwise{
+            fchannel.inc()
+          }
+        }.otherwise{
+          fNum.inc()
+        }
+        when((fchannel.value === io.peconfig.nchannel - 1.U) &
+          (row_reg === 2.S) &
+          (fLen.value === io.peconfig.singleFilterLen - 1.U)){
           val tmp = Wire(new Bundle{
             val high = UInt(w.W)
             val low = UInt(w.W)
@@ -117,11 +138,35 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x240, waddr:Int = 0x8000,
           tmp.low := qin.bits.data(33).asUInt()
           biasqIn.bits := tmp.asUInt().asSInt()
           biasqIn.valid := 1.U
-        }.otherwise{
-          row_reg := row_reg + 1.S
-          fcnt.value := 0.U
         }
       }
+      qin.bits.dataType := 0.U
+      qin.bits.data := io.ram.dout
+      qin.bits.cnt := 1.U
+      qin.bits.positon.col := (-1).S
+      qin.bits.positon.row := row_reg
+
+
+//      when(fcnt.value === singleFilterNum.asUInt()){
+//        when(row_reg === 2.S){
+//          state := img
+//          row_reg := 0.S
+//          col_reg := 0.S
+//          fcnt.value := 0.U
+//          val tmp = Wire(new Bundle{
+//            val high = UInt(w.W)
+//            val low = UInt(w.W)
+//          })
+//          tmp.high := qin.bits.data(34).asUInt()
+//          tmp.low := qin.bits.data(33).asUInt()
+//          biasqIn.bits := tmp.asUInt().asSInt()
+//          biasqIn.valid := 1.U
+//        }.otherwise{
+//          row_reg := row_reg + 1.S
+//          fcnt.value := 0.U
+//        }
+//      }
+
     }
     is(img){
       when(io.dataDone){

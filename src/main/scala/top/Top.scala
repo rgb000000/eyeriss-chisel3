@@ -39,13 +39,16 @@ class Top(val aw:Int = 3, val dw:Int = 8) extends Module{
   regfile.io.din := io.regfile.din
   io.regfile.dout := regfile.io.dout
   pea.io.peconfig := regfile.io.peconfig
+  ctrl.io.peconfig := regfile.io.peconfig
 //  pea.io.peconfig := io.peconfig
+  pool.io.channelOutNum := regfile.io.peconfig.filterNum
 
   ctrl.io.dataDone := pea.io.dataDone
   ctrl.io.ram <> io.ram
   ctrl.io.readGo := regfile.io.go
 
-  io.done := pea.io.done
+  pool.io.peaDone := pea.io.done
+  io.done := pool.io.allDone
   pea.io.oSumSRAM <> pool.io.din
   io.oSumSRAM <> pool.io.dout
   ctrl.io.oSumSRAM <> pool.io.dout

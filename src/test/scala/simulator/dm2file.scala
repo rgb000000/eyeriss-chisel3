@@ -43,7 +43,7 @@ object DM2fileOnce extends App {
 }
 
 object DM2file extends {
-  def apply(filter2d:List[List[Int]], img2d:List[List[Int]], bias:Int = 0,
+  def apply(filter2d:List[List[Int]], img2d:List[List[Int]], bias:DenseMatrix[Int],
             path:String="/home/SW/PRJ/eyeriss-chisel3/src/main/resources/ram.mem"): Unit ={
     val w = new PrintWriter(new File(path))
 //    filter2d.foreach((l)=>{
@@ -53,10 +53,15 @@ object DM2file extends {
 //        }
 //      )
 //    })
+    val fnum = bias.size
+    var biasNum = 0
     for (i <- filter2d.indices){
       for(j <- filter2d(0).indices){
-        if((i == filter2d.length - 1) & (j == filter2d(0).length - 1)){
-          w.write(f"${bias.toShort}%04x".toUpperCase() + f"${filter2d(i)(j).toByte}%066x".toUpperCase() + "\n")
+        if((i == filter2d.length - 1) & (j > filter2d(0).length - fnum - 1)){
+          w.write(f"${bias(0, biasNum).toShort}%04x".toUpperCase() + f"${filter2d(i)(j).toByte}%066x".toUpperCase() + "\n")
+          println(i)
+          println(j)
+          biasNum += 1
         }else{
           w.write(f"${filter2d(i)(j).toByte}%02x".toUpperCase() + "\n")
         }
@@ -97,13 +102,13 @@ object GenTestData{
 
     var filter = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
     var img = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
-    var filterNum = 1
+    var filterNum = 2
     var imgNum = 1
     var nchannel = 64
     var fLen = 3
     var iLen = 34 // padding = 1
     var maxLen = 0
-    var bias = util.Random.nextInt(64) - 32
+    var bias = DenseMatrix.fill[Int](1, filterNum)(scala.util.Random.nextInt(64) - 32)
     filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
     img = DenseMatrix.fill(nchannel, imgNum)(SW.randomMatrix((iLen, iLen)))
     maxLen = if (filterNum * fLen * nchannel > imgNum * iLen * nchannel) {
@@ -112,7 +117,7 @@ object GenTestData{
       imgNum * iLen * nchannel
     }
 
-    var sw1 = SW.conv4d(filter, img, true, bias=DenseMatrix.fill[Int](1, filter.cols )(bias))
+    var sw1 = SW.conv4d(filter, img, true, bias=bias)
     val filter2d = SW.fd2List(filter, 0)
     val img2d = SW.fd2List(img, 1)
 
@@ -147,8 +152,7 @@ object GenTestData{
     DM2file(filter2d, img2d, bias)
 
     (Map("filterNum"->filterNum, "fLen"->fLen, "imgNum"->imgNum, "iLen"->iLen,
-      "nchannel"->nchannel, "singLen"->singLen, "bias"->bias
-    ), sw1d.toList)
+      "nchannel"->nchannel, "singLen"->singLen), sw1d.toList)
   }
 }
 
