@@ -15,7 +15,7 @@ class regfileInterface(val aw:Int = 3, val dw:Int = 8) extends Bundle{
   val dout = Output(UInt(dw.W))
 }
 
-class Top(val aw:Int = 3, val dw:Int = 8) extends Module{
+class Top(val faddr:Int = 0x0000, val iaddr:Int = 0x0480, val aw:Int = 3, val dw:Int = 8) extends Module{
   val io = IO(new Bundle{
 //    val peconfig = Input(new PEConfigReg(16))
     val ram = Flipped(new RAMInterface())
@@ -26,7 +26,7 @@ class Top(val aw:Int = 3, val dw:Int = 8) extends Module{
     val regfile = new regfileInterface()
   })
   val pea = Module(new PEArray((3, 32)))
-  val ctrl = Module(new Controller())
+  val ctrl = Module(new Controller(faddr=faddr, iaddr=iaddr))
   val pool = Module(new maxPooling())
   val regfile = Module(new RegFile())
   pea.io.dataIn <> ctrl.io.dout
@@ -54,7 +54,7 @@ class Top(val aw:Int = 3, val dw:Int = 8) extends Module{
   ctrl.io.oSumSRAM <> pool.io.dout
 }
 
-class TB extends Module{
+class TB(val faddr:Int = 0x0000, val iaddr:Int = 0x0480) extends Module{
   val io = IO(new Bundle{
 //    val peconfig = Input(new PEConfigReg(16))
     val done = Output(Bool())
@@ -63,7 +63,7 @@ class TB extends Module{
     val dataCheck = Vec(32/2, Output(SInt(8.W)))
     val regfile = new regfileInterface()
   })
-  val top = Module(new Top)
+  val top = Module(new Top(faddr=faddr, iaddr=iaddr))
   val ram  = Module(new RAM)
 
   top.io.regfile <> io.regfile

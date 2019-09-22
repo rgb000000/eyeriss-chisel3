@@ -68,7 +68,7 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
 }
 
 class tbTester extends ChiselFlatSpec {
-  val filterNum = 2
+  val filterNum = 1
   val imgNum = 1
   val nchannel = 64
   val fLen = 3
@@ -78,7 +78,7 @@ class tbTester extends ChiselFlatSpec {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_TB_vcd", "--backend-name", "verilator",
         "--top-name", "make_TB_vcd"),
-      () => new TB) {
+      () => new TB(0x0000, 0x240 << (filterNum-1))) {
       c => new tbTest(c, myinfo, sw1d)
     } should be(true)
     //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
