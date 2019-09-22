@@ -15,8 +15,7 @@ class RAMInterface(val aw:Int=20, val dw:Int=280) extends Bundle{
 }
 
 class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
-                 aw:Int=20, dw:Int=280, w:Int = 8,
-                 singleFilterNum:Int = 3*64
+                 aw:Int=20, dw:Int=280, w:Int = 8
                 ) extends Module{
   val io = IO(new Bundle{
     val ram = Flipped(new RAMInterface(aw, dw))
@@ -109,11 +108,16 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
             fchannel.value := 0.U
             when(fLen.value === io.peconfig.singleFilterLen - 1.U){
               fLen.value := 0.U
-              when(row_reg === 2.S){
+              when(row_reg === (io.peconfig.singleFilterLen - 1.U).asSInt()){
                 state := img
                 row_reg := 0.S
                 col_reg := 0.S
                 fcnt.value := 0.U
+
+                fNum.value := 0.U
+                fchannel.value := 0.U
+                fLen.value := 0.U
+
               }.otherwise{
                 row_reg := row_reg + 1.S
                 fcnt.value := 0.U
@@ -127,6 +131,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
         }.otherwise{
           fNum.inc()
         }
+        // read bias
         when((fchannel.value === io.peconfig.nchannel - 1.U) &
           (row_reg === 2.S) &
           (fLen.value === io.peconfig.singleFilterLen - 1.U)){
@@ -177,15 +182,49 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
       when(qin.fire()){
         iaddr_reg := iaddr_reg + 1.U
         total_img := total_img - 1.U
-        fcnt.inc()
-        when(total_img === 1.U){
-          state := end
+
+//        when(fchannel.value === io.peconfig.nchannel - 1.U){
+//          fchannel.value := 0.U
+//          when(fLen.value === io.peconfig.singleImgLen - 1.U){
+//            fLen.value := 0.U
+//            when(fNum.value === io.peconfig.imgNum - 1.U){
+//              when(row_reg === (io.peconfig.singleImgLen - 1.U).asSInt()){
+//                row_reg := 0.U
+//                state := end
+//              }.otherwise{
+//                row_reg := row_reg + 1.S
+//              }
+//            }.otherwise{
+//              fNum.inc()
+//            }
+//          }.otherwise{
+//            fLen.inc()
+//          }
+//        }.otherwise{
+//          fchannel.inc()
+//        }
+        when(fNum.value === io.peconfig.singleImgLen - 1.U){
+          fNum.value := 0.U
+          when(fLen.value === io.peconfig.nchannel - 1.U){
+            fLen.value := 0.U
+            state := end
+          }.otherwise{
+            fLen.inc()
+          }
+        }.otherwise{
+          fNum.inc()
         }
+
+        fcnt.inc()
+//        when(total_img === 1.U){
+//          state := end
+//        }
         when(row_reg === 33.S){
           row_reg := 0.S
         }.otherwise{
           row_reg := row_reg + 1.S
         }
+
       }
       qin.bits.dataType := 1.U
       qin.bits.data := io.ram.dout

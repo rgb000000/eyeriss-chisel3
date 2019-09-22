@@ -84,7 +84,7 @@ object DM2file extends {
 }
 
 object GenTestData{
-  def apply(): (Map[String, Int], List[Int])={
+  def apply(filterNum:Int, imgNum:Int, nchannel:Int, fLen:Int, iLen:Int): (Map[String, Int], List[Int])={
     def saturationSW(x: Int, scale:Int = 4): Int = {
       val tmp = if (x >= 0) {
         x / ((1<<scale)*1.0) + 0.5
@@ -102,11 +102,6 @@ object GenTestData{
 
     var filter = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
     var img = DenseMatrix.fill(3, 3)(DenseMatrix.fill(3, 3)(0))
-    var filterNum = 2
-    var imgNum = 1
-    var nchannel = 64
-    var fLen = 3
-    var iLen = 34 // padding = 1
     var maxLen = 0
     var bias = DenseMatrix.fill[Int](1, filterNum)(scala.util.Random.nextInt(64) - 32)
     filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
@@ -157,5 +152,10 @@ object GenTestData{
 }
 
 object app extends App{
-  GenTestData()
+  val filterNum = 2
+  val imgNum = 1
+  val nchannel = 64
+  val fLen = 3
+  val iLen = 34 // padding = 1
+  GenTestData(filterNum, imgNum, nchannel, fLen, iLen)
 }

@@ -68,7 +68,12 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
 }
 
 class tbTester extends ChiselFlatSpec {
-  val (myinfo, sw1d) = GenTestData()
+  val filterNum = 2
+  val imgNum = 1
+  val nchannel = 64
+  val fLen = 3
+  val iLen = 34 // padding = 1
+  val (myinfo, sw1d) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen)
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_TB_vcd", "--backend-name", "verilator",
