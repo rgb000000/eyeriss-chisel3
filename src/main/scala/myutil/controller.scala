@@ -27,12 +27,16 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
     val dataDone = Input(Bool())
     val oSumSRAM = Vec(32/2, Flipped(DecoupledIO(SInt(8.W))))
     val peconfig = Input(new PEConfigReg())
+    val loop = Input(UInt(8.W))
+    val peaReset = Output(Bool())
+    val onceDone = Input(Bool())
+    val allDone = Output(Bool())
   })
 
   val faddr_reg = RegInit(faddr.asUInt(16.W))
   val iaddr_reg = RegInit(iaddr.asUInt(16.W))
 
-  val idle :: filter :: img :: end :: Nil = Enum(4)
+  val idle :: filter :: img :: end :: allEnd :: Nil = Enum(5)
   val state = RegInit(idle)
   val qin = Wire(io.dout.cloneType)
   qin.bits.data.foreach(_ := 0.S)
@@ -85,11 +89,17 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
   biasqIn.bits := 0.S
   biasqIn.valid := 0.U
 
+  val loop = Reg(UInt(8.W))
+  io.peaReset := false.B
+
+  io.allDone := 0.U
+
   switch(state){
     is(idle){
       row_reg := 0.S
       col_reg := 0.S
       data_cnt := 0.U
+      loop := io.loop
       when(io.readGo){
         state := filter
         stateSW := 1.U  // pearray get data
@@ -207,6 +217,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
           fNum.value := 0.U
           when(fLen.value === io.peconfig.nchannel - 1.U){
             fLen.value := 0.U
+            fNum.value := 0.U
             state := end
           }.otherwise{
             fLen.inc()
@@ -233,7 +244,18 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
       qin.bits.positon.row := row_reg
     }
     is(end){
-
+      when(io.onceDone){
+        when(loop === 1.U){
+          state := allEnd
+        }.otherwise{
+          iaddr_reg := iaddr.asUInt(16.W)
+          state := filter
+          io.peaReset := true.B
+        }
+      }
+    }
+    is(allEnd){
+      io.allDone := 1.U
     }
   }
 

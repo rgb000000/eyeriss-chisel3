@@ -1,11 +1,12 @@
 package top
 
 import chisel3._
+import chisel3.core.withReset
 import chisel3.internal.naming.chiselName
 import chisel3.util._
 import node._
 import myutil._
-import  pe._
+import pe._
 
 class regfileInterface(val aw:Int = 3, val dw:Int = 8) extends Bundle{
   val we = Input(Bool())
@@ -25,9 +26,10 @@ class Top(val faddr:Int = 0x0000, val iaddr:Int = 0x0480, val aw:Int = 3, val dw
     // control regfile
     val regfile = new regfileInterface()
   })
-  val pea = Module(new PEArray((3, 32)))
   val ctrl = Module(new Controller(faddr=faddr, iaddr=iaddr))
-  val pool = Module(new maxPooling())
+  val global_reset = WireInit(reset)
+  val pea = withReset(global_reset.asBool() | ctrl.io.peaReset){Module(new PEArray((3, 32)))}
+  val pool = withReset(global_reset.asBool() | ctrl.io.peaReset){Module(new maxPooling())}
   val regfile = Module(new RegFile())
   pea.io.dataIn <> ctrl.io.dout
   pea.io.bias <> ctrl.io.bias
@@ -40,6 +42,9 @@ class Top(val faddr:Int = 0x0000, val iaddr:Int = 0x0480, val aw:Int = 3, val dw
   io.regfile.dout := regfile.io.dout
   pea.io.peconfig := regfile.io.peconfig
   ctrl.io.peconfig := regfile.io.peconfig
+  ctrl.io.loop := regfile.io.loop
+
+  ctrl.io.onceDone := pea.io.done
 //  pea.io.peconfig := io.peconfig
   pool.io.channelOutNum := regfile.io.peconfig.filterNum
 
@@ -48,7 +53,8 @@ class Top(val faddr:Int = 0x0000, val iaddr:Int = 0x0480, val aw:Int = 3, val dw
   ctrl.io.readGo := regfile.io.go
 
   pool.io.peaDone := pea.io.done
-  io.done := pool.io.allDone
+//  io.done := pool.io.allDone
+  io.done := ctrl.io.allDone
   pea.io.oSumSRAM <> pool.io.din
   io.oSumSRAM <> pool.io.dout
   ctrl.io.oSumSRAM <> pool.io.dout

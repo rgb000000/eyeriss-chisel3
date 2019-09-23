@@ -14,6 +14,7 @@ class RegFile(val len:Int = 8, val aw:Int = 3, val dw:Int = 8) extends Module{
     val dout = Output(UInt(8.W))
     val peconfig = Output(new PEConfigReg(dw))
     val go = Output(UInt(1.W))
+    val loop = Output(UInt(8.W))
   })
 
   val regfile = RegInit(VecInit(Seq.fill(len)(0.U(dw.W))))
@@ -29,7 +30,7 @@ class RegFile(val len:Int = 8, val aw:Int = 3, val dw:Int = 8) extends Module{
   io.peconfig.singleImgLen := regfile(3)
   io.peconfig.nchannel := regfile(4)
   io.peconfig.relu := regfile(5)
-
+  io.loop := regfile(6)
   io.go := regfile(7)
 
 }
