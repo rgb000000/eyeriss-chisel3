@@ -106,6 +106,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
       }
     }
     is(filter){
+      stateSW := 1.U
       qin.valid := 1.U
       io.ram.raddr := faddr_reg
       when(qin.fire()){
@@ -218,6 +219,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
           when(fLen.value === io.peconfig.nchannel - 1.U){
             fLen.value := 0.U
             fNum.value := 0.U
+            row_reg := 0.S
             state := end
           }.otherwise{
             fLen.inc()
@@ -249,8 +251,10 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
           state := allEnd
         }.otherwise{
           iaddr_reg := iaddr.asUInt(16.W)
+          stateSW := 0.U
           state := filter
           io.peaReset := true.B
+          loop := loop - 1.U
         }
       }
     }

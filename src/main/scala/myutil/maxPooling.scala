@@ -27,8 +27,8 @@ class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 8) ex
     val q = Queue(qIn, 2)
     val state = RegInit(ud)
     dontTouch(state)
-    val out = Reg(Vec(channelOut, SInt(8.W)))
-    val out2 = Reg(Vec(channelOut, SInt(8.W)))
+    val out = RegInit(VecInit(Seq.fill(channelOut)(0.asSInt(8.W))))
+    val out2 = RegInit(VecInit(Seq.fill(channelOut)(0.asSInt(8.W))))
     val channelCnt = Counter(channelOut)
     din(i)(0).ready := qIn.ready
     din(i)(1).ready := qIn.ready

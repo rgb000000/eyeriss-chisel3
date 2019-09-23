@@ -6,7 +6,7 @@ import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
 import breeze.linalg._
 import simulator._
 
-class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTester(c) {
+class tbTest(c: TB, info: Map[String, Int], sw1d: List[List[Int]]) extends PeekPokeTester(c) {
 
   val filterNum = info("filterNum")
   val imgNum = info("imgNum")
@@ -14,6 +14,9 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
   val fLen = info("fLen")
   val iLen = info("iLen")
   val singLen = info("singLen")
+  val loop = info("loop")
+
+  val onceLen = singLen * (iLen - fLen + 1)/2
 
   def writeReg(addr:Int, data:Int): Unit ={
     poke(c.io.regfile.we, 1)
@@ -28,7 +31,7 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
   writeReg(3, iLen)
   writeReg(4, nchannel)
   writeReg(5, 1)
-  writeReg(6, 1)
+  writeReg(6, loop)
 //  poke(c.io.peconfig.filterNum, filterNum)
 //  poke(c.io.peconfig.singleFilterLen, fLen)
 //  poke(c.io.peconfig.imgNum, imgNum)
@@ -43,25 +46,30 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[Int]) extends PeekPokeTes
 //  poke(c.io.readGo, 1)
 
   var error = 0
-  var jj = List.fill(c.io.oSumSRAM.length)(0).toBuffer
+  var jj = List.fill(loop, c.io.oSumSRAM.length)(0).map(_.toBuffer).toBuffer
   var row = 0
+  var times = 0
   while (peek(c.io.done) == 0) {
-    row += 1
     for (i <- c.io.oSumSRAM.indices) {
       if (peek(c.io.oSumSRAM(i).valid) == 1) {
-        expect(c.io.oSumSRAM(i).bits, sw1d(i * singLen + jj(i)))
-        if (peek(c.io.oSumSRAM(i).bits) != sw1d(i * singLen + jj(i))) {
-          println(s"${row} - ${i} : " + peek(c.io.oSumSRAM(i).bits).toString() + " --- " + sw1d(i * singLen + jj(i)).toString)
+        expect(c.io.oSumSRAM(i).bits, sw1d(times)(i * singLen + jj(times)(i)))
+        if (peek(c.io.oSumSRAM(i).bits) != sw1d(times)(i * singLen + jj(times)(i))) {
+          println("index : " + times.toString + " -- " + (i * singLen + jj(times)(i)).toString)
+          println(peek(c.io.oSumSRAM(i).bits).toString() + " --- " + sw1d(times)(i * singLen + jj(times)(i)).toString)
           error += 1
         }
-        jj(i) += 1
+        jj(times)(i) += 1
+        if(jj.map(_.reduce(_+_)).reduce(_+_) % onceLen == 0){
+          println("time: ===> " + times.toString)
+          times += 1
+        }
       }
     }
     step(1)
   }
   step(1)
-  println(s"jj reduce: ${jj.reduce(_ + _)}")
-  println(s"sw1d: ${sw1d.length}")
+  println(s"jj reduce: ${jj.map(_.reduce(_+_)).reduce(_ + _)}")
+  println(s"sw1d: ${sw1d.map(_.length).reduce(_+_)}")
   //  assert(jj.reduce(_ + _) == sw1d.length)
   step(200)
   reset(50)
@@ -74,13 +82,13 @@ class tbTester extends ChiselFlatSpec {
   val nchannel = 64
   val fLen = 3
   val iLen = 34 // padding = 1
-  val loop = 1
+  val loop = 8
   val (myinfo, sw1d) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_TB_vcd", "--backend-name", "verilator",
         "--top-name", "make_TB_vcd"),
-      () => new TB(0x0000, 0x240 << (filterNum-1))) {
+      () => new TB(0x0000, 0x240*filterNum*loop)) {
       c => new tbTest(c, myinfo, sw1d)
     } should be(true)
     //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)
