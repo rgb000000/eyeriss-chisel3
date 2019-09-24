@@ -82,11 +82,11 @@ class tbTester extends ChiselFlatSpec {
   val nchannel = 64
   val fLen = 3
   val iLen = 34 // padding = 1
-  val loop = 8
+  val loop = 64
   val (myinfo, sw1d) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
-      Array("--generate-vcd-output", "on", "--target-dir", "test_run_dir/make_TB_vcd", "--backend-name", "verilator",
+      Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_TB_vcd", "--backend-name", "verilator",
         "--top-name", "make_TB_vcd"),
       () => new TB(0x0000, 0x240*filterNum*loop)) {
       c => new tbTest(c, myinfo, sw1d)

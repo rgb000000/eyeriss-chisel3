@@ -14,7 +14,7 @@ class RAMInterface(val aw:Int=20, val dw:Int=280) extends Bundle{
   val dout = Output(Vec(dw / 8, SInt(8.W)))
 }
 
-class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
+class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
                  aw:Int=20, dw:Int=280, w:Int = 8
                 ) extends Module{
   val io = IO(new Bundle{
@@ -33,8 +33,8 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
     val allDone = Output(Bool())
   })
 
-  val faddr_reg = RegInit(faddr.asUInt(16.W))
-  val iaddr_reg = RegInit(iaddr.asUInt(16.W))
+  val faddr_reg = RegInit(faddr.asUInt(aw.W))
+  val iaddr_reg = RegInit(iaddr.asUInt(aw.W))
 
   val idle :: filter :: img :: end :: allEnd :: Nil = Enum(5)
   val state = RegInit(idle)
@@ -60,7 +60,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
   io.ram.waddr := 0.U
   io.ram.din.foreach(_ := 0.S)
   io.oSumSRAM.map(_.ready).foreach(_ := 1.U)
-  val waddr_reg = RegInit(waddr.asUInt(16.W))
+  val waddr_reg = RegInit(waddr.asUInt(20.W))
   // write logic
   when(io.oSumSRAM.map(_.fire()).reduce(_ & _)){
     io.ram.we := 1.U
@@ -250,7 +250,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x8000,
         when(loop === 1.U){
           state := allEnd
         }.otherwise{
-          iaddr_reg := iaddr.asUInt(16.W)
+          iaddr_reg := iaddr.asUInt(aw.W)
           stateSW := 0.U
           state := filter
           io.peaReset := true.B
