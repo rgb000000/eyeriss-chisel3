@@ -77,12 +77,12 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[List[Int]]) extends PeekP
 }
 
 class tbTester extends ChiselFlatSpec {
-  val filterNum = 2
+  val filterNum = 16
   val imgNum = 1
   val nchannel = 64
   val fLen = 3
   val iLen = 34 // padding = 1
-  val loop = 64
+  val loop = 8
   val (myinfo, sw1d) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
@@ -96,5 +96,5 @@ class tbTester extends ChiselFlatSpec {
 }
 
 object getTopVerilog extends App{
-  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_TOP3080_a_verilog"), () => new Top)
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_TOP3080_b_verilog"), () => new Top)
 }
