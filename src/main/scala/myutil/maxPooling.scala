@@ -5,7 +5,7 @@ import chisel3.util._
 import chisel3.experimental._
 
 @chiselName
-class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 8) extends Module {
+class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 16) extends Module {
   val io = IO(new Bundle {
     val din = Vec(cols, Flipped(DecoupledIO(SInt(8.W))))
     val dout = Vec(cols/2, DecoupledIO(SInt(8.W)))
@@ -18,7 +18,7 @@ class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 8) ex
 
   val channelOut_1 = WireInit(io.channelOutNum - 1.U)
 
-  val allDone_reg = Reg(UInt(1.W))
+  val allDone_reg = RegInit(0.asUInt(1.W))
   io.allDone := allDone_reg
 
   val din = io.din.grouped(2).toList
@@ -55,7 +55,7 @@ class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 8) ex
           out2(channelCnt.value) := Mux(din(i)(0).bits > din(i)(1).bits, din(i)(0).bits, din(i)(1).bits)
           when(channelCnt.value === channelOut_1){
             channelCnt.value := 0.U
-            when(cnt.value === ((cols / 2 - 1).asUInt() << channelOut_1).asUInt()) {
+            when(cnt.value === ((cols / 2 - 1).asUInt() * io.channelOutNum).asUInt()) {
               state := last
             }.otherwise{
               state := udandout

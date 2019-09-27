@@ -16,7 +16,7 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
     val dataDone = Output(Bool())
     val totalFilterNum = Input(UInt(16.W))
   })
-  val pe = Module(new PE(512, 256, 256, w, position))
+  val pe = Module(new PE(3080, 256, 16, w, position))
   val fIn = Queue(io.filter, 8)
   val iIn = Queue(io.img, 8)
   //  val oSumOut = Queue(pe.io.oSumMEM, 256)

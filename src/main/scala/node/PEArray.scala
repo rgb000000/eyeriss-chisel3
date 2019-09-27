@@ -43,25 +43,10 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
     val dataDone = Output(Bool())
   })
 
-  val biasqIn = Wire(DecoupledIO(SInt((w*2).W)))
-  val biasQ = Queue(biasqIn, 8)
-  val dobias = Wire(UInt(1.W))
-  dobias := 0.U
-  dontTouch(dobias)
-  biasQ.ready := 0.U
-  io.bias.ready := 0.U
-  when(io.stateSW === 1.U){
-    biasqIn <> io.bias
-  }.otherwise{
-    biasqIn.bits := biasQ.bits
-    dobias := io.oSumSRAM(0).valid
-    biasQ.ready := dobias
-    biasqIn.valid := dobias
-  }
 
   val doneReg = RegInit(0.U(1.W))
   val doneRegReg = RegNext(doneReg)
-  io.done := doneRegReg       // wait pooling done
+  io.done := RegNext(doneRegReg)       // wait pooling done
 
   val dataInQ = Queue(io.dataIn, 4)
   val colLen = WireInit(io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U)
@@ -146,14 +131,30 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   //    pes.map(_(i)).foreach(_.io.oSumMEM.ready := io.oSumMEM(i).valid & io.oSumMEM(i).ready)
   //  }
 
+  val biasqIn = Wire(DecoupledIO(SInt((w*2).W)))
+  val biasQ = Queue(biasqIn, 32)
+  val dobias = Wire(UInt(1.W))
+  dobias := 0.U
+  dontTouch(dobias)
+  biasQ.ready := 0.U
+  io.bias.ready := 0.U
+  when(io.stateSW === 1.U){
+    biasqIn <> io.bias
+  }.otherwise{
+    biasqIn.bits := biasQ.bits
+    dobias := pes.map(_ (0)).map(_.io.oSumSRAM.valid).reduce(_ | _)
+    biasQ.ready := dobias
+    biasqIn.valid := dobias
+  }
+
   require(io.oSumSRAM.length == shape._2)
   require(pes.length == shape._1)
   require(pes.head.length == shape._2)
   for (i <- io.oSumSRAM.indices) {
-    io.oSumSRAM(i).valid := pes.map(_ (i)).map(_.io.oSumSRAM.valid).reduce(_ | _)
+    io.oSumSRAM(i).valid := RegNext(pes.map(_ (i)).map(_.io.oSumSRAM.valid).reduce(_ | _))
     val saturation = Module(new Saturation())
     val temp = Wire(SInt(16.W))
-    temp := pes.map(_ (i)).map((x) => {
+    temp := RegNext(pes.map(_ (i)).map((x) => {
       val tmp = Wire(SInt((16).W))
       when(x.io.oSumSRAM.valid === 1.U) {
         tmp := x.io.oSumSRAM.bits
@@ -161,14 +162,14 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
         tmp := 0.S
       }
       tmp
-    }).reduce(_ + _) + biasQ.bits
+    }).reduce(_ + _) + biasQ.bits)
     saturation.io.dataIn := temp
     when(io.peconfig.relu === 1.U & saturation.io.dataOut < 0.S) {
       io.oSumSRAM(i).bits := 0.S
     }.otherwise {
       io.oSumSRAM(i).bits := saturation.io.dataOut
     }
-    pes.map(_ (i)).foreach(_.io.oSumSRAM.ready := io.oSumSRAM(i).valid & io.oSumSRAM(i).ready)
+    pes.map(_ (i)).foreach(_.io.oSumSRAM.ready := io.oSumSRAM(i).ready)
   }
 
   val idle :: data :: cal :: pDone :: newImg :: allDone :: Nil = Enum(6)

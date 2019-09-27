@@ -51,15 +51,15 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   //  io.oSumMEM.valid := 0.U
   //  io.oSumMEM.bits := 0.S
 
-  val fCnt = Counter(256) // input filter total length
-  val iCnt = Counter(256) // input img total length
-  val calCnt = Counter(256) // calculate times
-  val fCalCnt = Counter(256) // f shift times
-  val iCalCnt = Counter(256) // i shift times
-  val cCalCnt = Counter(256) // channel shift times
-  val pDoneCnt = Counter(256) // in pDont state times
-  val newImgCnt = Counter(256) // in pDont state times
-  val pSumAddr = Counter(256) // for addr
+  val fCnt = Counter(4096) // input filter total length
+  val iCnt = Counter(4096) // input img total length
+  val calCnt = Counter(4096) // calculate times
+  val fCalCnt = Counter(4096) // f shift times
+  val iCalCnt = Counter(4096) // i shift times
+  val cCalCnt = Counter(4096) // channel shift times
+  val pDoneCnt = Counter(4096) // in pDont state times
+  val newImgCnt = Counter(4096) // in pDont state times
+  val pSumAddr = Counter(pSumMemLen) // for addr
   val zfc = WireInit(fCnt.value)
   val zic = WireInit(iCnt.value)
   val zcc = WireInit(calCnt.value)
@@ -115,7 +115,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   iQ.ready := (state === cal) & (fCalCnt.value === 0.U)
 
   //  val pSumMem = Mem(pSumMemLen, SInt(w.W))
-  val pSumSRAM = Module(new MySRAM) // 256 16bits
+  val pSumSRAM = Module(new MySRAM(pSumMemLen)) // 256 16bits
   pSumSRAM.io.rstLowas := reset
   pSumSRAM.io.din := 0.S
   io.oSumSRAM.bits := 0.S

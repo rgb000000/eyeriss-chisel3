@@ -44,7 +44,7 @@ class Top(val faddr:Int = 0x0000, val iaddr:Int = 0x0480, val aw:Int = 3, val dw
   ctrl.io.peconfig := regfile.io.peconfig
   ctrl.io.loop := regfile.io.loop
 
-  ctrl.io.onceDone := pea.io.done
+  ctrl.io.onceDone := pool.io.allDone
 //  pea.io.peconfig := io.peconfig
   pool.io.channelOutNum := regfile.io.peconfig.filterNum
 

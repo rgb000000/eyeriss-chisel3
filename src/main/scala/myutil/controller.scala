@@ -84,7 +84,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
 
   val bias = Reg(SInt((2*w).W))
   val biasqIn = Wire(DecoupledIO(SInt((2*w).W)))
-  val biasq = Queue(biasqIn, 8)
+  val biasq = Queue(biasqIn, 32)
   io.bias <> biasq
   biasqIn.bits := 0.S
   biasqIn.valid := 0.U
