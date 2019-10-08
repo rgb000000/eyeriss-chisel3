@@ -15,16 +15,17 @@ input we;
 input [aw-1: 0] raddr;
 input [aw-1: 0] waddr;
 input [dw-1: 0] din;
-output [dw-1: 0] dout;
+output reg [dw-1: 0] dout;
 
 reg [dw-1: 0] mem[(1 << aw) - 1 : 0];
 
-assign dout = mem[raddr];
+// assign dout = mem[raddr];
 
 always@(posedge clk)
 begin
 	if(we)
 		mem[waddr] <= din;
+	dout <= mem[raddr];
 end
 
 initial

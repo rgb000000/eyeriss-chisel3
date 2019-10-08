@@ -52,8 +52,10 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
   val stateSW = RegInit(0.asUInt(2.W))
   io.stateSW := stateSW
 
-  val total_filter = RegInit(576.asUInt())
-  val total_img = RegInit(2176.asUInt())
+  val total_filter = RegInit(0.asUInt(16.W))
+  val total_img = RegInit(0.asUInt(16.W))
+  dontTouch(total_filter)
+  dontTouch(total_img)
 
   io.ram.we := false.B
   io.ram.raddr := 0.U
@@ -61,6 +63,9 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
   io.ram.din.foreach(_ := 0.S)
   io.oSumSRAM.map(_.ready).foreach(_ := 1.U)
   val waddr_reg = RegInit(waddr.asUInt(20.W))
+  val ram_raddr_valid = WireInit(0.U(1.W))
+  ram_raddr_valid := 0.U
+  val ram_rdata_valid = RegNext(ram_raddr_valid)
   // write logic
   when(io.oSumSRAM.map(_.fire()).reduce(_ & _)){
     io.ram.we := 1.U
@@ -107,11 +112,12 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
     }
     is(filter){
       stateSW := 1.U
-      qin.valid := 1.U
+      qin.valid := ram_rdata_valid
       io.ram.raddr := faddr_reg
+      ram_raddr_valid := 1.U
+      faddr_reg := faddr_reg + 1.U
       when(qin.fire()){
-        faddr_reg := faddr_reg + 1.U
-        total_filter := total_filter - 1.U
+        total_filter := total_filter + 1.U
         fcnt.inc()
         when(fNum.value === io.peconfig.filterNum - 1.U){
           fNum.value := 0.U
@@ -121,6 +127,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
               fLen.value := 0.U
               when(row_reg === (io.peconfig.singleFilterLen - 1.U).asSInt()){
                 state := img
+                ram_raddr_valid := 0.U
                 row_reg := 0.S
                 col_reg := 0.S
                 fcnt.value := 0.U
@@ -188,10 +195,16 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
       when(io.dataDone){
         stateSW := 2.U    //pearray start cal
       }
-      qin.valid := 1.U
+      qin.valid := ram_rdata_valid
       io.ram.raddr := iaddr_reg
-      when(qin.fire()){
+      when(qin.ready){
+        ram_raddr_valid := 1.U
         iaddr_reg := iaddr_reg + 1.U
+      }.otherwise{
+       ram_raddr_valid := 1.U
+       io.ram.raddr := iaddr_reg - 1.U
+      }
+      when(qin.fire()){
         total_img := total_img - 1.U
 
 //        when(fchannel.value === io.peconfig.nchannel - 1.U){
@@ -221,6 +234,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
             fNum.value := 0.U
             row_reg := 0.S
             state := end
+            ram_raddr_valid := 0.U
           }.otherwise{
             fLen.inc()
           }
@@ -251,6 +265,7 @@ class Controller(faddr:Int = 0x0000, iaddr:Int = 0x0480, waddr:Int = 0x80000,
           state := allEnd
         }.otherwise{
           iaddr_reg := iaddr.asUInt(aw.W)
+          faddr_reg := faddr_reg - 1.U
           stateSW := 0.U
           state := filter
           io.peaReset := true.B
