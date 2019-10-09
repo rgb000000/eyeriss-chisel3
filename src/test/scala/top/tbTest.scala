@@ -77,18 +77,18 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[List[Int]]) extends PeekP
 }
 
 class tbTester extends ChiselFlatSpec {
-  val filterNum = 16
+  val filterNum = 4
   val imgNum = 1
   val nchannel = 64
   val fLen = 3
   val iLen = 34 // padding = 1
-  val loop = 8
+  val loop = 32
   val (myinfo, sw1d) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "off", "--target-dir", "test_run_dir/make_TB_vcd", "--backend-name", "verilator",
         "--top-name", "make_TB_vcd"),
-      () => new TB(0x0000, 0x240*filterNum*loop)) {
+      () => new TB(0x0000, 0x240*filterNum+filterNum*(1 + ( (loop-1)/16 )) )       ) {
       c => new tbTest(c, myinfo, sw1d)
     } should be(true)
     //    new File("test_run_dir/make_PEArray_vcd/PEArray.vcd").exists should be(true)

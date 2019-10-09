@@ -56,19 +56,49 @@ object DM2file extends {
 
     val fnum = bias.cols
     var biasNum = 0
-    for (k <- filter2d.indices) {
-      for (i <- filter2d(0).indices) {
-        for (j <- filter2d(0)(0).indices) {
-          if ((i == filter2d(0).length - 1) & (j > filter2d(0)(0).length - fnum - 1)) {
-            println("biasNum = " + biasNum.toString)
-            w.write(f"${bias(k, biasNum).toShort}%04x".toUpperCase() + f"${filter2d(k)(i)(j).toByte}%066x".toUpperCase() + "\n")
-            biasNum += 1
-          } else {
-            w.write(f"${filter2d(k)(i)(j).toByte}%02x".toUpperCase() + "\n")
-          }
+    for (i <- filter2d(0).indices) {
+      for (j <- filter2d(0)(0).indices) {
+        var data35 = ""
+        for (k <- filter2d.indices) {
+          data35 = f"${filter2d(k)(i)(j).toByte}%02x" + data35
         }
+
+        w.write(data35 + "\n")
+        //          if ((i == filter2d(0).length - 1) & (j > filter2d(0)(0).length - fnum - 1)) {
+        //            println("biasNum = " + biasNum.toString)
+        //            w.write(f"${bias(k, biasNum).toShort}%04x".toUpperCase() + f"${filter2d(k)(i)(j).toByte}%066x".toUpperCase() + "\n")
+        //            biasNum += 1
+        //          } else {
+        //            w.write(f"${filter2d(k)(i)(j).toByte}%02x".toUpperCase() + "\n")
+        //          }
       }
-      biasNum = 0
+    }
+
+    if (bias.rows <= 16){
+      for (i <- 0 until bias.cols){
+        var data35 = ""
+        for(j <- 0 until bias.rows){
+          data35 = f"${bias(j,i).toShort}%04x" + data35
+        }
+        w.write(data35 + "\n")
+      }
+    }else{
+      val biasup = bias(0 until 16, ::)
+      val biaslow = bias(16 until bias.rows, ::)
+      for (i <- 0 until biasup.cols){
+        var data35 = ""
+        for(j <- 0 until biasup.rows){
+          data35 = f"${biasup(j,i).toShort}%04x" + data35
+        }
+        w.write(data35 + "\n")
+      }
+      for (i <- 0 until biaslow.cols){
+        var data35 = ""
+        for(j <- 0 until biaslow.rows){
+          data35 = f"${biaslow(j,i).toShort}%04x" + data35
+        }
+        w.write(data35 + "\n")
+      }
     }
 
     //    val fnum = bias.size
@@ -140,7 +170,7 @@ object GenTestData {
         imgNum * iLen * nchannel
       }
 
-      var sw1 = SW.conv4d(filter, img, true, bias = bias(i,::).t.toDenseMatrix)
+      var sw1 = SW.conv4d(filter, img, true, bias = bias(i, ::).t.toDenseMatrix)
       val filter2d = SW.fd2List(filter, 0)
       filter2d_list.append(filter2d)
 
@@ -184,11 +214,16 @@ object GenTestData {
 }
 
 object app extends App {
-  val filterNum = 2
+  val filterNum = 1
   val imgNum = 1
   val nchannel = 64
   val fLen = 3
   val iLen = 34 // padding = 1
-  val loop = 2
+  val loop = 1
   val (a, b) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
+}
+
+object app2 extends App {
+  val a = DenseMatrix((1,2,3,4),(5,6,7,8),(9,10,11,12),(13,14,15,16))
+  println(a(0 until 2, ::).t(0,::).t)
 }
