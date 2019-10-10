@@ -226,4 +226,7 @@ object app extends App {
 object app2 extends App {
   val a = DenseMatrix((1,2,3,4),(5,6,7,8),(9,10,11,12),(13,14,15,16))
   println(a(0 until 2, ::).t(0,::).t)
+  val b = List(1,2,3,4)
+  val c = List(1,1)
+  println((c,b).zipped.map(_+_))
 }

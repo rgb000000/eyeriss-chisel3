@@ -20,7 +20,7 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[List[Int]]) extends PeekP
 
   def writeReg(addr:Int, data:Int): Unit ={
     poke(c.io.regfile.we, 1)
-    poke(c.io.regfile.waddr, addr)
+    poke(c.io.regfile.addr, addr)
     poke(c.io.regfile.din, data)
     step(1)
     poke(c.io.regfile.we, 0)
@@ -38,24 +38,21 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[List[Int]]) extends PeekP
 //  poke(c.io.peconfig.singleImgLen, iLen)
 //  poke(c.io.peconfig.nchannel, nchannel)
 //  poke(c.io.peconfig.relu, 1)
-  c.io.oSumSRAM.foreach((x) => {
-    poke(x.ready, 1)
-  })
   step(1) // PE buf basic information after 1 clock
   writeReg(7, 1)
 //  poke(c.io.readGo, 1)
 
   var error = 0
-  var jj = List.fill(loop, c.io.oSumSRAM.length)(0).map(_.toBuffer).toBuffer
+  var jj = List.fill(loop, c.io.wdata.length)(0).map(_.toBuffer).toBuffer
   var row = 0
   var times = 0
   while (peek(c.io.done) == 0) {
-    for (i <- c.io.oSumSRAM.indices) {
-      if ((peek(c.io.oSumSRAM(i).valid) == 1) & (peek(c.io.oSumSRAM(i).ready) == 1)) {
-        expect(c.io.oSumSRAM(i).bits, sw1d(times)(i * singLen + jj(times)(i)))
-        if (peek(c.io.oSumSRAM(i).bits) != sw1d(times)(i * singLen + jj(times)(i))) {
+    for (i <- c.io.wdata.indices) {
+      if ((peek(c.io.wdata_valid(i)) == 1))  {
+        expect(c.io.wdata(i), sw1d(times)(i * singLen + jj(times)(i)))
+        if (peek(c.io.wdata(i)) != sw1d(times)(i * singLen + jj(times)(i))) {
           println("index : " + times.toString + " -- " + (i * singLen + jj(times)(i)).toString)
-          println(peek(c.io.oSumSRAM(i).bits).toString() + " --- " + sw1d(times)(i * singLen + jj(times)(i)).toString)
+          println(peek(c.io.wdata(i)).toString() + " --- " + sw1d(times)(i * singLen + jj(times)(i)).toString)
           error += 1
         }
         jj(times)(i) += 1

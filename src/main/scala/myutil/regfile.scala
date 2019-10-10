@@ -8,8 +8,8 @@ import pe.PEConfigReg
 class RegFile(val len:Int = 8, val aw:Int = 3, val dw:Int = 8) extends Module{
   val io = IO(new Bundle{
     val we = Input(Bool())
-    val raddr = Input(UInt(aw.W))
-    val waddr = Input(UInt(aw.W))
+    val addr = Input(UInt(aw.W))
+//    val waddr = Input(UInt(aw.W))
     val din = Input(UInt(8.W))
     val dout = Output(UInt(8.W))
     val peconfig = Output(new PEConfigReg(dw))
@@ -19,10 +19,10 @@ class RegFile(val len:Int = 8, val aw:Int = 3, val dw:Int = 8) extends Module{
 
   val regfile = RegInit(VecInit(Seq.fill(len)(0.U(dw.W))))
   // read
-  io.dout := regfile(io.raddr)
+  io.dout := regfile(io.addr)
   when(io.we === 1.U) {
     // write
-    regfile(io.waddr) := io.din
+    regfile(io.addr) := io.din
   }
   io.peconfig.filterNum := regfile(0)
   io.peconfig.singleFilterLen := regfile(1)
