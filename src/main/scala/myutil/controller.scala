@@ -8,8 +8,8 @@ import chisel3.util._
 
 class RAMInterface(val aw: Int = 20, val dw: Int = 280) extends Bundle {
   val we = Input(Bool())
-  val raddr = Input(UInt(aw.W))
-  val waddr = Input(UInt(aw.W))
+  val addr = Input(UInt(aw.W))
+//  val waddr = Input(UInt(aw.W))
   val din = Input(Vec(dw / 8, SInt(8.W)))
   val dout = Output(Vec(dw / 8, SInt(8.W)))
 }
@@ -58,21 +58,21 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
   dontTouch(total_img)
 
   io.ram.we := false.B
-  io.ram.raddr := 0.U
-  io.ram.waddr := 0.U
+  io.ram.addr := 0.U
+//  io.ram.waddr := 0.U
   io.ram.din.foreach(_ := 0.S)
-  io.oSumSRAM.map(_.ready).foreach(_ := 1.U)
+  io.oSumSRAM.map(_.ready).foreach(_ := 0.U)
   val waddr_reg = RegInit(waddr.asUInt(20.W))
   val ram_raddr_valid = WireInit(0.U(1.W))
   ram_raddr_valid := 0.U
   val ram_rdata_valid = RegNext(ram_raddr_valid)
   // write logic
-  when(io.oSumSRAM.map(_.fire()).reduce(_ & _)) {
-    io.ram.we := 1.U
-    io.ram.waddr := waddr_reg
-    (io.ram.din, io.oSumSRAM).zipped.foreach(_ := _.bits)
-    waddr_reg := waddr_reg + 1.U
-  }
+//  when(io.oSumSRAM.map(_.fire()).reduce(_ & _)) {
+//    io.ram.we := 1.U
+//    io.ram.addr := waddr_reg
+//    (io.ram.din, io.oSumSRAM).zipped.foreach(_ := _.bits)
+//    waddr_reg := waddr_reg + 1.U
+//  }
 
 
   // read logic
@@ -113,7 +113,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
     is(filter) {
       stateSW := 1.U
       qin.valid := ram_rdata_valid
-      io.ram.raddr := faddr_reg
+      io.ram.addr := faddr_reg
       ram_raddr_valid := 1.U
       faddr_reg := faddr_reg + 1.U
       when(qin.fire()) {
@@ -207,9 +207,9 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
       //          biasqIn.valid := 1.U
       //        }
       when(curLoop > 15.U) {
-        io.ram.raddr := faddr_reg + 4.U
+        io.ram.addr := faddr_reg + 4.U
       }.otherwise {
-        io.ram.raddr := faddr_reg
+        io.ram.addr := faddr_reg
       }
       ram_raddr_valid := 1.U
       faddr_reg := faddr_reg + 1.U
@@ -236,13 +236,22 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
         stateSW := 2.U //pearray start cal
       }
       qin.valid := ram_rdata_valid
-      io.ram.raddr := iaddr_reg
+      io.ram.addr := iaddr_reg
       when(qin.ready) {
         ram_raddr_valid := 1.U
         iaddr_reg := iaddr_reg + 1.U
       }.otherwise {
-        ram_raddr_valid := 1.U
-        io.ram.raddr := iaddr_reg - 1.U
+        io.oSumSRAM.map(_.ready).foreach(_ := 1.U)
+        when(io.oSumSRAM.map(_.fire()).reduce(_ & _)) {
+          io.ram.we := 1.U
+          io.ram.addr := waddr_reg
+          (io.ram.din, io.oSumSRAM).zipped.foreach(_ := _.bits)
+          waddr_reg := waddr_reg + 1.U
+          ram_raddr_valid := 0.U
+        }.otherwise{
+          ram_raddr_valid := 1.U
+          io.ram.addr := iaddr_reg - 1.U
+        }
       }
       when(qin.fire()) {
         total_img := total_img - 1.U
@@ -300,6 +309,13 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
       qin.bits.positon.row := row_reg
     }
     is(end) {
+      io.oSumSRAM.map(_.ready).foreach(_ := 1.U)
+      when(io.oSumSRAM.map(_.fire()).reduce(_ & _)) {
+        io.ram.we := 1.U
+        io.ram.addr := waddr_reg
+        (io.ram.din, io.oSumSRAM).zipped.foreach(_ := _.bits)
+        waddr_reg := waddr_reg + 1.U
+      }
       when(io.onceDone) {
         when(loop === 1.U) {
           state := allEnd

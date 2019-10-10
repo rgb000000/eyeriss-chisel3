@@ -1,8 +1,8 @@
 module ram_sim(
 	clk,
-	raddr,
+	addr,
 	din,
-	waddr,
+	//waddr,
 	dout,
 	we
 );
@@ -12,20 +12,20 @@ parameter dw = 16;
 
 input clk;
 input we;
-input [aw-1: 0] raddr;
-input [aw-1: 0] waddr;
+input [aw-1: 0] addr;
+//input [aw-1: 0] waddr;
 input [dw-1: 0] din;
 output reg [dw-1: 0] dout;
 
 reg [dw-1: 0] mem[(1 << aw) - 1 : 0];
 
-// assign dout = mem[raddr];
+// assign dout = mem[addr];
 
 always@(posedge clk)
 begin
 	if(we)
-		mem[waddr] <= din;
-	dout <= mem[raddr];
+		mem[addr] <= din;
+    dout <= mem[addr];
 end
 
 initial

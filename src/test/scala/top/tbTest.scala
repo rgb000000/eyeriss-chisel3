@@ -51,7 +51,7 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[List[Int]]) extends PeekP
   var times = 0
   while (peek(c.io.done) == 0) {
     for (i <- c.io.oSumSRAM.indices) {
-      if (peek(c.io.oSumSRAM(i).valid) == 1) {
+      if ((peek(c.io.oSumSRAM(i).valid) == 1) & (peek(c.io.oSumSRAM(i).ready) == 1)) {
         expect(c.io.oSumSRAM(i).bits, sw1d(times)(i * singLen + jj(times)(i)))
         if (peek(c.io.oSumSRAM(i).bits) != sw1d(times)(i * singLen + jj(times)(i))) {
           println("index : " + times.toString + " -- " + (i * singLen + jj(times)(i)).toString)

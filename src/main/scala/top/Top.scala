@@ -87,7 +87,7 @@ class TB(val faddr:Int = 0x0000, val iaddr:Int = 0x0480) extends Module{
     io.dataCheck(i) := 0.S
   }
   when(cnt =/= 0.U){
-    ram.io.raddr := raddr
+    ram.io.addr := raddr
     raddr := raddr + 1.U
     cnt := cnt - 1.U
     for (i <- 0 until io.dataCheck.length){

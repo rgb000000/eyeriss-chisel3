@@ -9,8 +9,8 @@ class ram_sim(val aw: Int, val dw: Int) extends BlackBox(Map("aw" -> aw, "dw" ->
   val io = IO(new Bundle {
     val clk = Input(Clock())
     val we = Input(Bool())
-    val raddr = Input(UInt(aw.W))
-    val waddr = Input(UInt(aw.W))
+    val addr = Input(UInt(aw.W))
+//    val waddr = Input(UInt(aw.W))
     val din = Input(UInt(dw.W))
     val dout = Output(UInt(dw.W))
   })
@@ -21,16 +21,16 @@ class ram_sim(val aw: Int, val dw: Int) extends BlackBox(Map("aw" -> aw, "dw" ->
 class RAM(val aw: Int = 20, val dw: Int=280) extends Module {
   val io = IO(new Bundle {
     val we = Input(Bool())
-    val raddr = Input(UInt(aw.W))
-    val waddr = Input(UInt(aw.W))
+    val addr = Input(UInt(aw.W))
+//    val waddr = Input(UInt(aw.W))
     val din = Input(Vec(dw / 8, SInt(8.W)))
     val dout = Output(Vec(dw / 8, SInt(8.W)))
   })
   val u = Module(new ram_sim(aw, dw))
   u.io.clk := clock
   u.io.we := io.we
-  u.io.raddr := io.raddr
-  u.io.waddr := io.waddr
+  u.io.addr := io.addr
+//  u.io.waddr := io.waddr
   u.io.din := io.din.asUInt()
   //  io.dout := u.io.dout
   for (i <- 0 until dw / 8) {
@@ -38,13 +38,13 @@ class RAM(val aw: Int = 20, val dw: Int=280) extends Module {
   }
 
   def read(addr: UInt): Vec[SInt] = {
-    io.raddr := addr
+    io.addr := addr
     io.we := false.B
     io.dout
   }
 
   def write(addr: UInt, data: SInt): Unit = {
-    io.waddr := addr
+    io.addr := addr
     io.we := true.B
     io.din := data
   }

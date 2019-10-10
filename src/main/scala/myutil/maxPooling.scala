@@ -24,7 +24,7 @@ class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 16) e
   val din = io.din.grouped(2).toList
   for (i <- din.indices) {
     val qIn = Wire(DecoupledIO(SInt(8.W)))
-    val q = Queue(qIn, 2)
+    val q = Queue(qIn, 8)
     val state = RegInit(ud)
     dontTouch(state)
     val out = RegInit(VecInit(Seq.fill(channelOut)(0.asSInt(8.W))))

@@ -6,21 +6,21 @@ import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
 
 class ramTest(c:RAM) extends PeekPokeTester(c){
   def read(addr:UInt) = {
-    poke(c.io.raddr, addr)
+    poke(c.io.addr, addr)
     poke(c.io.we, false)
 //    peek(c.io.dout).toList
   }
 
   def write(addr:UInt, data:Int): Unit ={
-    poke(c.io.waddr, addr)
+    poke(c.io.addr, addr)
     poke(c.io.we, true)
 //    poke(c.io.din, IndexedSeq.fill(35)(data))
     poke(c.io.din, Array.fill(35)(BigInt(data)))
   }
 
   poke(c.io.we, 0)
-  poke(c.io.waddr, 1)
-  poke(c.io.raddr, 1)
+  poke(c.io.addr, 1)
+  poke(c.io.addr, 1)
   poke(c.io.din, Array.fill[BigInt](35)(1))
   step(1)
   step(1)
