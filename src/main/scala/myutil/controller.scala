@@ -14,7 +14,7 @@ class RAMInterface(val aw: Int = 20, val dw: Int = 280) extends Bundle {
   val dout = Output(Vec(dw / 8, SInt(8.W)))
 }
 
-class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 0x80000,
+class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
                  aw: Int = 20, dw: Int = 280, w: Int = 8
                 ) extends Module {
   val io = IO(new Bundle {

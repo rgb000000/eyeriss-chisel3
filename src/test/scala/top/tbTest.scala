@@ -96,5 +96,5 @@ class tbTester extends ChiselFlatSpec {
 }
 
 object getTopVerilog extends App{
-  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_TOP3080_b_verilog"), () => new Top)
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_TOP770_b_verilog"), () => new Top(0x0000, 2312))
 }
