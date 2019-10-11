@@ -48,7 +48,7 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   val doneRegReg = RegNext(doneReg)
   io.done := RegNext(doneRegReg)       // wait pooling done
 
-  val dataInQ = Queue(io.dataIn, 4)
+  val dataInQ = Queue(io.dataIn, 2)
   val colLen = WireInit(io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U)
   val rowLen = WireInit(io.peconfig.singleFilterLen)
 

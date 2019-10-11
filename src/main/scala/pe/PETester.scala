@@ -17,10 +17,10 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
     val totalFilterNum = Input(UInt(16.W))
   })
   val pe = Module(new PE(770, 256, 16, w, position))
-  val fIn = Queue(io.filter, 8)
-  val iIn = Queue(io.img, 8)
+  val fIn = Queue(io.filter, 2)
+  val iIn = Queue(io.img, 2)
   //  val oSumOut = Queue(pe.io.oSumMEM, 256)
-  val oSumOut2 = Queue(pe.io.oSumSRAM, 8)
+  val oSumOut2 = Queue(pe.io.oSumSRAM, 2)
   //  core.dontTouch(pe.io.oSumMEM.ready)
 
   pe.io.totalFilterNum := io.totalFilterNum
