@@ -319,6 +319,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
       when(io.onceDone) {
         when(loop === 1.U) {
           state := allEnd
+          io.allDone := 1.U
         }.otherwise {
           iaddr_reg := iaddr.asUInt(aw.W)
           faddr_reg := faddr.asUInt(aw.W)
@@ -331,7 +332,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
       }
     }
     is(allEnd) {
-      io.allDone := 1.U
+//      io.allDone := 1.U
     }
   }
 
