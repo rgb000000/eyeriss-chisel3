@@ -132,7 +132,7 @@ class PEArray(val shape: (Int, Int), w: Int = 8) extends Module {
   //  }
 
   val biasqIn = Wire(DecoupledIO(SInt((w*2).W)))
-  val biasQ = Queue(biasqIn, 32)
+  val biasQ = Queue(biasqIn, 8)
   val dobias = Wire(UInt(1.W))
   dobias := 0.U
   dontTouch(dobias)

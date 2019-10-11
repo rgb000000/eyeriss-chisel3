@@ -25,6 +25,7 @@ class Top(val faddr:Int = 0x0000, val iaddr:Int = 0x0480, val aw:Int = 3, val dw
 //    val readGo = Input(Bool())
     // control regfile
     val regfile = new regfileInterface()
+    val externalGo = Input(UInt(1.W))
   })
   val ctrl = Module(new Controller(faddr=faddr, iaddr=iaddr))
   val global_reset = WireInit(reset)
@@ -50,7 +51,7 @@ class Top(val faddr:Int = 0x0000, val iaddr:Int = 0x0480, val aw:Int = 3, val dw
 
   ctrl.io.dataDone := pea.io.dataDone
   ctrl.io.ram <> io.ram
-  ctrl.io.readGo := regfile.io.go
+  ctrl.io.readGo := regfile.io.go | io.externalGo
 
   pool.io.peaDone := pea.io.done
 //  io.done := pool.io.allDone
@@ -76,6 +77,7 @@ class TB(val faddr:Int = 0x0000, val iaddr:Int = 0x0480) extends Module{
   val ram  = Module(new RAM)
 
   top.io.regfile <> io.regfile
+  top.io.externalGo := 0.U
 
   top.io.ram <> ram.io
   io.wdata_valid.foreach(_ := ram.io.we)
