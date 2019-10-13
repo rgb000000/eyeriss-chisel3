@@ -95,3 +95,14 @@ class tbTester extends ChiselFlatSpec {
 object getTopVerilog extends App{
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_TOP770_verilog"), () => new Top(0x0000, 2312))
 }
+
+object getTopVerilog2 extends App{
+  val filterNum = 4
+  val imgNum = 1
+  val nchannel = 64
+  val fLen = 3
+  val iLen = 34 // padding = 1
+  val loop = 1
+  val (myinfo, sw1d) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_TB_verilog"),() => new TB(0x0000, 0x240*filterNum+filterNum*(1 + ( (loop-1)/16 )) ) )
+}

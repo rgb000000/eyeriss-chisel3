@@ -162,6 +162,7 @@ object GenTestData {
     val bias = DenseMatrix.fill[Int](loop, filterNum)(scala.util.Random.nextInt(64) - 32)
     val img = DenseMatrix.fill(nchannel, imgNum)(SW.randomMatrix((iLen, iLen)))
     val img2d = SW.fd2List(img, 1)
+    val result_mem = List[String]().toBuffer
     for (i <- 0 until loop) {
       val filter = DenseMatrix.fill(nchannel, filterNum)(SW.randomMatrix((fLen, fLen)))
       val maxLen = if (filterNum * fLen * nchannel > imgNum * iLen * nchannel) {
@@ -203,10 +204,25 @@ object GenTestData {
           }
         }
       }
+
+      println("=============")
+      for (i <- 0 until after_pool(0,0).cols){
+        for (j <- 0 until after_pool.cols){
+          for(k <- 0 until after_pool.rows){
+            result_mem.append(after_pool(k,j)(::,i).map((x:Int)=>{
+              f"${x.toShort}%02x"
+            }).reduce((x:String,y:String)=>{y + x}))
+          }
+        }
+      }
+      println("=============")
       sw1d.append(sw1d_once.toList)
     }
 
     DM2file(filter2d_list.toList, img2d, bias)
+    val w = new PrintWriter(new File("/home/SW/PRJ/eyeriss-chisel3/src/main/resources/result.mem"))
+    result_mem.foreach((s:String)=>{w.write(s + "\n")})
+    w.close()
 
     (Map("filterNum" -> filterNum, "fLen" -> fLen, "imgNum" -> imgNum, "iLen" -> iLen,
       "nchannel" -> nchannel, "singLen" -> singLen, "loop" -> loop), sw1d.toList)
@@ -214,13 +230,14 @@ object GenTestData {
 }
 
 object app extends App {
-  val filterNum = 1
+  val filterNum = 2
   val imgNum = 1
-  val nchannel = 64
+  val nchannel = 1
   val fLen = 3
   val iLen = 34 // padding = 1
   val loop = 1
   val (a, b) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
+  println(b)
 }
 
 object app2 extends App {
@@ -229,4 +246,6 @@ object app2 extends App {
   val b = List(1,2,3,4)
   val c = List(1,1)
   println((c,b).zipped.map(_+_))
+  val d = List("12","34","56")
+  println(d.reduce((x:String,y:String)=>{y + x}))
 }
