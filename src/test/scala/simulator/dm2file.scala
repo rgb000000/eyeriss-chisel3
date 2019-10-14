@@ -230,14 +230,14 @@ object GenTestData {
 }
 
 object app extends App {
-  val filterNum = 2
+  val filterNum = 4
   val imgNum = 1
-  val nchannel = 1
+  val nchannel = 64
   val fLen = 3
   val iLen = 34 // padding = 1
-  val loop = 1
+  val loop = 32
   val (a, b) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
-  println(b)
+  println("generate successfully!")
 }
 
 object app2 extends App {

@@ -4,8 +4,8 @@ import chisel3._
 import chisel3.util._
 
 class Positon(val w: Int) extends Bundle {
-  val row = SInt(w.W)
-  val col = SInt(w.W)
+  val row = UInt(w.W)
+  val col = UInt(1.W)
 }
 
 class dataPackage(val w: Int = 8, val n: Int = 35) extends Bundle {
@@ -45,55 +45,55 @@ class Node(row: Boolean, positon: (Int, Int), w: Int) extends Module {
   io.stop := false.B
   // if row means this node is use to row distrube and doesn't have PE
   if (row) {
-    boardcast := (io.dataPackageIn.bits.positon.row === (-1).S)
+    boardcast := 0.U
     io.dataPackageIn.ready := qIn.ready &
       (boardcast |
-        ((io.dataPackageIn.bits.positon.row === positon._1.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
-        (((io.dataPackageIn.bits.positon.row >= positon._1.S)
-          & (io.dataPackageIn.bits.positon.row < positon._1.S + io.colLen.asSInt()))
+        ((io.dataPackageIn.bits.positon.row === positon._1.U) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        (((io.dataPackageIn.bits.positon.row >= positon._1.U)
+          & (io.dataPackageIn.bits.positon.row < positon._1.U + io.colLen.asUInt()))
           & (io.dataPackageIn.bits.dataType === 1.U) & (io.rowLen > positon._1.U))
         )
     qIn.valid := io.dataPackageIn.valid &
       (boardcast |
-        ((io.dataPackageIn.bits.positon.row === positon._1.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
-        (((io.dataPackageIn.bits.positon.row >= positon._1.S)
-          & (io.dataPackageIn.bits.positon.row < positon._1.S + io.colLen.asSInt()))
+        ((io.dataPackageIn.bits.positon.row === positon._1.U) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        (((io.dataPackageIn.bits.positon.row >= positon._1.U)
+          & (io.dataPackageIn.bits.positon.row < positon._1.U + io.colLen.asUInt()))
           & (io.dataPackageIn.bits.dataType === 1.U) & (io.rowLen > positon._1.U))
         )
     when((qIn.ready === 0.U) &
       (boardcast |
-        ((io.dataPackageIn.bits.positon.row === positon._1.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
-        (((io.dataPackageIn.bits.positon.row >= positon._1.S)
-          & (io.dataPackageIn.bits.positon.row < positon._1.S + io.colLen.asSInt()))
+        ((io.dataPackageIn.bits.positon.row === positon._1.U) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        (((io.dataPackageIn.bits.positon.row >= positon._1.U)
+          & (io.dataPackageIn.bits.positon.row < positon._1.U + io.colLen.asUInt()))
           & (io.dataPackageIn.bits.dataType === 1.U) & (io.rowLen > positon._1.U))
         )) {
       io.stop := true.B
     }
   } else {
-    boardcast := (io.dataPackageIn.bits.positon.col === (-1).S)
+    boardcast := (io.dataPackageIn.bits.positon.col === 1.U)
     io.dataPackageIn.ready := qIn.ready &
       (boardcast |
-        ((io.dataPackageIn.bits.positon.col === positon._2.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
-        ((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U))
+//        ((io.dataPackageIn.bits.positon.col === positon._2.U) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        ((io.dataPackageIn.bits.positon.row === (positon._2.U(8.W) + positon._1.U - 1.U)) & (io.dataPackageIn.bits.dataType === 1.U))
         )
     qIn.valid := io.dataPackageIn.valid &
       (boardcast |
-        ((io.dataPackageIn.bits.positon.col === positon._2.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
-        ((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U))
+//        ((io.dataPackageIn.bits.positon.col === positon._2.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        ((io.dataPackageIn.bits.positon.row === (positon._2.U(8.W) + positon._1.U - 1.U)) & (io.dataPackageIn.bits.dataType === 1.U))
         )
     when((qIn.ready === 0.U) &
       (boardcast |
-        ((io.dataPackageIn.bits.positon.col === positon._2.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
-        ((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U))
+//        ((io.dataPackageIn.bits.positon.col === positon._2.S) & (io.dataPackageIn.bits.dataType === 0.U)) |
+        ((io.dataPackageIn.bits.positon.row === (positon._2.U(8.W) + positon._1.U - 1.U)) & (io.dataPackageIn.bits.dataType === 1.U))
         )
     ){
       io.stop := true.B
     }
   }
-  val test = WireInit(((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U)))
-  val whichRow = WireInit(positon._2.S(8.W) + positon._1.S - 1.S)
-  core.dontTouch(test)
-  core.dontTouch(whichRow)
+//  val test = WireInit(((io.dataPackageIn.bits.positon.row === (positon._2.S(8.W) + positon._1.S - 1.S)) & (io.dataPackageIn.bits.dataType === 1.U)))
+//  val whichRow = WireInit(positon._2.S(8.W) + positon._1.S - 1.S)
+//  core.dontTouch(test)
+//  core.dontTouch(whichRow)
 
 }
 
@@ -151,8 +151,8 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
 
   QIn.valid := 0.U
   QIn.bits.data(0) := 0.S
-  QIn.bits.positon.row := 0.S
-  QIn.bits.positon.col := 0.S
+  QIn.bits.positon.row := 0.U
+  QIn.bits.positon.col := 0.U
   QIn.bits.dataType := 0.U
 
   io.smallOut <> Q

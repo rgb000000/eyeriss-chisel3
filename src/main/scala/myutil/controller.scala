@@ -42,8 +42,8 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
   qin.bits.data.foreach(_ := 0.S)
   qin.bits.dataType := 0.U
   qin.bits.cnt := 0.U
-  qin.bits.positon.row := 0.S
-  qin.bits.positon.col := 0.S
+  qin.bits.positon.row := 0.U
+  qin.bits.positon.col := 0.U
   qin.valid := 0.U
   val q = Queue(qin, 4)
   io.dout <> q
@@ -83,8 +83,8 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
 
   val icnt = Counter(192)
   val data_cnt = Reg(UInt(8.W))
-  val row_reg = Reg(SInt(8.W))
-  val col_reg = Reg(SInt(8.W))
+  val row_reg = Reg(UInt(8.W))
+  val col_reg = Reg(UInt(8.W))
 
   val bias = Reg(SInt((2 * w).W))
   val biasqIn = Wire(DecoupledIO(SInt((2 * w).W)))
@@ -101,8 +101,8 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
 
   switch(state) {
     is(idle) {
-      row_reg := 0.S
-      col_reg := 0.S
+      row_reg := 0.U
+      col_reg := 0.U
       data_cnt := 0.U
       loop := io.loop
       when(io.readGo) {
@@ -125,12 +125,12 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
             fchannel.value := 0.U
             when(fLen.value === io.peconfig.singleFilterLen - 1.U) {
               fLen.value := 0.U
-              when(row_reg === (io.peconfig.singleFilterLen - 1.U).asSInt()) {
+              when(row_reg === (io.peconfig.singleFilterLen - 1.U).asUInt()) {
                 state := rbias
                 ram_raddr_valid := 0.U
                 faddr_reg := faddr_reg
-                row_reg := 0.S
-                col_reg := 0.S
+                row_reg := 0.U
+                col_reg := 0.U
                 fcnt.value := 0.U
 
                 fNum.value := 0.U
@@ -138,7 +138,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
                 fLen.value := 0.U
 
               }.otherwise {
-                row_reg := row_reg + 1.S
+                row_reg := row_reg + 1.U
                 fcnt.value := 0.U
               }
             }.otherwise {
@@ -167,7 +167,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
       qin.bits.dataType := 0.U
       qin.bits.data(0) := io.ram.dout(curLoop)
       qin.bits.cnt := 1.U
-      qin.bits.positon.col := (-1).S
+      qin.bits.positon.col := 1.U
       qin.bits.positon.row := row_reg
 
 
@@ -281,7 +281,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
           when(fLen.value === io.peconfig.nchannel - 1.U) {
             fLen.value := 0.U
             fNum.value := 0.U
-            row_reg := 0.S
+            row_reg := 0.U
             state := end
             ram_raddr_valid := 0.U
           }.otherwise {
@@ -295,17 +295,17 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
         //        when(total_img === 1.U){
         //          state := end
         //        }
-        when(row_reg === 33.S) {
-          row_reg := 0.S
+        when(row_reg === 33.U) {
+          row_reg := 0.U
         }.otherwise {
-          row_reg := row_reg + 1.S
+          row_reg := row_reg + 1.U
         }
 
       }
       qin.bits.dataType := 1.U
       qin.bits.data := io.ram.dout
       qin.bits.cnt := 34.U
-      qin.bits.positon.col := 1.S
+      qin.bits.positon.col := 0.U
       qin.bits.positon.row := row_reg
     }
     is(end) {
