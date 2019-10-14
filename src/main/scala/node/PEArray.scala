@@ -21,11 +21,11 @@ class dataSwitch(w: Int = 8) extends Module {
   io.img.valid := 0.U
   io.dataIn.ready := 0.U
   when(io.dataIn.bits.dataType === 0.U) {
-    io.filter.bits := io.dataIn.bits.data(0)
+    io.filter.bits := io.dataIn.bits.data
     io.filter.valid := io.dataIn.valid
     io.dataIn.ready := io.filter.ready
   }.otherwise {
-    io.img.bits := io.dataIn.bits.data(0)
+    io.img.bits := io.dataIn.bits.data
     io.img.valid := io.dataIn.valid
     io.dataIn.ready := io.img.ready
   }

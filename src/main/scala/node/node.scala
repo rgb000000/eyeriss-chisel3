@@ -9,14 +9,14 @@ class Positon(val w: Int) extends Bundle {
 }
 
 class dataPackage(val w: Int = 8, val n: Int = 35) extends Bundle {
-  val data = Vec(n, SInt(w.W))
+  val data = UInt((8*n).W)
   val dataType = UInt(1.W)
   val positon = new Positon(8)
   val cnt = UInt(8.W)
 }
 
 class dataPackageSmall(val w: Int = 8, val n: Int = 1) extends Bundle {
-  val data = Vec(n, SInt(w.W))
+  val data = SInt(w.W)
   val dataType = UInt(1.W)
   val positon = new Positon(8)
 }
@@ -106,7 +106,7 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
     val smallOut = DecoupledIO(new dataPackageSmall(8))
   })
 
-  val tmp = Reg(Vec((big / small), new dataPackageSmall(n = small).data(0).cloneType))
+  val tmp = Reg(Vec((big / small), UInt(8.W)))
   val cnt_reg = Reg(UInt(8.W))
   val dataType_reg = Reg(UInt(1.W))
   val positon_reg = Reg(new Positon(8).cloneType)
@@ -150,7 +150,7 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
 
 
   QIn.valid := 0.U
-  QIn.bits.data(0) := 0.S
+  QIn.bits.data := 0.S
   QIn.bits.positon.row := 0.U
   QIn.bits.positon.col := 0.U
   QIn.bits.dataType := 0.U
@@ -167,12 +167,14 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
       doing := true.B
       cnt.value := 1.U
     }
-    (tmp, io.bigIn.bits.data).zipped.foreach(_ := _)
+    for (i <- tmp.indices){
+      tmp(i) := io.bigIn.bits.data((i+1)*8-1, i*8).asUInt()
+    }
     cnt_reg := io.bigIn.bits.cnt
     positon_reg := io.bigIn.bits.positon
     dataType_reg := io.bigIn.bits.dataType
 
-    QIn.bits.data(0) := io.bigIn.bits.data(0)
+    QIn.bits.data := io.bigIn.bits.data(7,0).asSInt()
     QIn.bits.positon := io.bigIn.bits.positon
     QIn.bits.dataType := io.bigIn.bits.dataType
     QIn.valid := 1.U
@@ -187,7 +189,7 @@ class Q2Q(big: Int = 35, small: Int = 1) extends Module {
     }.otherwise {
 
     }
-    QIn.bits.data(0) := tmp(cnt.value)
+    QIn.bits.data := tmp(cnt.value).asSInt()
     QIn.bits.positon := positon_reg
     QIn.bits.dataType := dataType_reg
     QIn.valid := 1.U

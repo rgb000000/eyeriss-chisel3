@@ -39,7 +39,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
   val idle :: filter :: rbias :: img :: end :: allEnd :: Nil = Enum(6)
   val state = RegInit(idle)
   val qin = Wire(io.dout.cloneType)
-  qin.bits.data.foreach(_ := 0.S)
+  qin.bits.data := 0.U
   qin.bits.dataType := 0.U
   qin.bits.cnt := 0.U
   qin.bits.positon.row := 0.U
@@ -165,7 +165,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
         //        }
       }
       qin.bits.dataType := 0.U
-      qin.bits.data(0) := io.ram.dout(curLoop)
+      qin.bits.data := io.ram.dout(curLoop).asUInt()
       qin.bits.cnt := 1.U
       qin.bits.positon.col := 1.U
       qin.bits.positon.row := row_reg
@@ -303,7 +303,7 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
 
       }
       qin.bits.dataType := 1.U
-      qin.bits.data := io.ram.dout
+      qin.bits.data := io.ram.dout.asUInt()
       qin.bits.cnt := 34.U
       qin.bits.positon.col := 0.U
       qin.bits.positon.row := row_reg
