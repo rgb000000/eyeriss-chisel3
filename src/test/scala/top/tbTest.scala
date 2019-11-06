@@ -74,12 +74,13 @@ class tbTest(c: TB, info: Map[String, Int], sw1d: List[List[Int]]) extends PeekP
 }
 
 class tbTester extends ChiselFlatSpec {
-  val filterNum = 4
-  val imgNum = 1
-  val nchannel = 64
-  val fLen = 3
-  val iLen = 34 // padding = 1
-  val loop = 32
+  val filterNum = 4   // filter数目,输出通道
+  val imgNum = 1      // img数目
+  val nchannel = 64   // 输入通道
+  val fLen = 3        // filter规模,n*n
+  val iLen = 34       // img规模,n*n
+  val loop = 32       // 子任务数,循环执行次数
+  // 生成随机测试数据,并返回计算结果和计算规模信息
   val (myinfo, sw1d) = GenTestData(filterNum, imgNum, nchannel, fLen, iLen, loop)
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(

@@ -138,6 +138,7 @@ object DM2file extends {
 
 }
 
+// 根据输入参数,生成随机测试数据,并完成重拍,生成ram.mem文件用于初始化ram
 object GenTestData {
   def apply(filterNum: Int, imgNum: Int, nchannel: Int, fLen: Int, iLen: Int, loop: Int):
   (Map[String, Int], List[List[Int]]) = {
