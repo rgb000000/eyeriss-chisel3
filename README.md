@@ -72,4 +72,4 @@ A man walks fast, and a group goes far
 
 欢迎入群交流
 
-![qq group](https://raw.githubusercontent.com/s1104439112/eyeriss-chisel3/MNIST/img/qqgroup.png)
+![qq group](https://github.com/s1104439112/eyeriss-chisel3/blob/master/img/chisel_QQ_group.png)
