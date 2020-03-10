@@ -7,13 +7,14 @@ import chisel3.experimental._
 import pe._
 import myutil._
 import breeze.linalg._
+import config._
 
-class PEArray2(val shape: (Int, Int), w: Int) extends Module {
+class PEArray2(implicit p: Parameters) extends Module {
   val io = IO(new Bundle {
-    val filter_in = Vec(shape._1, Flipped(DecoupledIO(SInt(w.W))))
-    val img_in = Vec(shape._1 + shape._2 - 1, Flipped(DecoupledIO(SInt(w.W))))
-    val bias = Flipped(DecoupledIO(SInt((w).W)))
-    val oSum = Vec(shape._2, DecoupledIO(SInt(w.W)))
+    val filter_in = Vec(p(Shape)._1, Flipped(DecoupledIO(SInt(p(FilterW).W))))
+    val img_in = Vec(p(Shape)._1 + p(Shape)._2 - 1, Flipped(DecoupledIO(SInt(p(ImgW).W))))
+    val bias = Flipped(DecoupledIO(SInt((p(BiasW)).W)))
+    val oSum = Vec(p(Shape)._2, DecoupledIO(SInt(p(OSumW).W)))
 
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg(8))
@@ -21,8 +22,8 @@ class PEArray2(val shape: (Int, Int), w: Int) extends Module {
 //    val done = Output(UInt(1.W))
     val dataDone = Output(Bool())
   })
-  val pearray = Seq.tabulate(shape._1, shape._2)((x: Int, y: Int) => {
-    Module(new PETesterTop(position = (x, y), w = w))
+  val pearray = Seq.tabulate(p(Shape)._1, p(Shape)._2)((x: Int, y: Int) => {
+    Module(new PETesterTop(position = (x, y)))
   })
 
   // row share filter in
@@ -36,8 +37,8 @@ class PEArray2(val shape: (Int, Int), w: Int) extends Module {
   }))
 
   //oSum upward
-  val addTree = List.fill(shape._2)(Module(new addTreeDecoupleIO(shape._1 + 1, 8)))
-  for(i <- 0 until shape._2) {
+  val addTree = List.fill(p(Shape)._2)(Module(new addTreeDecoupleIO(p(Shape)._1 + 1, 8)))
+  for(i <- 0 until p(Shape)._2) {
     (addTree(i).io.seq, pearray.map(_(i).io.oSumSRAM) :+ io.bias).zipped.foreach((addTreein, depIO)=>{
       addTreein.valid := depIO.valid
       addTreein.bits := depIO.bits

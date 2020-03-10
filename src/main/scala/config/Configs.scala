@@ -1,0 +1,26 @@
+package config
+
+case object FilterW extends Field[Int]
+case object ImgW extends Field[Int]
+case object BiasW extends Field[Int]
+case object OSumW extends Field[Int]
+
+case object Shape extends Field[(Int, Int)]
+
+case object FilterSpadDepth extends Field[Int]
+case object ImgSpadDepth extends Field[Int]
+case object PSumMemDepth extends Field[Int]
+
+class DefaultConfig extends Config((site, here, up) => {
+  case FilterW => 8
+  case ImgW => 8
+  case BiasW => 8
+  case OSumW => 8
+
+  case Shape => (3,3)
+
+  case FilterSpadDepth => 256
+  case ImgSpadDepth => 256
+  case PSumMemDepth => 16
+
+})

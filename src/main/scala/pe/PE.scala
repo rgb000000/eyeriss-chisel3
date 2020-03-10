@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.internal.naming.chiselName
 import chisel3.util._
 import myutil._
+import config._
 
 
 class PEConfigReg(val w: Int = 8) extends Bundle {
@@ -18,8 +19,7 @@ class PEConfigReg(val w: Int = 8) extends Bundle {
 
 // take care!  in PE stateSw is buffer one time
 @chiselName
-class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256, w: Int = 16,
-         position: (Int, Int) = (0, 0))
+class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   extends Module {
   val io = IO(new Bundle {
     // 00 -> idle
@@ -28,9 +28,9 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
     val stateSW = Input(UInt(2.W))
     val regConfig = Input(new PEConfigReg())
 
-    val filter = Flipped(DecoupledIO(SInt(w.W)))
-    val img = Flipped(DecoupledIO(SInt(w.W)))
-    val pSumIn = Flipped(DecoupledIO(SInt(w.W)))
+    val filter = Flipped(DecoupledIO(SInt(p(FilterW).W)))
+    val img = Flipped(DecoupledIO(SInt(p(ImgW).W)))
+    val pSumIn = Flipped(DecoupledIO(SInt(p(FilterW).W)))
     //      val oSumMEM = DecoupledIO(SInt(w.W))
     val oSumSRAM = DecoupledIO(SInt((16).W))
 
@@ -61,7 +61,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val cCalCnt = Counter(4096) // channel shift times
   val pDoneCnt = Counter(4096) // in pDont state times
   val newImgCnt = Counter(4096) // in pDont state times
-  val pSumAddr = Counter(pSumMemLen) // for addr
+  val pSumAddr = Counter(p(PSumMemDepth)) // for addr
   val zfc = WireInit(fCnt.value)
   val zic = WireInit(iCnt.value)
   val zcc = WireInit(calCnt.value)
@@ -87,7 +87,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 
 
   val fQMuxIn = Wire(DecoupledIO(io.filter.bits.cloneType))
-  val fQ = FIFO(fQMuxIn, filterSpadLen)
+  val fQ = FIFO(fQMuxIn, p(FilterSpadDepth))
   io.filter.ready := 0.U
   fQ.ready := 0.U
   // when getdata switch io.statwSW == cal and filter must all translate to fQ
@@ -106,7 +106,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   fQ.ready := state === cal
 
   val iQMuxIn = Wire(DecoupledIO(io.img.bits.cloneType))
-  val iQ = FIFO(iQMuxIn, imgSpadLen)
+  val iQ = FIFO(iQMuxIn, p(ImgSpadDepth))
   val iQreg = Reg(iQ.bits.cloneType)
   io.img.ready := 0.U
   iQ.ready := 0.U
@@ -123,12 +123,12 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   iQ.ready := (state === cal) & (fCalCnt.value === 0.U)
 
   //  val pSumMem = Mem(pSumMemLen, SInt(w.W))
-  val pSumSRAM = Module(new MySRAM(pSumMemLen)) // 256 16bits
+  val pSumSRAM = Module(new MySRAM(p(PSumMemDepth))) // 256 16bits
   pSumSRAM.io.rstLowas := reset
   pSumSRAM.io.din := 0.S
   io.oSumSRAM.bits := 0.S
 
-  val trash = RegInit(0.S(w.W))
+  val trash = RegInit(0.S(p(ImgW).W))
 
   //  io.oSumMEM.valid := 0.U
   io.oSumSRAM.valid := 0.U
@@ -145,7 +145,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   //    mode := normal
   //  }
 
-  val addr = Wire(UInt(log2Ceil(pSumMemLen).W))
+  val addr = Wire(UInt(log2Ceil(p(PSumMemDepth)).W))
   val singleResultLen = configReg.singleImgLen - configReg.singleFilterLen + 1.U
   addr := fCalCnt.value
   //  when(mode === normal){
@@ -270,9 +270,6 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
       }
     }
     is(pDone) {
-      for (i <- Range(0, pSumMemLen)) {
-        //        pSumMem(i) := 0.S
-      }
       pSumSRAM.io.rstLowas := 1.U
       switch(mode) {
         is(normal) {

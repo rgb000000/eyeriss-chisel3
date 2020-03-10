@@ -5,6 +5,7 @@ package bwn
 import chisel3._
 import chisel3.iotesters.{ChiselFlatSpec, PeekPokeTester}
 import node.{PEArray2}
+import config._
 
 class PEArray2Tests(c: PEArray2) extends PeekPokeTester(c){
   val filterNum = 3
@@ -77,8 +78,7 @@ class PEArray2Tests(c: PEArray2) extends PeekPokeTester(c){
 }
 
 class PEArray2Tester extends ChiselFlatSpec {
-  val shape = (3, 3)
-  val w = 8
+  implicit val p = new DefaultConfig
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
       Array(
@@ -87,7 +87,7 @@ class PEArray2Tester extends ChiselFlatSpec {
         "--backend-name", "verilator",
         "--top-name", "make_fudan_vcd"
       ),
-      () => new PEArray2(shape, w)
+      () => new PEArray2
     ) {
       c => new PEArray2Tests(c)
     } should be(true)

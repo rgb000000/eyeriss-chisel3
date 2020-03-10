@@ -2,25 +2,26 @@ package pe
 
 import chisel3._
 import chisel3.util._
+import config._
 
-class PETesterTop(val position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
+class PETesterTop(val position: (Int, Int) = (0, 0))(implicit val p:Parameters) extends Module {
 
   override def desiredName: String = "PE" + position.toString()
 
   val io = IO(new Bundle {
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg())
-    val filter = Flipped(Decoupled(SInt(w.W)))
-    val img = Flipped(Decoupled(SInt(w.W)))
-    val pSumIn = Flipped(DecoupledIO(SInt(w.W)))
+    val filter = Flipped(Decoupled(SInt(p(FilterW).W)))
+    val img = Flipped(Decoupled(SInt(p(ImgW).W)))
+    val pSumIn = Flipped(DecoupledIO(SInt(p(FilterW).W)))
     //    val oSumMEM = Decoupled(SInt(w.W))
-    val oSumSRAM = Decoupled(SInt((w).W))
+    val oSumSRAM = Decoupled(SInt(p(OSumW).W))
     val stateOut = Output(UInt(4.W))
     val dataDone = Output(Bool())
     val totalFilterNum = Input(UInt(16.W))
     val totalSingleFilterNum = Input(UInt(16.W))
   })
-  val pe = Module(new PE(770, 256, 8, w, position))
+  val pe = Module(new PE(position))
   val fIn = Queue(io.filter, 32)
   val iIn = Queue(io.img, 32)
   //  val oSumOut = Queue(pe.io.oSumMEM, 256)
