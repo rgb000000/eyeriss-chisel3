@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental._
 import pe.PEConfigReg
+import axi._
 
 class RegFile(val len:Int = 8, val aw:Int = 3, val dw:Int = 8) extends Module{
   val io = IO(new Bundle{
@@ -34,3 +35,4 @@ class RegFile(val len:Int = 8, val aw:Int = 3, val dw:Int = 8) extends Module{
   io.go := regfile(7)
 
 }
+

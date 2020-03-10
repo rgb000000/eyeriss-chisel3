@@ -3,7 +3,10 @@ package pe
 import chisel3._
 import chisel3.util._
 
-class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
+class PETesterTop(val position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
+
+  override def desiredName: String = "PE" + position.toString()
+
   val io = IO(new Bundle {
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg())
@@ -11,18 +14,20 @@ class PETesterTop(position: (Int, Int) = (0, 0), w: Int = 8) extends Module {
     val img = Flipped(Decoupled(SInt(w.W)))
     val pSumIn = Flipped(DecoupledIO(SInt(w.W)))
     //    val oSumMEM = Decoupled(SInt(w.W))
-    val oSumSRAM = Decoupled(SInt((16).W))
+    val oSumSRAM = Decoupled(SInt((w).W))
     val stateOut = Output(UInt(4.W))
     val dataDone = Output(Bool())
     val totalFilterNum = Input(UInt(16.W))
+    val totalSingleFilterNum = Input(UInt(16.W))
   })
   val pe = Module(new PE(770, 256, 8, w, position))
-  val fIn = Queue(io.filter, 2)
-  val iIn = Queue(io.img, 2)
+  val fIn = Queue(io.filter, 32)
+  val iIn = Queue(io.img, 32)
   //  val oSumOut = Queue(pe.io.oSumMEM, 256)
   val oSumOut2 = Queue(pe.io.oSumSRAM, 2)
   //  core.dontTouch(pe.io.oSumMEM.ready)
 
+  pe.io.totalSingleFilterNum := io.totalSingleFilterNum
   pe.io.totalFilterNum := io.totalFilterNum
 
   //  override def desiredName: String = position.toString()

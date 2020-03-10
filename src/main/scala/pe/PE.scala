@@ -37,7 +37,9 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
     val stateOut = Output(UInt(4.W))
     val dataDone = Output(Bool())
 
+
     val totalFilterNum = Input(UInt(16.W))
+    val totalSingleFilterNum = Input(UInt(16.W))
   })
 
   //  override def desiredName: String = position.toString()
@@ -89,8 +91,15 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   io.filter.ready := 0.U
   fQ.ready := 0.U
   // when getdata switch io.statwSW == cal and filter must all translate to fQ
+
+  io.dataDone := false.B
   when(dodata) {
     fQMuxIn <> io.filter
+    when(fCnt.value === io.totalFilterNum){
+      fQMuxIn.valid := 0.U
+      io.filter.ready := 0.U
+      io.dataDone := true.B
+    }
   }.otherwise {
     fQMuxIn <> fQ
   }
@@ -101,13 +110,12 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
   val iQreg = Reg(iQ.bits.cloneType)
   io.img.ready := 0.U
   iQ.ready := 0.U
-  io.dataDone := false.B
   when(dodata) {
     iQMuxIn <> io.img
-    when(iCnt.value === io.totalFilterNum) {
+    when(iCnt.value === io.totalSingleFilterNum) {
       iQMuxIn.valid := 0.U
       io.img.ready := 0.U
-      io.dataDone := true.B
+//      io.dataDone := true.B
     }
   }.otherwise {
     iQMuxIn <> iQ
@@ -198,7 +206,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
 
           //          io.oSumMEM.bits := 0.S
           io.oSumSRAM.bits := 0.S
-          when((calCnt.value === io.totalFilterNum)) {
+          when((calCnt.value === io.totalSingleFilterNum)) {
             //            io.oSumMEM.valid := 1.U
             //            io.oSumMEM.bits := pResultLast
 
@@ -206,7 +214,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             io.oSumSRAM.bits := pResultLastSRAM
             // io.oSum.bits := fQ.bits * iQreg + pSumMem(addr)
             //                           /*^*/
-          }.elsewhen((calCnt.value === /*|*/ io.totalFilterNum - 1.U) &
+          }.elsewhen((calCnt.value === /*|*/ io.totalSingleFilterNum - 1.U) &
             (fCalCnt.value === 0.U)) { // 0 mean the last
             //            io.oSumMEM.valid := 1.U         /*v*/   // when the first result it use iQ.bits, else will use iQreg
             //            io.oSumMEM.bits := pResultCurrect
@@ -229,7 +237,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             }
 
             calCnt.inc()
-            when((configReg.filterNum === 1.U) & (calCnt.value === io.totalFilterNum - 1.U) &
+            when((configReg.filterNum === 1.U) & (calCnt.value === io.totalSingleFilterNum - 1.U) &
               (fCalCnt.value === 0.U)) {
               calCnt.value := 0.U
               pSumAddr.inc()
@@ -246,7 +254,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
             }
 
             //            calCnt.inc()
-            when((calCnt.value === io.totalFilterNum) &
+            when((calCnt.value === io.totalSingleFilterNum) &
               (fCalCnt.value === configReg.filterNum - 1.U)) {
               calCnt.value := 0.U
               pSumAddr.inc()
@@ -320,7 +328,7 @@ class PE(filterSpadLen: Int = 225, imgSpadLen: Int = 225, pSumMemLen: Int = 256,
         core.dontTouch(trash)
         iQMuxIn <> io.img
         newImgCnt.inc()
-        when(io.img.valid === 0.U) {
+        when(io.img.valid === 0.U | io.regConfig.imgNum === 1.U) {
           state := allDone
         }.elsewhen(newImgCnt.value === iCnt.value - 2.U) {
           newImgCnt.value := 0.U
