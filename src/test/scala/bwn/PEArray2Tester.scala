@@ -85,7 +85,7 @@ class PEArray2Tester extends ChiselFlatSpec {
         "--generate-vcd-output", "on",
         "--target-dir", "test_run_dir/make_bwn_pearray2_vcd",
         "--backend-name", "verilator",
-        "--top-name", "make_fudan_vcd"
+        "--top-name", "make_bwn_pearry2_vcd"
       ),
       () => new PEArray2
     ) {

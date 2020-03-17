@@ -5,6 +5,7 @@ import pe.PEConfigReg
 import node.dataPackage
 import chisel3.experimental._
 import chisel3.util._
+import config._
 
 class RAMInterface(val aw: Int = 20, val dw: Int = 280) extends Bundle {
   val we = Input(Bool())
@@ -17,6 +18,7 @@ class RAMInterface(val aw: Int = 20, val dw: Int = 280) extends Bundle {
 class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
                  aw: Int = 20, dw: Int = 280, w: Int = 8
                 ) extends Module {
+  implicit val p = new DefaultConfig
   val io = IO(new Bundle {
     val ram = Flipped(new RAMInterface(aw, dw))
     //    val config = Input(new PEConfigReg)

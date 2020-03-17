@@ -7,7 +7,8 @@ import myutil._
 import config._
 
 
-class PEConfigReg(val w: Int = 8) extends Bundle {
+class PEConfigReg(implicit val p: Parameters) extends Bundle {
+  val w = p(RegFileW)
   val filterNum = UInt(w.W)
   val singleFilterLen = UInt(w.W)
   val imgNum = UInt(w.W)
@@ -47,7 +48,7 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   val y = WireInit(position._2.U(8.W))
   core.dontTouch(x)
   core.dontTouch(y)
-  val configReg = Reg(new PEConfigReg(8))
+  val configReg = Reg(new PEConfigReg)
 
   io.pSumIn.ready := 0.U
   //  io.oSumMEM.valid := 0.U
