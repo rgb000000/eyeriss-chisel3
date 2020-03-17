@@ -54,8 +54,6 @@ class PEArray2(implicit p: Parameters) extends Module {
   pearray.foreach(_.foreach(_.io.totalFilterNum := totalFilterNum))
   pearray.foreach(_.foreach(_.io.peconfig := io.peconfig))
   pearray.foreach(_.foreach(_.io.stateSW := io.stateSW))
-  pearray.foreach(_.foreach(_.io.pSumIn.valid := 0.U))
-  pearray.foreach(_.foreach(_.io.pSumIn.bits := 0.S))
 
   // dataDone
   io.dataDone := pearray.map(_.map(_.io.dataDone).reduce(_ | _)).reduce(_ | _)

@@ -31,7 +31,6 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
 
     val filter = Flipped(DecoupledIO(SInt(p(FilterW).W)))
     val img = Flipped(DecoupledIO(SInt(p(ImgW).W)))
-    val pSumIn = Flipped(DecoupledIO(SInt(p(FilterW).W)))
     //      val oSumMEM = DecoupledIO(SInt(w.W))
     val oSumSRAM = DecoupledIO(SInt((16).W))
 
@@ -50,7 +49,6 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   core.dontTouch(y)
   val configReg = Reg(new PEConfigReg)
 
-  io.pSumIn.ready := 0.U
   //  io.oSumMEM.valid := 0.U
   //  io.oSumMEM.bits := 0.S
 
