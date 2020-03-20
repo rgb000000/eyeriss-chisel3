@@ -8,12 +8,11 @@ import config._
 import pe.{PEConfigReg}
 
 class Writer(implicit val p: Parameters) extends Module{
-  val inNums = p(ShellKey).memParams.dataBits / p(FilterW)
   val io = IO(new Bundle{
-    val in = Vec(p(Shape)._2, Flipped(DecoupledIO(Vec(inNums, SInt(p(OSumW).W)))))
+    val in = Vec(p(Shape)._2, Flipped(DecoupledIO(SInt(p(AccW).W))))
     val wr = new VMEWriteMaster
   })
-  val wr_arb = Module(new Arbiter(Vec(inNums, SInt(p(OSumW).W)), p(Shape)._2))
+  val wr_arb = Module(new Arbiter(SInt(p(AccW).W), p(Shape)._2))
   (wr_arb.io.in, io.in).zipped.foreach(_ <> _)
 
   val addr = RegInit(VecInit(Seq.fill(p(Shape)._2)(0.U(p(ShellKey).memParams.dataBits.W))))

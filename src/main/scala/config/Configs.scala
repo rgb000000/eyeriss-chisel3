@@ -10,6 +10,8 @@ case object BiasW extends Field[Int]
 
 case object OSumW extends Field[Int]
 
+case object AccW extends Field[Int]
+
 case object Shape extends Field[(Int, Int)]
 
 case object FilterSpadDepth extends Field[Int]
@@ -28,17 +30,25 @@ case class ShellParams(
 
 case object ShellKey extends Field[ShellParams]
 
+case class BRAMParams(
+                       addrW:Int,
+                       dataW:Int)
+
+case object BRAMKey extends Field[BRAMParams]
+
+
 
 class DefaultConfig extends Config((site, here, up) => {
   case FilterW => 8
   case ImgW => 8
   case BiasW => 8
   case OSumW => 8
+  case AccW => 8
 
   case Shape => (3, 3)
 
-  case FilterSpadDepth => 256
-  case ImgSpadDepth => 256
+  case FilterSpadDepth => 16
+  case ImgSpadDepth => 16
   case PSumMemDepth => 16
 
   case RegFileW => 8
@@ -52,9 +62,14 @@ class DefaultConfig extends Config((site, here, up) => {
       userBits = 1),
     memParams = AXIParams(coherent = false,
       addrBits = 64,
-      dataBits = 512,
+      dataBits = 64,
       lenBits = 8,
       userBits = 1)
+  )
+
+  case BRAMKey => BRAMParams(
+    addrW = 16,
+    dataW = 64
   )
 
 })

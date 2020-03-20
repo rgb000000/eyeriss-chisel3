@@ -6,14 +6,15 @@ import chisel3.util._
 import myutil._
 import config._
 
-class PEn(implicit p: Parameters) extends Module {
-  val n = p(ShellKey).memParams.dataBits / p(FilterW)
-  val memW = p(ShellKey).memParams.dataBits
+class PEn(val position: (Int, Int) = (0, 0))(implicit p: Parameters) extends Module {
+  val memW = p(BRAMKey).dataW
+  val n = memW / p(FilterW)
   val io = IO(new Bundle {
     // [Input] data waiting for calculate
-    val filter = Flipped(DecoupledIO(SInt(memW.W)))
-    val img = Flipped(DecoupledIO(SInt(memW.W)))
+    val filter = Flipped(DecoupledIO(UInt(memW.W)))
+    val img = Flipped(DecoupledIO(UInt(memW.W)))
     val oSumSRAM = DecoupledIO(SInt(p(OSumW).W))
+    val iSum = Flipped(DecoupledIO(SInt(p(OSumW).W)))
     // [Input] config info
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg())
@@ -33,7 +34,7 @@ class PEn(implicit p: Parameters) extends Module {
     iSplit(i) := io.img.bits((i + 1) * p(ImgW) - 1, i * p(ImgW)).asSInt()
   }
 
-  for(i <- 0 until n){
+  for (i <- 0 until n) {
     // filter
     pen(i).io.filter.valid := io.filter.valid
     pen(i).io.filter.bits := fSplit(i)
@@ -49,15 +50,17 @@ class PEn(implicit p: Parameters) extends Module {
     pen(i).io.totalSingleFilterNum := io.totalSingleFilterNum
   }
   // oSum
-  val addT = addTree(pen.map(_.io.oSumSRAM.bits))
+  val addT = addTree(pen.map(_.io.oSumSRAM.bits) :+ io.iSum.bits)
   io.oSumSRAM.valid := pen.head.io.oSumSRAM.valid
   io.oSumSRAM.bits := addT
   pen.foreach(_.io.oSumSRAM.ready := io.oSumSRAM.ready)
+  io.iSum.ready := pen.head.io.oSumSRAM.valid & io.oSumSRAM.ready
 
   io.stateOut := pen.head.io.stateOut
   io.dataDone := pen.head.io.dataDone
 }
-object GetVerilogPEn extends App{
+
+object GetVerilogPEn extends App {
   implicit val p = new DefaultConfig
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_PEn_vcd"), () => new PEn)
 }

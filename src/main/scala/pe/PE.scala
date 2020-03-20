@@ -91,13 +91,19 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   fQ.ready := 0.U
   // when getdata switch io.statwSW == cal and filter must all translate to fQ
 
-  io.dataDone := false.B
+  when(fCnt.value === io.totalFilterNum &
+    iCnt.value === io.totalSingleFilterNum){
+    io.dataDone := true.B
+  }.otherwise{
+    io.dataDone := false.B
+  }
+
   when(dodata) {
     fQMuxIn <> io.filter
     when(fCnt.value === io.totalFilterNum){
       fQMuxIn.valid := 0.U
       io.filter.ready := 0.U
-      io.dataDone := true.B
+//      io.dataDone := true.B
     }
   }.otherwise {
     fQMuxIn <> fQ
@@ -183,7 +189,7 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
           when(iQMuxIn.fire()) {
             iCnt.inc()
           }
-          when(io.stateSW === cal) {
+          when(io.stateSW === cal | io.dataDone) {
             when(iCnt.value === 0.U | fCnt.value === 0.U) {
               state := allDone
             }.otherwise {
