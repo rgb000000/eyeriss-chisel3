@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental._
 import chisel3.util.experimental.loadMemoryFromFile
+import config._
 
 class ram_sim(val aw: Int, val dw: Int) extends BlackBox(Map("aw" -> aw, "dw" -> dw)) with HasBlackBoxResource {
   val io = IO(new Bundle {
@@ -16,6 +17,16 @@ class ram_sim(val aw: Int, val dw: Int) extends BlackBox(Map("aw" -> aw, "dw" ->
   })
   setResource("/ram_sim.v")
   //  setResource("/ram.mem")
+}
+
+class BRAM(implicit p: Parameters) extends Module{
+  val io = IO(new BRAMInterface)
+  val bram = Module(new ram_sim(p(BRAMKey).addrW, p(BRAMKey).dataW))
+  bram.io.clk := clock
+  bram.io.we := io.we
+  bram.io.addr := io.addr
+  bram.io.din := io.din
+  io.dout := bram.io.dout
 }
 
 class RAM(val aw: Int = 20, val dw: Int=280) extends Module {

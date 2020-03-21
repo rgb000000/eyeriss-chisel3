@@ -30,7 +30,7 @@ end
 
 initial
  begin
- $readmemh("/home/SW/PRJ/eyeriss-chisel3/src/main/resources/ram.mem", mem);
+ $readmemh("/home/l-b/prj/eyeriss-chisel3/src/main/resources/ram.mem", mem);
  //$vcdplusmemon;
  end
 
