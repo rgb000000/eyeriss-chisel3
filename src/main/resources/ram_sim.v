@@ -9,6 +9,7 @@ module ram_sim(
 
 parameter aw = 16;
 parameter dw = 16;
+parameter path = "/home/l-b/prj/eyeriss-chisel3/src/main/resources/ram.mem";
 
 input clk;
 input we;
@@ -30,7 +31,7 @@ end
 
 initial
  begin
- $readmemh("/home/l-b/prj/eyeriss-chisel3/src/main/resources/ram.mem", mem);
+ $readmemh(path, mem);
  //$vcdplusmemon;
  end
 

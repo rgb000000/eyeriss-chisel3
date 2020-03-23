@@ -69,7 +69,7 @@ class DefaultConfig extends Config((site, here, up) => {
 
   case BRAMKey => BRAMParams(
     addrW = 16,
-    dataW = 64
+    dataW = 64     // PEn N
   )
 
 })

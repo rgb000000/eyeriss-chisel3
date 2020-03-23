@@ -6,12 +6,13 @@ import chisel3.experimental._
 import chisel3.util.experimental.loadMemoryFromFile
 import config._
 
-class ram_sim(val aw: Int, val dw: Int) extends BlackBox(Map("aw" -> aw, "dw" -> dw)) with HasBlackBoxResource {
+class ram_sim(val aw: Int, val dw: Int, val path: String) extends BlackBox(Map("aw" -> aw, "dw" -> dw, "path" -> path))
+  with HasBlackBoxResource {
   val io = IO(new Bundle {
     val clk = Input(Clock())
     val we = Input(Bool())
     val addr = Input(UInt(aw.W))
-//    val waddr = Input(UInt(aw.W))
+    //    val waddr = Input(UInt(aw.W))
     val din = Input(UInt(dw.W))
     val dout = Output(UInt(dw.W))
   })
@@ -19,9 +20,11 @@ class ram_sim(val aw: Int, val dw: Int) extends BlackBox(Map("aw" -> aw, "dw" ->
   //  setResource("/ram.mem")
 }
 
-class BRAM(implicit p: Parameters) extends Module{
-  val io = IO(new BRAMInterface)
-  val bram = Module(new ram_sim(p(BRAMKey).addrW, p(BRAMKey).dataW))
+class BRAM(val memW: Int,
+           val path: String = "/home/l-b/prj/eyeriss-chisel3/src/main/resources/ram.mem")(implicit p: Parameters)
+  extends Module {
+  val io = IO(new BRAMInterface(memW))
+  val bram = Module(new ram_sim(p(BRAMKey).addrW, memW, path))
   bram.io.clk := clock
   bram.io.we := io.we
   bram.io.addr := io.addr
@@ -29,19 +32,19 @@ class BRAM(implicit p: Parameters) extends Module{
   io.dout := bram.io.dout
 }
 
-class RAM(val aw: Int = 20, val dw: Int=280) extends Module {
+class RAM(val aw: Int = 20, val dw: Int = 280) extends Module {
   val io = IO(new Bundle {
     val we = Input(Bool())
     val addr = Input(UInt(aw.W))
-//    val waddr = Input(UInt(aw.W))
+    //    val waddr = Input(UInt(aw.W))
     val din = Input(Vec(dw / 8, SInt(8.W)))
     val dout = Output(Vec(dw / 8, SInt(8.W)))
   })
-  val u = Module(new ram_sim(aw, dw))
+  val u = Module(new ram_sim(aw, dw, "/home/l-b/prj/eyeriss-chisel3/src/main/resources/ram.mem"))
   u.io.clk := clock
   u.io.we := io.we
   u.io.addr := io.addr
-//  u.io.waddr := io.waddr
+  //  u.io.waddr := io.waddr
   u.io.din := io.din.asUInt()
   //  io.dout := u.io.dout
   for (i <- 0 until dw / 8) {

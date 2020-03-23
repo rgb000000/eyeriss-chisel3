@@ -48,7 +48,7 @@ class PEnArrayTests(c: PEnArray) extends PeekPokeTester(c) {
   poke(c.io.peconfig.singleImgLen, singleImgLen)
   poke(c.io.peconfig.nchannel, nchannel)
   poke(c.io.peconfig.relu, relu)
-  poke(c.io.Write.ready, 1)
+//  poke(c.io.Write.ready, 1)
 
   // stateSW 00 to 01
   poke(c.io.stateSW, 0)
@@ -77,6 +77,35 @@ class PEnArrayTests(c: PEnArray) extends PeekPokeTester(c) {
   // bias
 }
 
+class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(c) {
+  val filterNum = 1
+  val singleFilterLen = 3
+  val imgNum = 1
+  val singleImgLen = 5
+  val nchannel = 1
+  val relu = 1
+
+  // config PEConfig
+  poke(c.io.peconfig.filterNum, filterNum)
+  poke(c.io.peconfig.singleFilterLen, singleFilterLen)
+  poke(c.io.peconfig.imgNum, imgNum)
+  poke(c.io.peconfig.singleImgLen, singleImgLen)
+  poke(c.io.peconfig.nchannel, nchannel)
+  poke(c.io.peconfig.relu, relu)
+  c.io.Write.foreach(o => {
+    poke(o.ready, 1)
+  })
+
+  // stateSW 00 to 01
+  poke(c.io.stateSW, 0)
+  step(1)
+  poke(c.io.stateSW, 1)
+  step(1)
+  poke(c.io.go, 1)
+  step(1)
+  step(100)
+}
+
 class PEnArrayTester extends ChiselFlatSpec {
   implicit val p = new DefaultConfig
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
@@ -90,6 +119,23 @@ class PEnArrayTester extends ChiselFlatSpec {
       () => new PEnArray
     ) {
       c => new PEnArrayTests(c)
+    } should be(true)
+  }
+}
+
+class PEnArrayShellTestTopTester extends ChiselFlatSpec {
+  implicit val p = new DefaultConfig
+  "running with --generate-vcd-output on" should "create a vcd file from your test" in {
+    iotesters.Driver.execute(
+      Array(
+        "--generate-vcd-output", "on",
+        "--target-dir", "test_run_dir/make_PEnArrayShellTestTop_vcd",
+        "--backend-name", "verilator",
+        "--top-name", "make_PEnArrayShellTestTop_vcd"
+      ),
+      () => new PEnArrayShellTestTop
+    ) {
+      c => new PEnArrayShellTestTopTests(c)
     } should be(true)
   }
 }

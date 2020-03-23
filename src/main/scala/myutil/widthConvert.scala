@@ -5,11 +5,11 @@ import chisel3.util._
 import chisel3.experimental._
 import config._
 
-class widthConvert(implicit p: Parameters) extends Module{
+class widthConvert(implicit p: Parameters) extends Module {
   val inWidth = p(OSumW)
   val outWidth = p(ShellKey).memParams.dataBits
-  val nums: Int = (outWidth/inWidth).toInt
-  val io = IO(new Bundle{
+  val nums: Int = (outWidth / inWidth).toInt
+  val io = IO(new Bundle {
     val in = Flipped(DecoupledIO(SInt(inWidth.W)))
     val out = DecoupledIO(Vec(nums, SInt(inWidth.W)))
   })
@@ -19,12 +19,23 @@ class widthConvert(implicit p: Parameters) extends Module{
 
   io.in.ready := io.out.ready
 
-  when(io.in.fire()){
+  when(io.in.fire()) {
     cnt.inc()
     regs(cnt.value) := io.in.bits
   }
-  io.out.valid := (cnt.value === (nums-1).asUInt()) & (io.in.fire())
+  io.out.valid := (cnt.value === (nums - 1).asUInt()) & (io.in.fire())
   // last should be wire
   (io.out.bits, regs).zipped.foreach(_ := _)
-  io.out.bits(nums-1) := io.in.bits
+  io.out.bits(nums - 1) := io.in.bits
+}
+
+class widthCvtWire(val din: Int, val dout: Int) extends Module {
+  val n = din / dout
+  val io = IO(new Bundle {
+    val in = Input(UInt(din.W))
+    val out = Output(Vec(n, UInt(dout.W)))
+  })
+  for (i <- 0 until n) {
+    io.out(i) := io.in((i + 1) * dout - 1, i * dout).asUInt()
+  }
 }

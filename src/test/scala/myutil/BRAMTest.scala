@@ -6,8 +6,8 @@ import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
 import config.DefaultConfig
 
 
-class BRAMTests(c:BRAMTestTop) extends PeekPokeTester(c){
-  poke(c.io.len, 32)
+class BRAMFilterReaderTests(c:BRAMFilterReaderTestTop) extends PeekPokeTester(c){
+  poke(c.io.len, 9)
   poke(c.io.addr, -1)
   poke(c.io.go, 0)
   step(1)
@@ -22,19 +22,52 @@ class BRAMTests(c:BRAMTestTop) extends PeekPokeTester(c){
   step(100)
 }
 
-class BRAMTester extends ChiselFlatSpec{
+class BRAMImgReaderTests(c:BRAMImgReaderTestTop) extends PeekPokeTester(c){
+  poke(c.io.len, 9)
+  poke(c.io.addr, -1)
+  poke(c.io.go, 0)
+  step(1)
+  poke(c.io.go, 1)
+  step(1)
+  step(10)
+  poke(c.io.doutSplit.ready, 1)
+  step(10)
+  poke(c.io.doutSplit.ready, 0)
+  step(10)
+  poke(c.io.doutSplit.ready, 1)
+  step(100)
+}
+
+class BRAMFilterReaderTester extends ChiselFlatSpec{
   implicit val p = new DefaultConfig
   "running with --generate-vcd-output on" should "create a vcd file from your test" in {
     iotesters.Driver.execute(
       Array("--generate-vcd-output", "on",
-        "--target-dir", "test_run_dir/make_BRAMTest_vcd",
-        "--top-name", "make_BRAMTest_vcd",
+        "--target-dir", "test_run_dir/make_BRAMFilterTest_vcd",
+        "--top-name", "make_BRAMFilterTest_vcd",
         "--backend-name", "verilator",
         // "-tmvf", "-full64 -cpp g++-4.8 -cc gcc-4.8 -LDFLAGS -Wl,-no-as-needed +memcbk  +vcs+dumparrays -debug_all"
       ),
-      () => new BRAMTestTop
+      () => new BRAMFilterReaderTestTop(true)
     ) {
-      c => new BRAMTests(c)
+      c => new BRAMFilterReaderTests(c)
+    } should be(true)
+  }
+}
+
+class BRAMImgReaderTester extends ChiselFlatSpec{
+  implicit val p = new DefaultConfig
+  "running with --generate-vcd-output on" should "create a vcd file from your test" in {
+    iotesters.Driver.execute(
+      Array("--generate-vcd-output", "on",
+        "--target-dir", "test_run_dir/make_BRAMImgTest_vcd",
+        "--top-name", "make_BRAMImgTest_vcd",
+        "--backend-name", "verilator",
+        // "-tmvf", "-full64 -cpp g++-4.8 -cc gcc-4.8 -LDFLAGS -Wl,-no-as-needed +memcbk  +vcs+dumparrays -debug_all"
+      ),
+      () => new BRAMImgReaderTestTop
+    ) {
+      c => new BRAMImgReaderTests(c)
     } should be(true)
   }
 }

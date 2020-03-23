@@ -57,3 +57,41 @@ class Writer(implicit val p: Parameters) extends Module{
   io.wr.data.valid := state === wData
   io.wr.data.bits := data
 }
+
+class BRAMWriter(implicit p: Parameters) extends Module{
+  val io = IO(new Bundle{
+    // TODO
+    val w = Flipped(new BRAMInterface(1))
+    val in = Flipped(DecoupledIO(SInt(p(AccW).W)))
+    val addr = Input(UInt(p(BRAMKey).addrW.W))
+    val step = Input(UInt(8.W))
+    val go = Input(Bool())
+    val accCnt = Input(UInt(4.W))
+  })
+
+  val addr = Reg(UInt(p(BRAMKey).addrW.W))
+  val step = Reg(UInt(8.W))
+  io.w.addr := addr
+
+  val ready = RegInit(false.B)
+  io.in.ready := ready
+
+  when(io.go){
+    addr := io.addr
+    step := io.step
+    ready := true.B
+  }
+
+  io.w.we := 0.U
+  io.w.din := 0.U
+  when(io.in.fire()){
+    io.w.we := 1.U
+    io.w.din := io.in.bits.asUInt()
+    addr := addr + step
+  }
+}
+
+object GetVerilogWriter extends App{
+  implicit val p = new DefaultConfig
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_Writer_test"), () => new BRAMWriter)
+}
