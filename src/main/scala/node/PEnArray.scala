@@ -128,7 +128,7 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
 
   val penarray = Module(new PEnArray)
   penarray.io.Freader <> freader.io.dout
-  penarray.io.Fid <> freader.io.fid.get
+  penarray.io.Fid <> freader.io.fid
   penarray.io.Ireaders.foreach(_.valid := ireader.io.doutSplit.valid)
   (penarray.io.Ireaders, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
   ireader.io.doutSplit.ready := penarray.io.Ireaders.last.ready
@@ -157,7 +157,7 @@ class PEnArrayShellTestTop(implicit p: Parameters) extends Module{
   val penarray = Module(new PEnArrayShell)
   penarray.io.FilterBRAM <> filterBRAM.io
   penarray.io.FilterAddr := 0.U
-  penarray.io.FilterLen := io.peconfig.singleFilterLen * p(Shape)._1.asUInt()
+  penarray.io.FilterLen := io.peconfig.singleFilterLen * p(Shape)._1.asUInt() * io.peconfig.filterNum
   penarray.io.ImgBRAM <> imgBRAM.io
   penarray.io.ImgAddr := 0.U
   penarray.io.ImgLen := io.peconfig.singleImgLen

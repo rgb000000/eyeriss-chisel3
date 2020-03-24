@@ -48,7 +48,7 @@ class BRAMFilterReaderTester extends ChiselFlatSpec{
         "--backend-name", "verilator",
         // "-tmvf", "-full64 -cpp g++-4.8 -cc gcc-4.8 -LDFLAGS -Wl,-no-as-needed +memcbk  +vcs+dumparrays -debug_all"
       ),
-      () => new BRAMFilterReaderTestTop(true)
+      () => new BRAMFilterReaderTestTop
     ) {
       c => new BRAMFilterReaderTests(c)
     } should be(true)
