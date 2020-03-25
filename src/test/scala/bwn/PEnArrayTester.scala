@@ -84,6 +84,7 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   val singleImgLen = 5
   val nchannel = 1
   val relu = 1
+  val totalOutChannel = 64
 
   // config PEConfig
   poke(c.io.peconfig.filterNum, filterNum)
@@ -92,6 +93,7 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   poke(c.io.peconfig.singleImgLen, singleImgLen)
   poke(c.io.peconfig.nchannel, nchannel)
   poke(c.io.peconfig.relu, relu)
+  poke(c.io.peconfig.totalOutChannel, totalOutChannel)
   c.io.Write.foreach(o => {
     poke(o.ready, 1)
   })
@@ -103,7 +105,7 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   step(1)
   poke(c.io.go, 1)
   step(1)
-  step(100)
+  step(1000)
 }
 
 class PEnArrayTester extends ChiselFlatSpec {

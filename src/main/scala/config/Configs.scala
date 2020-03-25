@@ -47,8 +47,8 @@ class DefaultConfig extends Config((site, here, up) => {
 
   case Shape => (3, 3)
 
-  case FilterSpadDepth => 49  // 16 * 3 = 48
-  case ImgSpadDepth => 8
+  case FilterSpadDepth => 16  // just for 1 out channel
+  case ImgSpadDepth => 16
   case PSumMemDepth => 16
 
   case RegFileW => 8

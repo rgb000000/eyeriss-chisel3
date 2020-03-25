@@ -120,6 +120,7 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
   freader.io.go := io.go
   freader.io.addr := io.FilterAddr
   freader.io.len := io.FilterLen
+  freader.io.totalOutChannel := io.peconfig.totalOutChannel
   val ireader = Module(new BRAMImgReader)
   ireader.io.r <> io.ImgBRAM
   ireader.io.go := io.go

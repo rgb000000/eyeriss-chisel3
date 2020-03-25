@@ -77,7 +77,8 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
     val len = Input(UInt(16.W))
     val addr = Input(UInt(p(BRAMKey).addrW.W))
 
-//    val jumpStep = Input(UInt(8.W))
+    val totalOutChannel = Input(UInt(8.W))
+
     val fid = Output(UInt(p(Shape)._1.W))
   })
 
@@ -85,7 +86,9 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
   val state = RegInit(idle)
   val len = RegInit(0.U(16.W))
 
+  val baseAddr = RegInit(0.U(p(BRAMKey).addrW.W))
   val addr = RegInit(0.U(p(BRAMKey).addrW.W))
+  val totalOutChannel = Reg(UInt(8.W))
   val we = RegInit(false.B)
   val valid = RegInit(false.B)
   val validDelay = RegNext(valid)
@@ -126,13 +129,22 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
   when(state === idle) {
     len := io.len
     addr := io.addr - 1.U
+    baseAddr := io.addr
+    totalOutChannel := io.totalOutChannel
   }
 
+  val pointCnt = Counter(16)
   when(state === read) {
     when(qIn.ready & !dataPool.valid) {
-      addr := addr + 1.U
+      when(pointCnt.value === 0.U){
+        addr := baseAddr
+        baseAddr := baseAddr + totalOutChannel
+      }.otherwise{
+        addr := addr + 1.U
+      }
       valid := 1.U
       len := len - 1.U
+      pointCnt.inc()
     }.otherwise {
       addr := addr
       valid := 0.U
@@ -144,20 +156,19 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
     valid := 0.U
   }
 
-  io.r.addr := addr
-  io.r.din := 0.U
-  io.r.we := we
-
-  val fcnt = Counter(3)
-  val channelCnt = Counter(16)
+  val idCnt = Counter(48)       // 3 * 16, outChannel first
   val id = RegInit(1.asUInt(p(Shape)._1.W))
   io.fid := id
   when(io.dout.fire()) {
-    when(fcnt.value === 2.U) {
+    when(idCnt.value === 47.U) {
       id := id << 1.U
     }
-    fcnt.inc()
+    idCnt.inc()
   }
+
+  io.r.addr := addr
+  io.r.din := 0.U
+  io.r.we := we
 }
 
 class BRAMImgReader(implicit p: Parameters) extends Module {
@@ -251,10 +262,12 @@ class BRAMFilterReaderTestTop(implicit p: Parameters) extends Module {
     val go = Input(Bool())
     val len = Input(UInt(16.W))
     val addr = Input(UInt(p(BRAMKey).addrW.W))
+    val totalOutChannel = Input(UInt(8.W))
     val fid = Output(UInt(p(Shape)._1.W))
   })
   val bram = Module(new BRAM(p(BRAMKey).dataW))
   val reader = Module(new BRAMFilterReader)
+  reader.io.totalOutChannel := io.totalOutChannel
   bram.io <> reader.io.r
   reader.io.go := io.go
   reader.io.len := io.len

@@ -15,6 +15,7 @@ class PEConfigReg(implicit val p: Parameters) extends Bundle {
   val singleImgLen = UInt(w.W)
   val nchannel = UInt(w.W)
   val relu = UInt(1.W)
+  val totalOutChannel = UInt(w.W)
 }
 
 

@@ -60,34 +60,20 @@ class Writer(implicit val p: Parameters) extends Module{
 
 class BRAMWriter(implicit p: Parameters) extends Module{
   val io = IO(new Bundle{
-    // TODO
-    val w = Flipped(new BRAMInterface(1))
     val in = Flipped(DecoupledIO(SInt(p(AccW).W)))
-    val addr = Input(UInt(p(BRAMKey).addrW.W))
-    val step = Input(UInt(8.W))
-    val go = Input(Bool())
-    val accCnt = Input(UInt(4.W))
+    val w = Flipped(new BRAMInterface(1))
   })
 
-  val addr = Reg(UInt(p(BRAMKey).addrW.W))
-  val step = Reg(UInt(8.W))
-  io.w.addr := addr
+  val addr = Counter(1024)
+  io.in.ready := 1.U
 
-  val ready = RegInit(false.B)
-  io.in.ready := ready
-
-  when(io.go){
-    addr := io.addr
-    step := io.step
-    ready := true.B
-  }
-
-  io.w.we := 0.U
-  io.w.din := 0.U
+  io.w.addr := addr.value
+  io.w.din := io.in.bits.asUInt()
   when(io.in.fire()){
     io.w.we := 1.U
-    io.w.din := io.in.bits.asUInt()
-    addr := addr + step
+    addr.inc()
+  }.otherwise{
+    io.w.we := 0.U
   }
 }
 
