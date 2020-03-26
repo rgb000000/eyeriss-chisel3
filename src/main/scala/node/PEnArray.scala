@@ -21,7 +21,7 @@ class PEnArray(implicit p: Parameters) extends Module {
 
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg)
-    //  val done = Output(UInt(1.W))
+    val done = Output(Bool())
     //    val dataDone = Output(Bool())
 
     val go = Input(Bool())
@@ -35,6 +35,7 @@ class PEnArray(implicit p: Parameters) extends Module {
   val penarray = Seq.tabulate(p(Shape)._1, p(Shape)._2)((x, y) => {
     Module(new PEn(position = (x, y)))
   })
+  io.done := penarray.head.head.io.stateOut === 5.U
   val peLeftandBottom = penarray.toList.map(_.head).toList ::: penarray.toList.last.tail.toList
 
   require(peLeftandBottom.length == io.Ireaders.length)
@@ -107,12 +108,13 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
     val ImgLen = Input(UInt(16.W))
 
 //    val writer = new VMEWriteMaster
-    val Write = Vec(p(Shape)._2, DecoupledIO(SInt(p(OSumW).W)))
+    val WriteBRAM =  Flipped(new BRAMInterface(p(WriterBRAMW)))
 
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg)
 
     val go = Input(Bool())
+    val done = Output(Bool())
   })
 
   val freader = Module(new BRAMFilterReader)
@@ -127,13 +129,22 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
   ireader.io.addr := io.ImgAddr
   ireader.io.len := io.ImgLen
 
+  val accs = List.fill(p(Shape)._2)(Module(new Acc))
+  accs.foreach(_.io.accState := io.peconfig.accState)
+  accs.foreach(_.io.bias := io.peconfig.bias)
+  accs.foreach(_.io.cntLen := io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U)
+  val writer = Module(new BRAMWriter)
+
   val penarray = Module(new PEnArray)
   penarray.io.Freader <> freader.io.dout
   penarray.io.Fid <> freader.io.fid
   penarray.io.Ireaders.foreach(_.valid := ireader.io.doutSplit.valid)
   (penarray.io.Ireaders, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
   ireader.io.doutSplit.ready := penarray.io.Ireaders.last.ready
-  (io.Write, penarray.io.Write).zipped.foreach(_ <> _)
+  (accs, penarray.io.Write).zipped.foreach(_.io.in <> _)
+  (writer.io.in, accs).zipped.foreach(_ <> _.io.out)
+  io.WriteBRAM <> writer.io.w
+  io.done := penarray.io.done
 
   //other config
   val totalSingleFilterNum = WireInit(io.peconfig.singleFilterLen * io.peconfig.nchannel)
@@ -146,23 +157,24 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
 class PEnArrayShellTestTop(implicit p: Parameters) extends Module{
   val io = IO(new Bundle{
     //    val writer = new VMEWriteMaster
-    val Write = Vec(p(Shape)._2, DecoupledIO(SInt(p(OSumW).W)))
-
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg)
 
     val go = Input(Bool())
+    val done = Output(Bool())
   })
   val filterBRAM = Module(new BRAM(p(BRAMKey).dataW))
   val imgBRAM = Module(new BRAM(p(BRAMKey).dataW*(p(Shape)._1 + p(Shape)._2 - 1)))
+  val outBRAM = Module(new BRAM(p(WriterBRAMW)))
   val penarray = Module(new PEnArrayShell)
+  io.done := penarray.io.done
   penarray.io.FilterBRAM <> filterBRAM.io
   penarray.io.FilterAddr := 0.U
   penarray.io.FilterLen := io.peconfig.singleFilterLen * p(Shape)._1.asUInt() * io.peconfig.filterNum
   penarray.io.ImgBRAM <> imgBRAM.io
   penarray.io.ImgAddr := 0.U
   penarray.io.ImgLen := io.peconfig.singleImgLen
-  io.Write <> penarray.io.Write
+  outBRAM.io <> penarray.io.WriteBRAM
   penarray.io.stateSW := io.stateSW
   penarray.io.peconfig := io.peconfig
   penarray.io.go := io.go

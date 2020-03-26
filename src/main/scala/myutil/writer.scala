@@ -60,16 +60,18 @@ class Writer(implicit val p: Parameters) extends Module{
 
 class BRAMWriter(implicit p: Parameters) extends Module{
   val io = IO(new Bundle{
-    val in = Flipped(DecoupledIO(SInt(p(AccW).W)))
-    val w = Flipped(new BRAMInterface(1))
+    val in = Vec(p(Shape)._2, Flipped(DecoupledIO(SInt(p(AccW).W))))
+    val w = Flipped(new BRAMInterface(p(WriterBRAMW)))
   })
 
   val addr = Counter(1024)
-  io.in.ready := 1.U
+  io.in.foreach(_.ready := 1.U)
+  val concat = Wire(Vec(p(Shape)._2, SInt(p(AccW).W)))
+  (concat, io.in).zipped.foreach(_ := _.bits)
 
   io.w.addr := addr.value
-  io.w.din := io.in.bits.asUInt()
-  when(io.in.fire()){
+  io.w.din := concat.asUInt()
+  when(io.in.map(_.valid).reduce(_&_)){
     io.w.we := 1.U
     addr.inc()
   }.otherwise{

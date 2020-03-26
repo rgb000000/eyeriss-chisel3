@@ -94,9 +94,8 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   poke(c.io.peconfig.nchannel, nchannel)
   poke(c.io.peconfig.relu, relu)
   poke(c.io.peconfig.totalOutChannel, totalOutChannel)
-  c.io.Write.foreach(o => {
-    poke(o.ready, 1)
-  })
+  poke(c.io.peconfig.bias, 0)
+  poke(c.io.peconfig.accState, 0)
 
   // stateSW 00 to 01
   poke(c.io.stateSW, 0)
@@ -105,7 +104,15 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   step(1)
   poke(c.io.go, 1)
   step(1)
-  step(1000)
+
+  while (peek(c.io.done) != 1){
+    step(1)
+  }
+
+  poke(c.io.peconfig.accState, 1)
+  step(50)
+
+//  step(100)
 }
 
 class PEnArrayTester extends ChiselFlatSpec {

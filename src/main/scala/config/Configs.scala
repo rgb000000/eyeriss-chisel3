@@ -24,6 +24,8 @@ case object RegFileW extends Field[Int]
 
 case object RegFileDepth extends Field[Int]
 
+case object WriterBRAMW extends Field[Int]
+
 case class ShellParams(
                         hostParams: AXIParams,
                         memParams: AXIParams)
@@ -44,6 +46,7 @@ class DefaultConfig extends Config((site, here, up) => {
   case BiasW => 8
   case OSumW => 8
   case AccW => 8
+  case WriterBRAMW => 128
 
   case Shape => (3, 3)
 

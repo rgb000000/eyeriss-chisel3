@@ -13,9 +13,8 @@ class Acc(implicit p: Parameters) extends Module {
     val in = Flipped(DecoupledIO(SInt(p(OSumW).W)))
     val bias = Input(SInt(p(BiasW).W))
     val out = DecoupledIO(SInt(p(AccW).W))
-    val last = Input(Bool())
-    val again = Input(Bool())
-    val push = Input(Bool())
+    val accState = Input(UInt(p(RegFileW).W))
+    val cntLen = Input(UInt(16.W))
   })
 
   val mem = Mem(512, SInt(p(OSumW).W))
@@ -24,6 +23,12 @@ class Acc(implicit p: Parameters) extends Module {
 
   val acc :: bias :: output ::Nil = Enum(3)
   val state = RegInit(acc)
+
+  val sagain :: slast :: spush :: Nil = Enum(3)
+
+  val again = WireInit(io.accState === sagain)
+  val last = WireInit(io.accState === slast)
+  val push = WireInit(io.accState === spush)
 
   val qIn = Wire(DecoupledIO(SInt(p(AccW).W)))
   qIn.valid := 0.U
@@ -34,12 +39,12 @@ class Acc(implicit p: Parameters) extends Module {
 
   switch(state){
     is(acc){
-      when(io.last){
+      when(last){
         state := bias
       }
     }
     is(bias){
-      when(io.push){
+      when(push){
         state := output
       }
     }
@@ -53,7 +58,10 @@ class Acc(implicit p: Parameters) extends Module {
   }
 
   io.in.ready := state === acc
-  when(io.again | io.last | io.push){
+  when(addr.value === io.cntLen - 1.U & (io.in.fire() | qIn.fire())){
+    when(state === bias){
+      state := output
+    }
     addr.value := 0.U
   }.elsewhen(io.in.fire() | qIn.fire()){
     addr.inc()
