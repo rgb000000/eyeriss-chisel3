@@ -57,16 +57,35 @@ def getFeature(startAddr, inFeatureSize, path = "./featureMEM.hex"):
 
     CHANNELMAX = 64
     ROWMAX = 5
-    n = math.ceil(inFeatureSize / ROWMAX)
     feature = np.zeros([ROWMAX, inFeatureSize, CHANNELMAX])
     offset = 0
     for col in range(feature.shape[1]):
         col_data = np.array(feature_int[startAddr + offset])
         feature[:, col, :] = col_data.reshape(ROWMAX, CHANNELMAX)
-        offset += n
+        offset += 1
     shape = feature.shape
     feature = np.array(list(map(getSign, feature.flatten())))
     return feature.reshape(shape)
 
-def conv_forward(feature, filter):
+def conv_forward(feature, filter, stride):
+    f = filter.shape[0]
+    (n_H_prev, n_W_prev, n_C) = feature.shape
+    n_H = int((n_H_prev - f)/stride + 1)
+    n_W = int((n_W_prev - f)/stride + 1)
+    Z = np.zeros([n_H, n_W, n_C])
+    for h in range(n_H):
+        for w in range(n_W):
+            for c in range(n_C):
+                vert_start = h * stride
+                vert_end = vert_start + f
+                horiz_start = w * stride
+                horiz_end = horiz_start + f
+                feature_slice = feature[vert_start:vert_end,horiz_start:horiz_end, :]
+                Z[h, w, c] = np.sum(np.multiply(feature_slice[:, :, c], filter[:, :, c]))
+    return Z
+
+def layer(filterSize, inChannel, outChannel, featureSize):
+    CHANNELMAX = 64
+    ROWMAX = 5
+    inChannelTime = math.ceil(inChannel / ROWMAX)
     pass

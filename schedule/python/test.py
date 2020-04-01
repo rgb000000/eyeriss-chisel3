@@ -17,6 +17,6 @@ a = np.random.randn(6,6,256)*10
 a = a.astype(np.int)
 a.shape
 feature2mem(a)
-b = getFeature(0, 6)
-c = np.sum(a[0:5, :, 0:64] != b)
+b = getFeature(6, 6)
+c = np.sum(a[3:, :, 0:64] != b[0:3, :, :])
 print(c)

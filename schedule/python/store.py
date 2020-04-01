@@ -102,15 +102,25 @@ def feature2mem(afeature, path=os.getcwd()+"/featureMEM.hex"):
     """
     
     ROWMAX = 5
+    FILTERSIZE = 3
     CHANNELMAX = 64
+    STEP = ROWMAX - (FILTERSIZE - 1)
+
     mem = open(path, "w")
-    shape = (math.ceil(afeature.shape[0] / ROWMAX) * ROWMAX, afeature.shape[1], math.ceil(afeature.shape[2]/CHANNELMAX)*CHANNELMAX)
+
+    row_need_complement = (STEP - (afeature.shape[0] - ROWMAX) % STEP) % STEP
+    print("complement {} rows".format(row_need_complement))
+    shape = [afeature.shape[0] + row_need_complement, afeature.shape[1], afeature.shape[2]]
     feature = np.zeros(shape, dtype=np.int)
-    feature[0:afeature.shape[0], :, 0:afeature.shape[2]] = afeature
+    feature[0: afeature.shape[0], :, :] = afeature
     feature_split = [feature[:, :, i*CHANNELMAX : (i+1)*CHANNELMAX] for i in range(math.ceil(feature.shape[2] / CHANNELMAX))]
     for f in feature_split:
-        for col in range(f.shape[1]):
-            for row in range(int(f.shape[0] / ROWMAX)):
-                mem_row = "".join(list(map("{:>02x}".format, list(map(complement, f[row*ROWMAX: (row+1)*ROWMAX, col, :].flatten()))))) + "\n"
+        head = 0
+        for i in range(1 + int((f.shape[0] - ROWMAX) / STEP)):
+            for col in range(f.shape[1]):
+                mem_row = "ERROR \n"
+                mem_row = "".join(list(map("{:>02x}".format, list(map(complement, f[head:head+ROWMAX, col, :].flatten()))))) + "\n"
                 mem.write(mem_row)
-                
+            head += STEP
+        assert((head - STEP + ROWMAX) == f.shape[0])
+    mem.close()
