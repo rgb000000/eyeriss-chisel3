@@ -76,14 +76,8 @@ def filter2mem(filters, path=os.getcwd()+"/filterMEM.hex"):
     shape = (filters.shape[0], filters.shape[1], filters.shape[2], math.ceil(filters.shape[3]/CHANNELMAX)*CHANNELMAX)
     filter = np.zeros(shape, dtype=np.int)
     filter[:, :, :, 0: filters.shape[3]] = filters
-    filter_split = []
+    filter_split = [filter[:, :, :, i*CHANNELMAX : (i+1)*CHANNELMAX] for i in range(math.ceil(filter.shape[3] / CHANNELMAX))]
     mem = open(path, "w")
-    for i in range(math.ceil(filter.shape[3] / CHANNELMAX)):
-        try:
-            tmp = filter[:, :, :, i*CHANNELMAX : (i+1)*CHANNELMAX]
-        except:
-            tmp = filter[:, :, :, i*CHANNELMAX : ]
-        filter_split.append(tmp)
     
     for f in filter_split:
         for i in range(f.shape[1] ** 2):
@@ -93,20 +87,30 @@ def filter2mem(filters, path=os.getcwd()+"/filterMEM.hex"):
 
     mem.close()
 
-def feature2mem(afeature, path=os.getcwd()+"/featureMem.hex"):
+def feature2mem(afeature, path=os.getcwd()+"/featureMEM.hex"):
     
-        """ Description
-        :type feature:
-        :param feature:
+    """ Description
+    :type feature: np.array 3D
+    :param feature:
+
+    :type path:
+    :param path:
+
+    :raises:
+
+    :rtype:
+    """
     
-        :type path:
-        :param path:
-    
-        :raises:
-    
-        :rtype:
-        """
-        
-        ROWMAX = 14
-        CHANNELMAX = 64
-        shape = (afeature)
+    ROWMAX = 5
+    CHANNELMAX = 64
+    mem = open(path, "w")
+    shape = (math.ceil(afeature.shape[0] / ROWMAX) * ROWMAX, afeature.shape[1], math.ceil(afeature.shape[2]/CHANNELMAX)*CHANNELMAX)
+    feature = np.zeros(shape, dtype=np.int)
+    feature[0:afeature.shape[0], :, 0:afeature.shape[2]] = afeature
+    feature_split = [feature[:, :, i*CHANNELMAX : (i+1)*CHANNELMAX] for i in range(math.ceil(feature.shape[2] / CHANNELMAX))]
+    for f in feature_split:
+        for col in range(f.shape[1]):
+            for row in range(int(f.shape[0] / ROWMAX)):
+                mem_row = "".join(list(map("{:>02x}".format, list(map(complement, f[row*ROWMAX: (row+1)*ROWMAX, col, :].flatten()))))) + "\n"
+                mem.write(mem_row)
+                

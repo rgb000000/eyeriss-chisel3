@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 BITS = 8
 VARIANCE = 10
@@ -9,7 +10,24 @@ def getSign(num):
     else:
         return num
 
-def getW(startAddr, inChannel, outChannel, filterSize = 3, path = "./filterMEM.hex"):
+def getW(startAddr, outChannel,  path = "./filterMEM.hex"):
+
+    """ Description
+    :type startAddr:    Int
+    :param startAddr:   the first of mem address which need to be readed
+
+    :type outChannel:   Int
+    :param outChannel:  the number of this conv layer's outChannel, in other word the number of filter
+
+    :type path:         String
+    :param path:        filter mem file path
+
+    :raises:
+
+    :rtype:             Filter 3D
+    """
+    SIZE = 3
+    CHANNELMAX= 64
     W_int = []
     with open(path, "r") as f:
         for line in f.readlines():
@@ -18,35 +36,37 @@ def getW(startAddr, inChannel, outChannel, filterSize = 3, path = "./filterMEM.h
             W_int.append(list(map(int, numbers, [16]*len(numbers))))
 
     channel = 64 # if (inChannel > 64) else inChannel     #卷积核拆分后最大通道数
-    W = np.zeros([filterSize, filterSize, channel])
+    W = np.zeros([SIZE, SIZE, CHANNELMAX])
     #W = [ 卷积核大小， 卷积核大小, 卷积核拆分后最大通道数 ]
     n = 0 #读取数据的第几行
-    for w in range(filterSize):
-        for h in range(filterSize):
+    for w in range(SIZE):
+        for h in range(SIZE):
                 W[w, h, :] = W_int[startAddr + n]
                 n += outChannel
     shape = W.shape
     W = np.array(list(map(getSign, W.flatten())))
     return W.reshape(shape)
 
-def getFeature(startAddr, inputWidth, inChannel):
+def getFeature(startAddr, inFeatureSize, path = "./featureMEM.hex"):
     feature_int = []
-    with open("feature.txt", "r") as f:
+    with open(path, "r") as f:
         for line in f.readlines():
-            feature_int.append(list(map(int, line.strip("\n").split(" "))))
+            line = line.rstrip()
+            numbers = [line[i:i+2] for i in range(0, len(line), 2)]
+            feature_int.append(list(map(int, numbers, [16]*len(numbers))))
 
-    channel = 64 if (inChannel > 64) else inChannel     #feature核拆分后最大通道数
-    inputHeight = 16 if (inputWidth > 16) else inputWidth   #feature读取的最大行数
-    
-    feature = np.zeros([inputHeight, inputWidth, channel])
-    #feature = [ feature读取的最大行数， feature列， feature核拆分后最大通道数]
-    n = 0   #读取数据的第几行
-    for w in range(inputWidth):
-        for h in range(inputHeight):
-            feature[h, w, :] = feature_int[startAddr + n][h * channel : (h + 1) * channel]  #一次读取64个数据
-        n += inputWidth // inputHeight
-    
-    return feature
+    CHANNELMAX = 64
+    ROWMAX = 5
+    n = math.ceil(inFeatureSize / ROWMAX)
+    feature = np.zeros([ROWMAX, inFeatureSize, CHANNELMAX])
+    offset = 0
+    for col in range(feature.shape[1]):
+        col_data = np.array(feature_int[startAddr + offset])
+        feature[:, col, :] = col_data.reshape(ROWMAX, CHANNELMAX)
+        offset += n
+    shape = feature.shape
+    feature = np.array(list(map(getSign, feature.flatten())))
+    return feature.reshape(shape)
 
 def conv_forward(feature, filter):
     pass
