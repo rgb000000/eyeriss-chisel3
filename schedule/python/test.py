@@ -1,6 +1,6 @@
 
 from store import *
-a = np.random.randn(32, 3, 3, 256) *10
+a = np.random.randn(32, 3, 3, 64) *10
 a = a.astype(np.int)
 filter2mem(a)
 from filter_feature import *
@@ -13,7 +13,7 @@ print(d)
 
 from store import *
 from filter_feature import *
-a = np.random.randn(6,6,256)*10
+a = np.random.randn(6,6,64)*10
 a = a.astype(np.int)
 a.shape
 feature2mem(a)
