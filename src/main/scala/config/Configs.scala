@@ -1,6 +1,7 @@
 package config
 
 import axi._
+import java.nio.file.Paths
 
 case object FilterW extends Field[Int]
 
@@ -38,6 +39,9 @@ case class BRAMParams(
 
 case object BRAMKey extends Field[BRAMParams]
 
+case object FilterMEMPath extends Field[String]
+
+case object FeatureMEMPath extends Field[String]
 
 
 class DefaultConfig extends Config((site, here, up) => {
@@ -74,5 +78,15 @@ class DefaultConfig extends Config((site, here, up) => {
     addrW = 16,
     dataW = 64     // PEn N
   )
+
+  case FilterMEMPath =>
+    val path = Paths.get("./schedule/python/filterMEM.hex").toAbsolutePath.toString
+    println(path)
+    path
+
+  case FeatureMEMPath =>
+    val path = Paths.get("./schedule/python/featureMEM.hex").toAbsolutePath.toString
+    println(path)
+    path
 
 })

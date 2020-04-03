@@ -81,10 +81,11 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   val filterNum = 1
   val singleFilterLen = 3
   val imgNum = 1
-  val singleImgLen = 5
   val nchannel = 1
   val relu = 1
-  val totalOutChannel = 64
+
+  val singleImgLen = 32
+  val totalOutChannel = 1
 
   // config PEConfig
   poke(c.io.peconfig.filterNum, filterNum)

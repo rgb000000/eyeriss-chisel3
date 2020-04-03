@@ -163,8 +163,8 @@ class PEnArrayShellTestTop(implicit p: Parameters) extends Module{
     val go = Input(Bool())
     val done = Output(Bool())
   })
-  val filterBRAM = Module(new BRAM(p(BRAMKey).dataW))
-  val imgBRAM = Module(new BRAM(p(BRAMKey).dataW*(p(Shape)._1 + p(Shape)._2 - 1)))
+  val filterBRAM = Module(new BRAM(p(BRAMKey).dataW, p(FilterMEMPath)))
+  val imgBRAM = Module(new BRAM(p(BRAMKey).dataW*(p(Shape)._1 + p(Shape)._2 - 1), p(FeatureMEMPath)))
   val outBRAM = Module(new BRAM(p(WriterBRAMW)))
   val penarray = Module(new PEnArrayShell)
   io.done := penarray.io.done
