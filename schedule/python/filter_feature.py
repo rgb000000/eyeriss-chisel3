@@ -18,6 +18,19 @@ def getSign(num):
 W_int = []
 feature_int = []
 def readFile(featureMEMPath, filterMEMPath):
+
+    """ Description
+    :type featureMEMPath:
+    :param featureMEMPath:
+
+    :type filterMEMPath:
+    :param filterMEMPath:
+
+    :raises:
+
+    :rtype:
+    """
+
     with open(featureMEMPath, "r") as f:
         for line in f.readlines():
             line = line.rstrip()
@@ -59,6 +72,18 @@ def getW(startAddr, outChannel):
 
 def getFeature(startAddr, inFeatureSize):
 
+    """ Description
+    :type startAddr:
+    :param startAddr:
+
+    :type inFeatureSize:
+    :param inFeatureSize:
+
+    :raises:
+
+    :rtype:
+    """
+
     feature = np.zeros([ROWMAX, inFeatureSize, CHANNELMAX])
     offset = 0
     for col in range(feature.shape[1]):
@@ -70,6 +95,19 @@ def getFeature(startAddr, inFeatureSize):
     return feature.reshape(shape)
 
 def conv_forward(feature, filter):
+
+    """ Description:    use for single filter, one outChannel
+    :type feature:
+    :param feature:
+
+    :type filter:
+    :param filter:
+
+    :raises:
+
+    :rtype:
+    """
+
     assert(feature.shape[2] == filter.shape[2])
     shape = [
         feature.shape[0] - filter.shape[0] + 1, 
@@ -81,6 +119,19 @@ def conv_forward(feature, filter):
     return Z
 
 def conv4D_forward(feature, filter):
+
+    """ Description:    use for conv 4D filter, outChannel 
+    :type feature:
+    :param feature:
+
+    :type filter:
+    :param filter:
+
+    :raises:
+
+    :rtype:
+    """
+
     assert(feature.shape[2] == filter.shape[3])
     shape = [
         feature.shape[0] - filter.shape[1] + 1, 
@@ -92,15 +143,33 @@ def conv4D_forward(feature, filter):
     return Z
 
 def layer(inChannel, outChannel, featureSize):
+    
+    """ Description:    to simulate a layer
+    :type inChannel:
+    :param inChannel:   input channel number
+
+    :type outChannel:
+    :param outChannel:  output channel number or filter number
+
+    :type featureSize:
+    :param featureSize: feature size
+
+    :raises:
+
+    :rtype:             return a layer result
+    """
+
     n = featureSize - FILTERSIZE + 1
     Z = np.zeros((n, n, outChannel))
     for filterNum in range(outChannel):
         for feature_split_num in range(math.ceil(n / (ROWMAX - 3 + 1))):
             Z_split = np.zeros((ROWMAX - FILTERSIZE + 1, n))
             for channel_split_num in range(math.ceil(inChannel / CHANNELMAX)):
-                filter = getW(channel_split_num * outChannel * (FILTERSIZE**2) + filterNum, outChannel)
-                feature = getFeature(channel_split_num * (math.ceil((featureSize - ROWMAX)/STEP)+1)*featureSize + 
-                                    feature_split_num * featureSize, featureSize)
+                filter_addr = channel_split_num * outChannel * (FILTERSIZE**2) + filterNum
+                feature_addr = channel_split_num * (math.ceil((featureSize - ROWMAX)/STEP)+1)*featureSize + feature_split_num * featureSize
+                filter = getW(filter_addr, outChannel)
+                feature = getFeature(feature_addr, featureSize)
+                print("filter addr: {:>08x},   feature addr: {:>08x}".format(filter_addr, feature_addr))
                 Z_split += conv_forward(feature, filter)
             if (feature_split_num + 1)*Z_split.shape[0] <= Z.shape[1]:
                 Z[feature_split_num*Z_split.shape[0]: (feature_split_num + 1)*Z_split.shape[0], :, filterNum] = Z_split
@@ -110,9 +179,16 @@ def layer(inChannel, outChannel, featureSize):
     return Z
 
 def layerTest():
-    inChannel = 256
+    
+    """ Description: use to test schedule program
+    :raises:
+
+    :rtype: return simulation result
+    """
+
+    inChannel = 64
     outChanel = 1
-    featureSize = 128
+    featureSize = 8
     W = filterG(outChanel, FILTERSIZE, inChannel)
     F = featureG(featureSize, inChannel)
     sw_Z = conv4D_forward(F, W)
@@ -123,6 +199,7 @@ def layerTest():
     hw_Z = layer(inChannel, outChanel, featureSize)
     print(hw_Z.shape)
     print(np.sum(hw_Z != sw_Z))
+    return hw_Z
 
 if __name__ == '__main__':
     layerTest()

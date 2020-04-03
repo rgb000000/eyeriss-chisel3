@@ -3,7 +3,7 @@ import math
 import os
 
 BITS = 8
-VARIANCE = 2
+VARIANCE = 1
 
 def complement(num):
     
