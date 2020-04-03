@@ -1,9 +1,8 @@
 import numpy as np
 import math
 import os
+from config import *
 
-BITS = 8
-VARIANCE = 1
 
 def complement(num):
     
@@ -72,7 +71,6 @@ def filter2mem(filters, path=os.getcwd()+"/filterMEM.hex"):
     :rtype: null
     """
 
-    CHANNELMAX = 64
     shape = (filters.shape[0], filters.shape[1], filters.shape[2], math.ceil(filters.shape[3]/CHANNELMAX)*CHANNELMAX)
     filter = np.zeros(shape, dtype=np.int)
     filter[:, :, :, 0: filters.shape[3]] = filters
@@ -82,7 +80,7 @@ def filter2mem(filters, path=os.getcwd()+"/filterMEM.hex"):
     for f in filter_split:
         for i in range(f.shape[1] ** 2):
             for n in range(f.shape[0]):
-                row = "".join(list(map("{:>02x}".format, list(map(complement, f[n, i // 3, i % 3, :]))))) + "\n"
+                row = "".join(list(map("{:>02x}".format, list(map(complement, f[n, i // 3, i % 3, :]))))[::-1]) + "\n"
                 mem.write(row)
 
     mem.close()
@@ -100,11 +98,6 @@ def feature2mem(afeature, path=os.getcwd()+"/featureMEM.hex"):
 
     :rtype:
     """
-    
-    ROWMAX = 5
-    FILTERSIZE = 3
-    CHANNELMAX = 64
-    STEP = ROWMAX - (FILTERSIZE - 1)
 
     mem = open(path, "w")
 
@@ -119,7 +112,7 @@ def feature2mem(afeature, path=os.getcwd()+"/featureMEM.hex"):
         for i in range(1 + int((f.shape[0] - ROWMAX) / STEP)):
             for col in range(f.shape[1]):
                 mem_row = "ERROR \n"
-                mem_row = "".join(list(map("{:>02x}".format, list(map(complement, f[head:head+ROWMAX, col, :].flatten()))))) + "\n"
+                mem_row = "".join(list(map("{:>02x}".format, list(map(complement, f[head:head+ROWMAX, col, :].flatten()))))[::-1]) + "\n"
                 mem.write(mem_row)
             head += STEP
         assert((head - STEP + ROWMAX) == f.shape[0])

@@ -2,12 +2,7 @@ import numpy as np
 import math
 from store import *
 
-BITS = 8
-VARIANCE = 10
-CHANNELMAX = 64
-ROWMAX = 5
-FILTERSIZE = 3
-STEP = ROWMAX - (FILTERSIZE - 1)
+from config import *
 
 def getSign(num):
     if num >= 0x80:
@@ -34,12 +29,12 @@ def readFile(featureMEMPath, filterMEMPath):
     with open(featureMEMPath, "r") as f:
         for line in f.readlines():
             line = line.rstrip()
-            numbers = [line[i:i+2] for i in range(0, len(line), 2)]
+            numbers = [line[i:i+2] for i in range(0, len(line), 2)][::-1]
             feature_int.append(list(map(int, numbers, [16]*len(numbers))))
     with open(filterMEMPath, "r") as f:
         for line in f.readlines():
             line = line.rstrip()
-            numbers = [line[i:i+2] for i in range(0, len(line), 2)]
+            numbers = [line[i:i+2] for i in range(0, len(line), 2)][::-1]
             W_int.append(list(map(int, numbers, [16]*len(numbers))))
 
 def getW(startAddr, outChannel):
@@ -186,9 +181,9 @@ def layerTest():
     :rtype: return simulation result
     """
 
-    inChannel = 64
+    inChannel = 8
     outChanel = 1
-    featureSize = 8
+    featureSize = 5
     W = filterG(outChanel, FILTERSIZE, inChannel)
     F = featureG(featureSize, inChannel)
     sw_Z = conv4D_forward(F, W)
@@ -199,7 +194,10 @@ def layerTest():
     hw_Z = layer(inChannel, outChanel, featureSize)
     print(hw_Z.shape)
     print(np.sum(hw_Z != sw_Z))
-    return hw_Z
+    np.save("W", W)
+    np.save("F", F)
+    np.save("Z", hw_Z)
+    return W, F, hw_Z
 
 if __name__ == '__main__':
     layerTest()
