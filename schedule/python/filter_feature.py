@@ -110,9 +110,9 @@ def layer(inChannel, outChannel, featureSize):
     return Z
 
 def layerTest():
-    inChannel = 64
+    inChannel = 256
     outChanel = 1
-    featureSize = 256
+    featureSize = 128
     W = filterG(outChanel, FILTERSIZE, inChannel)
     F = featureG(featureSize, inChannel)
     sw_Z = conv4D_forward(F, W)

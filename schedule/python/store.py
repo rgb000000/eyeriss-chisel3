@@ -112,7 +112,7 @@ def feature2mem(afeature, path=os.getcwd()+"/featureMEM.hex"):
     print("complement {} rows".format(row_need_complement))
     shape = [afeature.shape[0] + row_need_complement, afeature.shape[1], max(afeature.shape[2], CHANNELMAX)]
     feature = np.zeros(shape, dtype=np.int)
-    feature[0: afeature.shape[0], :, 0:max(afeature.shape[2], CHANNELMAX)] = afeature
+    feature[0: afeature.shape[0], :, 0:afeature.shape[2]] = afeature
     feature_split = [feature[:, :, i*CHANNELMAX : (i+1)*CHANNELMAX] for i in range(math.ceil(feature.shape[2] / CHANNELMAX))]
     for f in feature_split:
         head = 0
