@@ -55,7 +55,7 @@ class PEnArray(implicit p: Parameters) extends Module {
   // PEnArray
   // row share filter in
   for (i <- 0 until p(Shape)._1) {
-    (penarray.map(_ (i)), FselectPass).zipped.foreach(_.io.filter <> _.io.out)
+    (penarray.map(_ (i)), FselectPass.reverse).zipped.foreach(_.io.filter <> _.io.out)
   }
   // bolique upward image in
   penarray.foreach(_.foreach((PEn) => {
@@ -125,7 +125,7 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
   freader.io.totalOutChannel := io.peconfig.totalOutChannel
   val ireader = Module(new BRAMImgReader)
   ireader.io.r <> io.ImgBRAM
-  ireader.io.go := io.go
+  ireader.io.go := freader.io.done
   ireader.io.addr := io.ImgAddr
   ireader.io.len := io.ImgLen
 
@@ -138,9 +138,11 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
   val penarray = Module(new PEnArray)
   penarray.io.Freader <> freader.io.dout
   penarray.io.Fid <> freader.io.fid
-  penarray.io.Ireaders.foreach(_.valid := ireader.io.doutSplit.valid)
-  (penarray.io.Ireaders, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
+
+  penarray.io.Ireaders.reverse.foreach(_.valid := ireader.io.doutSplit.valid)
+  (penarray.io.Ireaders.reverse, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
   ireader.io.doutSplit.ready := penarray.io.Ireaders.last.ready
+
   (accs, penarray.io.Write).zipped.foreach(_.io.in <> _)
   (writer.io.in, accs).zipped.foreach(_ <> _.io.out)
   io.WriteBRAM <> writer.io.w

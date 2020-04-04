@@ -80,6 +80,7 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
     val totalOutChannel = Input(UInt(8.W))
 
     val fid = Output(UInt(p(Shape)._1.W))
+    val done = Output(Bool())
   })
 
   val idle :: read :: done :: Nil = Enum(3)
@@ -156,11 +157,11 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
     valid := 0.U
   }
 
-  val idCnt = Counter(48)       // 3 * 16, outChannel first
+  val idCnt = Counter(3)       // 3 * 16, outChannel first
   val id = RegInit(1.asUInt(p(Shape)._1.W))
   io.fid := id
   when(io.dout.fire()) {
-    when(idCnt.value === 47.U) {
+    when(idCnt.value === 2.U) {
       id := id << 1.U
     }
     idCnt.inc()
@@ -169,6 +170,7 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
   io.r.addr := addr
   io.r.din := 0.U
   io.r.we := we
+  io.done := state === done
 }
 
 class BRAMImgReader(implicit p: Parameters) extends Module {

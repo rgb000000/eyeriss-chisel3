@@ -1,6 +1,7 @@
 package pe
 
 import chisel3._
+import chisel3.core.dontTouch
 import chisel3.internal.naming.chiselName
 import chisel3.util._
 import myutil._
@@ -29,6 +30,8 @@ class PEn(val position: (Int, Int) = (0, 0))(implicit p: Parameters) extends Mod
 
   val fSplit = Wire(Vec(n, SInt(p(FilterW).W)))
   val iSplit = Wire(Vec(n, SInt(p(FilterW).W)))
+  dontTouch(fSplit)
+  dontTouch(iSplit)
   for (i <- 0 until n) {
     fSplit(i) := io.filter.bits((i + 1) * p(FilterW) - 1, i * p(FilterW)).asSInt()
     iSplit(i) := io.img.bits((i + 1) * p(ImgW) - 1, i * p(ImgW)).asSInt()

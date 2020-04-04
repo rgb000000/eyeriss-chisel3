@@ -84,7 +84,7 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   val nchannel = 1
   val relu = 1
 
-  val singleImgLen = 32
+  val singleImgLen = 5
   val totalOutChannel = 1
 
   // config PEConfig
