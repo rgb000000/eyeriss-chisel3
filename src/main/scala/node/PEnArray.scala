@@ -27,7 +27,7 @@ class PEnArray(implicit p: Parameters) extends Module {
     val go = Input(Bool())
   })
 
-  val FselectPass = List.fill(p(Shape)._1)(Module(new selectPass(UInt(p(ShellKey).memParams.dataBits.W))))
+  val FselectPass = List.fill(p(Shape)._1)(Module(new selectPass(UInt(p(BRAMKey).dataW.W))))
   FselectPass.foreach(_.io.in <> io.Freader)
   io.Freader.ready := FselectPass.map(_.io.in.ready).reduce(_ | _)
   (FselectPass, io.Fid.toBools).zipped.foreach(_.io.en := _)
