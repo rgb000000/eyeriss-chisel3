@@ -20,6 +20,9 @@ class PEConfigReg(implicit val p: Parameters) extends Bundle {
 
   val bias = SInt(p(BiasW).W)
   val accState = UInt(w.W)
+
+  val filterAddr = UInt(16.W)
+  val imgAddr = UInt(16.W)
 }
 
 

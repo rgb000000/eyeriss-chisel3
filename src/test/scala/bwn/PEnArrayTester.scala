@@ -97,6 +97,8 @@ class PEnArrayShellTestTopTests(c: PEnArrayShellTestTop) extends PeekPokeTester(
   poke(c.io.peconfig.totalOutChannel, totalOutChannel)
   poke(c.io.peconfig.bias, 0)
   poke(c.io.peconfig.accState, 0)
+  poke(c.io.peconfig.filterAddr, 0)
+  poke(c.io.peconfig.imgAddr, 0)
 
   // stateSW 00 to 01
   poke(c.io.stateSW, 0)
