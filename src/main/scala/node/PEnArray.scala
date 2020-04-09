@@ -55,7 +55,7 @@ class PEnArray(implicit p: Parameters) extends Module {
 
   // PEnArray
   // row share filter in
-  for (i <- 0 until p(Shape)._1) {
+  for (i <- 0 until p(Shape)._2) {
     (penarray.map(_ (i)), FselectPass.reverse).zipped.foreach(_.io.filter <> _.io.out)
   }
   // bolique upward image in
