@@ -337,6 +337,16 @@ class Controller(faddr: Int = 0x0000, iaddr: Int = 0x0480, waddr: Int = 4500,
 //      io.allDone := 1.U
     }
   }
+}
 
-
+class PEnController(implicit p: Parameters) extends Module{
+  val io = IO(new Bundle{
+    val go = Input(Bool())
+    val stateSW = Output(UInt(2.W))
+  })
+  val reg = RegInit(0.U)
+  when(io.go){
+    reg := 1.U
+  }
+  io.stateSW := reg
 }

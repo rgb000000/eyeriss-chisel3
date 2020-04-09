@@ -59,7 +59,7 @@ class DefaultConfig extends Config((site, here, up) => {
   case PSumMemDepth => 16
 
   case RegFileW => 8
-  case RegFileDepth => 8
+  case RegFileDepth => 16
 
   case ShellKey => ShellParams(
     hostParams = AXIParams(coherent = false,

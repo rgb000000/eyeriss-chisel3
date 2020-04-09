@@ -115,8 +115,14 @@ class AXIRegFile(implicit val p: Parameters) extends Module {
   io.peconfig.singleImgLen := regfile(3)
   io.peconfig.nchannel := regfile(4)
   io.peconfig.relu := regfile(5)
-  io.loop := regfile(6)
-  io.go := regfile(7)
+  io.peconfig.totalOutChannel := regfile(6)
+  io.peconfig.bias := regfile(7).asSInt()
+  io.peconfig.accState := regfile(8)
+  io.peconfig.filterAddr := regfile(9)
+  io.peconfig.imgAddr := regfile(10)
+
+  io.loop := regfile(11)
+  io.go := regfile(12)
 }
 
 class XilinxShell(implicit p: Parameters) extends RawModule {
@@ -128,9 +134,19 @@ class XilinxShell(implicit p: Parameters) extends RawModule {
   val ap_rst_n = IO(Input(Bool()))
   val s_axi_control = IO(new XilinxAXILiteClient(hp))
 
+  val out = IO(new Bundle{
+    val peconfig = Output(new PEConfigReg)
+    val go = Output(UInt(1.W))
+    val loop = Output(UInt(8.W))
+  })
+
   val shell = withClockAndReset(clock = ap_clk, reset = (~ap_rst_n).toBool) {
     Module(new AXIRegFile)
   }
+
+  out.peconfig <> shell.io.peconfig
+  out.go <> shell.io.go
+  out.loop <> shell.io.loop
 
   // host
   shell.io.host.aw.valid := s_axi_control.AWVALID

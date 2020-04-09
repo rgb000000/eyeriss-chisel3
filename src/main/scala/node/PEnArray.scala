@@ -1,5 +1,6 @@
 package node
 
+import axi._
 import chisel3._
 import chisel3.internal.naming.chiselName
 import chisel3.util._
@@ -174,8 +175,50 @@ class PEnArrayShellTestTop(implicit p: Parameters) extends Module{
   penarray.io.go := io.go
 }
 
+class PEnArrayXilinxShell(implicit p: Parameters) extends RawModule{
+  val hp = p(ShellKey).hostParams
+  val mp = p(ShellKey).memParams
+
+  val ap_clk = IO(Input(Clock()))
+  val ap_rst_n = IO(Input(Bool()))
+  val s_axi_control = IO(new XilinxAXILiteClient(hp))
+  val axi_reg = Module(new XilinxShell)
+  axi_reg.ap_clk := ap_clk
+  axi_reg.ap_rst_n := ap_rst_n
+  axi_reg.s_axi_control <> s_axi_control
+
+  val sys_clk = IO(Input(Clock()))
+  val sys_rst_n = IO(Input(Bool()))
+  val n = p(Shape)._1 + p(Shape)._2 - 1
+  val pearrayio = IO(new Bundle{
+      val FilterBRAM = Flipped(new BRAMInterface(p(BRAMKey).dataW))
+      val ImgBRAM = Flipped(new BRAMInterface(p(BRAMKey).dataW*n))
+      val WriteBRAM =  Flipped(new BRAMInterface(p(WriterBRAMW)))
+      val done = Output(Bool())
+    })
+  val penarray = withClockAndReset(clock = sys_clk, reset = sys_rst_n){
+    Module(new PEnArrayShell)
+  }
+  val ctrl = withClockAndReset(clock = sys_clk, reset = sys_rst_n){
+    Module(new PEnController)
+  }
+  ctrl.io.go := axi_reg.out.go
+  penarray.io.FilterBRAM <> pearrayio.FilterBRAM
+  penarray.io.ImgBRAM <> pearrayio.ImgBRAM
+  penarray.io.WriteBRAM <> pearrayio.WriteBRAM
+  penarray.io.stateSW <> ctrl.io.stateSW
+  penarray.io.peconfig <> axi_reg.out.peconfig
+  penarray.io.go <> axi_reg.out.go
+  penarray.io.done <> pearrayio.done
+}
+
 
 object GetVerilogPEnArray extends App {
   implicit val p = new DefaultConfig
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_PEnArray_test"), () => new PEnArrayShellTestTop)
+}
+
+object GetVerilogXilinxIP extends App {
+  implicit val p = new DefaultConfig
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_XilinxIP_verilog"), () => new PEnArrayXilinxShell)
 }
