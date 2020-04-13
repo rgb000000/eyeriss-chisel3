@@ -172,8 +172,21 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   //  val pResultCurrect = WireInit(fQ.bits * iQ.bits + pSumMem(addr))
   //  val pResultLast = WireInit(fQ.bits * iQreg + pSumMem(addr))
 
-  val pResultCurrentSRAM = WireInit(fQ.bits * iQ.bits + pSumSRAM.read(addr))
-  val pResultLastSRAM = WireInit(fQ.bits * iQreg + pSumSRAM.read(addr))
+  // when bSelect == true then b = iQ.bits else b = iQreg
+  val bSelect = Wire(Bool())
+  bSelect := false.B
+
+  val a = WireInit(fQ.bits)
+  val c = WireInit(pSumSRAM.read(addr))
+  val b = Mux(bSelect, iQ.bits, iQreg)
+
+  val mac = WireInit(a * b + c)
+
+  // bSelect == true
+  val pResultCurrentSRAM = mac
+
+  // bSelect = false
+  val pResultLastSRAM = mac
 
   val needNewImg = RegInit(0.U(1.W))
 
@@ -234,6 +247,7 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
 
             io.oSumSRAM.valid := 1.U
             io.oSumSRAM.bits := pResultCurrentSRAM
+            bSelect := true.B
             // io.oSum.bits := fQ.bits * iQ.bits + pSumMem(addr)
           }
 
@@ -241,6 +255,7 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
             iQMuxIn.valid := 1.U
             //            pSumMem(addr) := pResultCurrect
             pSumSRAM.write(addr, pResultCurrentSRAM)
+            bSelect := true.B
             iQreg := iQ.bits
             fCalCnt.inc() // when configReg.fNum = 1 error!!! so change to next
             when((configReg.filterNum === 1.U) & fCalCnt.value === 0.U) {
