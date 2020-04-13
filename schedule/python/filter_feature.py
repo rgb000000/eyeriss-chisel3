@@ -181,17 +181,16 @@ def layerTest():
     :rtype: return simulation result
     """
 
-    inChannel = 8
     outChanel = 1
     featureSize = 5
-    W = filterG(outChanel, FILTERSIZE, inChannel)
-    F = featureG(featureSize, inChannel)
+    W = filterG(outChanel, FILTERSIZE, CHANNELMAX)
+    F = featureG(featureSize, CHANNELMAX)
     sw_Z = conv4D_forward(F, W)
     print(sw_Z.shape)
     filter2mem(W)
     feature2mem(F)
     readFile("./featureMEM.hex", "./filterMEM.hex")
-    hw_Z = layer(inChannel, outChanel, featureSize)
+    hw_Z = layer(CHANNELMAX, outChanel, featureSize)
     print(hw_Z.shape)
     print(np.sum(hw_Z != sw_Z))
     np.save("W", W)
