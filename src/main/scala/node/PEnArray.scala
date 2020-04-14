@@ -214,11 +214,11 @@ class PEnArrayXilinxShell(implicit p: Parameters) extends RawModule{
 
 
 object GetVerilogPEnArray extends App {
-  implicit val p = new DefaultConfig
+  implicit val p = new SmallWidthConfig
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_PEnArray_test"), () => new PEnArrayShellTestTop)
 }
 
 object GetVerilogXilinxIP extends App {
-  implicit val p = new DefaultConfig
+  implicit val p = new SmallWidthConfig
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_XilinxIP_verilog"), () => new PEnArrayXilinxShell)
 }

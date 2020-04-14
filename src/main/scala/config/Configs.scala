@@ -43,20 +43,22 @@ case object FilterMEMPath extends Field[String]
 
 case object FeatureMEMPath extends Field[String]
 
+case object MaxChannel extends Field[Int]
 
-class DefaultConfig extends Config((site, here, up) => {
+class DefaultConfig(maxChannel: Int = 8) extends Config((site, here, up) => {
   case FilterW => 8
   case ImgW => 8
   case BiasW => 8
   case OSumW => 8
   case AccW => 8
   case WriterBRAMW => 128
+  case MaxChannel => maxChannel
 
   case Shape => (3, 3)
 
-  case FilterSpadDepth => 16  // just for 1 out channel
-  case ImgSpadDepth => 16
-  case PSumMemDepth => 16
+  case FilterSpadDepth => here(MaxChannel) + 1  // just for 1 out channel
+  case ImgSpadDepth => 4
+  case PSumMemDepth => here(MaxChannel)
 
   case RegFileW => 8
   case RegFileDepth => 16
@@ -74,11 +76,6 @@ class DefaultConfig extends Config((site, here, up) => {
       userBits = 1)
   )
 
-  case BRAMKey => BRAMParams(
-    addrW = 16,
-    dataW = 64     // PEn N
-  )
-
   case FilterMEMPath =>
     val path = Paths.get("./schedule/python/filterMEM.hex").toAbsolutePath.toString
     println(path)
@@ -89,4 +86,12 @@ class DefaultConfig extends Config((site, here, up) => {
     println(path)
     path
 
+  case BRAMKey => BRAMParams(
+    addrW = 16,
+    dataW = here(MaxChannel) * here(FilterW)     // PEn N
+  )
 })
+
+class SmallWidthConfig extends DefaultConfig(8)
+
+class BigWidthConfig extends DefaultConfig(64)
