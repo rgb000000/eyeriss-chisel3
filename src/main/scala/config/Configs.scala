@@ -45,7 +45,7 @@ case object FeatureMEMPath extends Field[String]
 
 case object MaxChannel extends Field[Int]
 
-class DefaultConfig(maxChannel: Int = 8) extends Config((site, here, up) => {
+class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, here, up) => {
   case FilterW => 8
   case ImgW => 8
   case BiasW => 8
@@ -54,7 +54,7 @@ class DefaultConfig(maxChannel: Int = 8) extends Config((site, here, up) => {
   case WriterBRAMW => 128
   case MaxChannel => maxChannel
 
-  case Shape => (3, 3)
+  case Shape => (3, col)
 
   case FilterSpadDepth => here(MaxChannel) + 1  // just for 1 out channel
   case ImgSpadDepth => 4
@@ -92,6 +92,6 @@ class DefaultConfig(maxChannel: Int = 8) extends Config((site, here, up) => {
   )
 })
 
-class SmallWidthConfig extends DefaultConfig(8)
+class SmallWidthConfig extends DefaultConfig(8, 3)
 
-class BigWidthConfig extends DefaultConfig(64)
+class BigWidthConfig extends DefaultConfig(64, 14)
