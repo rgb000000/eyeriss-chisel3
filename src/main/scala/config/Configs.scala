@@ -33,17 +33,22 @@ case class ShellParams(
 
 case object ShellKey extends Field[ShellParams]
 
-case class BRAMParams(
-                       addrW:Int,
-                       dataW:Int)
+case class BRAMParams(addrW: Int,
+                      dataW: Int)
+
+case class URAMParams(addrW: Int,
+                      dataW: Int)
 
 case object BRAMKey extends Field[BRAMParams]
+
+case object URAMKey extends Field[URAMParams]
 
 case object FilterMEMPath extends Field[String]
 
 case object FeatureMEMPath extends Field[String]
 
 case object MaxChannel extends Field[Int]
+
 
 class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, here, up) => {
   case FilterW => 8
@@ -56,7 +61,7 @@ class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, her
 
   case Shape => (3, col)
 
-  case FilterSpadDepth => here(MaxChannel) + 1  // just for 1 out channel
+  case FilterSpadDepth => here(MaxChannel) + 1 // just for 1 out channel
   case ImgSpadDepth => 4
   case PSumMemDepth => here(MaxChannel)
 
@@ -88,8 +93,14 @@ class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, her
 
   case BRAMKey => BRAMParams(
     addrW = 16,
-    dataW = here(MaxChannel) * here(FilterW)     // PEn N
+    dataW = here(MaxChannel) * here(FilterW) // PEn N
   )
+
+  case URAMKey => URAMParams(
+    addrW = 9,              // 9bit means max col output is 512
+    dataW = here(AccW)
+  )
+
 })
 
 class SmallWidthConfig extends DefaultConfig(8, 3)
