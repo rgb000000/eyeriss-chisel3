@@ -8,18 +8,16 @@ import config._
 
 class URAMTests(c: Avalue2MaxChannel)(implicit p: Parameters) extends PeekPokeTester(c){
   val writeNum = (1 << p(URAMKey).addrW) * p(MaxChannel)
+  poke(c.io.rdataMaxChannel.ready, 1)
   for(i <- 0 until writeNum){
     poke(c.io.op, 1)
     poke(c.io.waddr, i)
-    poke(c.io.wdata, i / (1 << p(URAMKey).addrW))
+    poke(c.io.wdata, i % (1 << p(URAMKey).addrW))
     step(1)
     poke(c.io.op, 0)
   }
   step(1)
-  for(i <- 0 until (1 << p(URAMKey).addrW)){
-    poke(c.io.raddr, i)
-    step(1)
-  }
+  step((1 << p(URAMKey).addrW))
 }
 
 class URAMTester extends ChiselFlatSpec {

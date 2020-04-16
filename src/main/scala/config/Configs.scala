@@ -36,8 +36,7 @@ case object ShellKey extends Field[ShellParams]
 case class BRAMParams(addrW: Int,
                       dataW: Int)
 
-case class URAMParams(addrW: Int,
-                      dataW: Int)
+case class URAMParams(addrW: Int)
 
 case object BRAMKey extends Field[BRAMParams]
 
@@ -97,8 +96,7 @@ class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, her
   )
 
   case URAMKey => URAMParams(
-    addrW = 9,              // 9bit means max col output is 512
-    dataW = here(AccW)
+    addrW = 9
   )
 
 })
