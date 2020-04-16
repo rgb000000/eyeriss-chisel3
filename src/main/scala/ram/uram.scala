@@ -64,7 +64,7 @@ class Avalue2MaxChannel(implicit p: Parameters) extends Module {
     }
   })
 
-  val canRead = WireInit(wIdx === (p(MaxChannel) - 1).asUInt()) & (io.op === 1.U)
+  val canRead = RegNext(wIdx === (p(MaxChannel) - 1).asUInt() & (io.op === 1.U))
   val raddr = Counter(1 << p(URAMKey).addrW)
   val qIn = Wire(DecoupledIO(UInt((p(AccW) * p(MaxChannel)).W)))
   val q = Queue(qIn, 2)
@@ -85,7 +85,7 @@ class Avalue2MaxChannel(implicit p: Parameters) extends Module {
       assert(false)
     }
   })
-  when(canRead){
+  when(wIdx === (p(MaxChannel) - 1).asUInt() & (io.op === 1.U)){
     raddr.inc()
   }
   qIn.valid := canRead
@@ -94,30 +94,50 @@ class Avalue2MaxChannel(implicit p: Parameters) extends Module {
 
 class ResultRecover(implicit p: Parameters) extends Module{
   val io = IO(new Bundle{
-    val canRead = Input(Bool())
-    /*
-     * Read Channel Only
-     */
-    val raddr = Output(UInt(p(URAMKey).addrW.W))
-    val rdata = Input(UInt((p(URAMKey).addrW * p(MaxChannel)).W))
+    val dataChannelParallel = Flipped(DecoupledIO(UInt((p(AccW) * p(MaxChannel)).W)))
+    val raddr = Input(UInt(p(URAMKey).addrW.W))
+    val rdata = Output(UInt((p(AccW) * p(MaxChannel)).W))
   })
 
   val uram = Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel)))
+  uram.io.clk := clock
 
-  val valid = RegInit(false.B)
-
-  val addr = Counter(p(URAMKey).addrW)
-  uram.io.raddr := addr.value
-  when(io.canRead){
+  io.dataChannelParallel.ready := 1.U
+  val addr = Counter(4096)
+  when(io.dataChannelParallel.fire()){
+    uram.io.we := 1.U
+    uram.io.waddr := addr.value
+    uram.io.din := io.dataChannelParallel.bits
     addr.inc()
-    valid := true.B
   }.otherwise{
-    valid := false.B
+    uram.io.we := 0.U
   }
 
-  when(valid){
+  uram.io.raddr := io.raddr
+  io.rdata := uram.io.dout
+}
 
-  }
+class Reorder(implicit p: Parameters) extends Module{
+  val io = IO(new Bundle{
+    // left
+    val op = Input(Bool())
+    val waddr = Input(UInt((p(URAMKey).addrW + log2Ceil(p(MaxChannel))).W))
+    val wdata = Input(UInt(p(AccW).W))
+    // right
+    val raddr = Input(UInt(p(URAMKey).addrW.W))
+    val rdata = Output(UInt((p(AccW) * p(MaxChannel)).W))
+  })
+  val widthCvt = Module(new Avalue2MaxChannel)
+  val recover = Module(new ResultRecover)
+
+  widthCvt.io.rdataMaxChannel <> recover.io.dataChannelParallel
+
+  widthCvt.io.op := io.op
+  widthCvt.io.waddr := io.waddr
+  widthCvt.io.wdata := io.wdata
+
+  recover.io.raddr := io.raddr
+  io.rdata := recover.io.rdata
 }
 
 object GetVeilogAvalue2Channel extends App{
