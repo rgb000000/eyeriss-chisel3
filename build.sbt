@@ -14,7 +14,7 @@ scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-language:refle
 // The following are the current "release" versions.
 val defaultVersions = Map(
   "chisel3" -> "3.1.+",
-  "chisel-iotesters" -> "1.3.+"
+  "chisel-iotesters" -> "1.2.+"
   )
 
 libraryDependencies ++= (Seq("chisel3","chisel-iotesters").map {
