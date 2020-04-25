@@ -48,6 +48,7 @@ case object FeatureMEMPath extends Field[String]
 
 case object MaxChannel extends Field[Int]
 
+case object FilterSize extends Field[Int](3)
 
 class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, here, up) => {
   case FilterW => 8
@@ -96,7 +97,7 @@ class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, her
   )
 
   case URAMKey => URAMParams(
-    addrW = 9
+    addrW = 9         // 512
   )
 
 })

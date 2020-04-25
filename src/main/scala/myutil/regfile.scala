@@ -2,7 +2,6 @@ package myutil
 
 import chisel3._
 import chisel3.util._
-import chisel3.experimental._
 import pe.PEConfigReg
 import axi._
 import config._

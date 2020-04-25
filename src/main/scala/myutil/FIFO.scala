@@ -25,7 +25,7 @@ class FIFO[T <: Data](gen: T,
                       val entries: Int,
                       pipe: Boolean = false,
                       flow: Boolean = false)
-                     (implicit compileOptions: chisel3.core.CompileOptions)
+//                     (implicit compileOptions: chisel3.core.CompileOptions)
   extends Module() {
   @deprecated("Module constructor with override _reset deprecated, use withReset", "chisel3")
   def this(gen: T, entries: Int, pipe: Boolean, flow: Boolean, override_reset: Option[Bool]) = {

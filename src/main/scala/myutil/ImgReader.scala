@@ -9,7 +9,7 @@ import pe.{PEConfigReg}
 class ImgReader(implicit p: Parameters) extends Module{
   val io = IO(new Bundle{
     val reader = new VMEReadMaster
-    val dout = Output(Vec(p(Shape)._1 + p(Shape)._2 - 1, DecoupledIO(UInt(p(ShellKey).memParams.dataBits))))
+    val dout = Output(Vec(p(Shape)._1 + p(Shape)._2 - 1, DecoupledIO(UInt(p(ShellKey).memParams.dataBits.W))))
 
     val addr = Input(UInt(p(ShellKey).memParams.addrBits.W))
     val peconfig = Input(new PEConfigReg)
