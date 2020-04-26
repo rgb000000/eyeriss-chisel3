@@ -1,7 +1,6 @@
 package ram
 
 import chisel3._
-import chisel3.experimental._
 import chisel3.util._
 import config._
 
@@ -140,6 +139,152 @@ class Reorder(implicit p: Parameters) extends Module {
   io.rdata := recover.io.rdata
 }
 
+class One2MaxChannel(implicit p: Parameters) extends Module{
+  val io = IO(new Bundle{
+    val din = Flipped(Decoupled(SInt(p(OSumW).W)))
+    val rowLength = Input(UInt(p(URAMKey).addrW.W))
+    val dout = Decoupled(UInt((p(OSumW) * p(MaxChannel)).W))
+  })
+
+  // addr generate
+  val idx = Counter(p(MaxChannel))
+  val addr = Counter(512)
+  val waddr = (idx.value << p(URAMKey).addrW.U).asUInt() + addr.value
+  val we = WireInit(false.B)
+  val wdata = WireInit(0.asUInt(p(AccW).W))
+  val one2maxc = Module(new Avalue2MaxChannel)
+  // wire <> one2mac
+  one2maxc.io.op := we
+  one2maxc.io.waddr := waddr
+  one2maxc.io.wdata := wdata
+  one2maxc.io.rdataMaxChannel <> io.dout
+  // addr logic
+  io.din.ready := true.B
+  when(io.din.fire()){
+    we := true.B
+    wdata := io.din.bits.asUInt()
+    when(addr.value === io.rowLength - 1.U){
+      idx.inc()
+      addr.value := 0.U
+    }.otherwise{
+      addr.inc()
+    }
+  }
+}
+
+class MaxChannelReorder (implicit p: Parameters) extends Module{
+  val io = IO(new Bundle{
+    val dins = Vec(p(Shape)._2, Flipped(Decoupled(UInt((p(OSumW) * p(MaxChannel)).W))))
+    val length = Input(UInt(p(URAMKey).addrW.W))
+
+    val inputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
+    val outValid = Output(Bool())
+    val outAddr = Output(UInt(p(URAMKey).addrW.W))
+  })
+  val ping :: pong :: Nil = Enum(2)
+  val state = RegInit(ping)
+  val canOut = RegInit(false.B)
+
+  val qs = Seq.tabulate(p(Shape)._2)(i => Queue(io.dins(i), 16))
+  val uramPP = Seq.fill(2, p(Shape)._2)(Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel))))
+  uramPP.foreach(_.foreach(_.io.clk := clock))
+  val waddr = Counter(512) // max length of a row
+
+
+  switch(state){
+    is(ping){
+      when(waddr.value === io.length - 1.U){
+        state := pong
+      }
+    }
+    is(pong){
+      when(waddr.value === io.length - 1.U){
+        state := ping
+      }
+      canOut := true.B
+    }
+  }
+
+  uramPP(0).foreach(_.io.waddr := waddr.value)
+  uramPP(0).foreach(_.io.we := false.B)
+  (uramPP(0), io.dins.map(_.bits)).zipped.foreach(_.io.din := _)
+  uramPP(1).foreach(_.io.waddr := waddr.value)
+  uramPP(1).foreach(_.io.we := false.B)
+  (uramPP(1), io.dins.map(_.bits)).zipped.foreach(_.io.din := _)
+
+  when(qs.map(_.valid).reduce(_ & _)){
+    qs.foreach(_.ready := true.B)
+  }.otherwise{
+    qs.foreach(_.ready := false.B)
+  }
+  when(qs.head.fire()){
+    when(state === ping){
+      when(waddr.value === io.length - 1.U){
+        waddr.value := 0.U
+      }.otherwise{
+        waddr.inc()
+      }
+      uramPP(0).foreach(_.io.we := true.B)
+    }.elsewhen(state === pong){
+      when(waddr.value === io.length - 1.U){
+        waddr.value := 0.U
+      }.otherwise{
+        waddr.inc()
+      }
+      uramPP(1).foreach(_.io.we := true.B)
+    }
+  }
+
+  val outAddr = Counter(512)
+  io.outValid := false.B
+  io.inputRowDataOut.foreach(_ := 0.U)
+  io.outAddr := outAddr.value
+  val valid = RegInit(false.B)
+  uramPP.foreach(_.foreach(_.io.raddr := outAddr.value))
+
+  when(canOut){
+    when(qs.head.fire()){
+      when(waddr.value === io.length - 1.U){
+        outAddr.value := 0.U
+      }.otherwise{
+        outAddr.inc()
+        valid := true.B
+      }
+      io.outValid := true.B
+      when(state === pong){
+        (io.inputRowDataOut, uramPP(0).map(_.io.dout) :+ qs(0).bits :+ qs(1).bits).zipped.foreach(
+          _ := _
+        )
+      }.elsewhen(state === ping){
+        (io.inputRowDataOut, uramPP(1).map(_.io.dout) :+ qs(0).bits :+ qs(1).bits).zipped.foreach(
+          _ := _
+        )
+      }
+    }
+  }
+}
+
+class NewWB(implicit p: Parameters) extends Module{
+  val io = IO(new Bundle{
+    // left
+    val dins = Vec(p(Shape)._2, Flipped(Decoupled(SInt(p(OSumW).W))))
+    val rowLength = Input(UInt(p(URAMKey).addrW.W))
+    // right
+    val inputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
+    val outValid = Output(Bool())
+    val outAddr = Output(UInt(p(URAMKey).addrW.W))
+  })
+  val one2Maxcs = Seq.fill(p(Shape)._2)(Module(new One2MaxChannel))
+  (one2Maxcs, io.dins).zipped.foreach(_.io.din <> _)
+  one2Maxcs.foreach(_.io.rowLength := io.rowLength)
+  val reorder = Module(new MaxChannelReorder)
+  (reorder.io.dins, one2Maxcs).zipped.foreach(_ <> _.io.dout)
+  reorder.io.length := io.rowLength
+  io.inputRowDataOut := reorder.io.inputRowDataOut
+  io.outValid := reorder.io.outValid
+  io.outAddr := reorder.io.outAddr
+}
+
 class RowDataRecover(implicit p: Parameters) extends Module {
   val io = IO(new Bundle {
     val go = Input(Bool())
@@ -253,25 +398,43 @@ class RowDataRecover(implicit p: Parameters) extends Module {
 
 class WB (implicit p: Parameters) extends Module{
   val io = IO(new Bundle{
+    // left
+    val fromCol = Vec(p(Shape)._2, Flipped(Decoupled(SInt(p(OSumW).W))))
+    val length = Input(UInt(9.W))
 
+    //right
+    val out = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
+    val outAddr = Output(UInt(p(URAMKey).addrW.W))
+    val outValid = Output(Bool())
   })
-}
 
-class Test(implicit p: Parameters) extends Module{
-  val io = IO(new Bundle{
-    val in = Input(Bool())
-    val out = Output(UInt(8.W))
-  })
-  val temp = Module(new URAM(8, 8))
-  io.out := 7.U
-}
+  val reorders = Seq.fill(p(Shape)._2)(Module(new Reorder))
+  val reorderAddr = Seq.fill(p(Shape)._2)(Counter(512))
+  io.fromCol.foreach(_.ready := 1.U)
+  (reorders, io.fromCol).zipped.foreach(_.io.wdata := _.bits.asUInt())
+  (reorders, reorderAddr).zipped.foreach(_.io.waddr := _.value)
+  for(i <- 0 until(p(Shape)._2)){
+    when(io.fromCol(i).fire()){
+      reorderAddr(i).inc()
+      reorders(i).io.op := true.B
+    }
+  }
 
-object GetVeilogTest extends App {
-  implicit val p = new SmallWidthConfig
-  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_test_verilog"), () => new Test)
+  val rowDataRcv = Module(new RowDataRecover)
+  reorders.foreach(_.io.raddr := rowDataRcv.io.raddr)
+  (rowDataRcv.io.rdata, reorders).zipped.foreach(_ := _.io.rdata)
+  rowDataRcv.io.length := io.length
+  io.out := rowDataRcv.io.out
+  io.outAddr := rowDataRcv.io.outAddr
+  io.outValid := rowDataRcv.io.outValid
 }
 
 object GetVeilogAvalue2Channel extends App {
   implicit val p = new SmallWidthConfig
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_uram_verilog"), () => new Avalue2MaxChannel)
+}
+
+object GetVeilogNewWB extends App {
+  implicit val p = new SmallWidthConfig
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_newwb_verilog"), () => new NewWB)
 }
