@@ -3,7 +3,6 @@ package bwn
 
 import chisel3._
 import chisel3.iotesters.{ChiselFlatSpec, PeekPokeTester}
-import node.{PEArray2}
 import config._
 import node._
 

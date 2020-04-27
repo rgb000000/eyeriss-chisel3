@@ -42,6 +42,8 @@ class Avalue2MaxChannel(implicit p: Parameters) extends Module {
     [[rdata]]:  r data
     */
     val rdataMaxChannel = Decoupled(UInt((p(MaxChannel) * p(AccW)).W))
+
+    val length = Input(UInt(p(URAMKey).addrW.W))
   })
 
   val urams = Seq.fill(p(MaxChannel) - 1)(Module(new URAM(p(URAMKey).addrW, p(AccW))))
@@ -85,7 +87,11 @@ class Avalue2MaxChannel(implicit p: Parameters) extends Module {
     }
   })
   when(wIdx === (p(MaxChannel) - 1).asUInt() & (io.op === 1.U)) {
-    raddr.inc()
+    when(raddr.value === io.length - 1.U){
+      raddr.value := 0.U
+    }.otherwise{
+      raddr.inc()
+    }
   }
   qIn.valid := canRead
   qIn.bits := doutChannelParallel.asUInt()
@@ -144,6 +150,7 @@ class One2MaxChannel(implicit p: Parameters) extends Module{
     val din = Flipped(Decoupled(SInt(p(OSumW).W)))
     val rowLength = Input(UInt(p(URAMKey).addrW.W))
     val dout = Decoupled(UInt((p(OSumW) * p(MaxChannel)).W))
+    val done = Output(Bool())
   })
 
   // addr generate
@@ -153,6 +160,7 @@ class One2MaxChannel(implicit p: Parameters) extends Module{
   val we = WireInit(false.B)
   val wdata = WireInit(0.asUInt(p(AccW).W))
   val one2maxc = Module(new Avalue2MaxChannel)
+  one2maxc.io.length := io.rowLength
   // wire <> one2mac
   one2maxc.io.op := we
   one2maxc.io.waddr := waddr
@@ -160,12 +168,14 @@ class One2MaxChannel(implicit p: Parameters) extends Module{
   one2maxc.io.rdataMaxChannel <> io.dout
   // addr logic
   io.din.ready := true.B
+  io.done := false.B
   when(io.din.fire()){
     we := true.B
     wdata := io.din.bits.asUInt()
     when(addr.value === io.rowLength - 1.U){
       idx.inc()
       addr.value := 0.U
+      io.done := true.B
     }.otherwise{
       addr.inc()
     }
@@ -193,12 +203,12 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
 
   switch(state){
     is(ping){
-      when(waddr.value === io.length - 1.U){
+      when((waddr.value === io.length - 1.U) & qs.head.fire()){
         state := pong
       }
     }
     is(pong){
-      when(waddr.value === io.length - 1.U){
+      when((waddr.value === io.length - 1.U) & qs.head.fire()){
         state := ping
       }
       canOut := true.B
@@ -207,10 +217,10 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
 
   uramPP(0).foreach(_.io.waddr := waddr.value)
   uramPP(0).foreach(_.io.we := false.B)
-  (uramPP(0), io.dins.map(_.bits)).zipped.foreach(_.io.din := _)
+  (uramPP(0), qs.map(_.bits)).zipped.foreach(_.io.din := _)
   uramPP(1).foreach(_.io.waddr := waddr.value)
   uramPP(1).foreach(_.io.we := false.B)
-  (uramPP(1), io.dins.map(_.bits)).zipped.foreach(_.io.din := _)
+  (uramPP(1), qs.map(_.bits)).zipped.foreach(_.io.din := _)
 
   when(qs.map(_.valid).reduce(_ & _)){
     qs.foreach(_.ready := true.B)
@@ -273,6 +283,8 @@ class NewWB(implicit p: Parameters) extends Module{
     val inputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
     val outValid = Output(Bool())
     val outAddr = Output(UInt(p(URAMKey).addrW.W))
+
+    val done = Output(Bool())
   })
   val one2Maxcs = Seq.fill(p(Shape)._2)(Module(new One2MaxChannel))
   (one2Maxcs, io.dins).zipped.foreach(_.io.din <> _)
@@ -283,6 +295,7 @@ class NewWB(implicit p: Parameters) extends Module{
   io.inputRowDataOut := reorder.io.inputRowDataOut
   io.outValid := reorder.io.outValid
   io.outAddr := reorder.io.outAddr
+  io.done := one2Maxcs.head.io.done
 }
 
 class RowDataRecover(implicit p: Parameters) extends Module {

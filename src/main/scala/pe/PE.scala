@@ -137,7 +137,7 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
 
   //  val pSumMem = Mem(pSumMemLen, SInt(w.W))
   val pSumSRAM = Module(new MySRAM(p(PSumMemDepth))) // 256 16bits
-  pSumSRAM.io.rstLowas := reset
+  pSumSRAM.io.rstLowas := reset.toBool()
   pSumSRAM.io.din := 0.S
   io.oSumSRAM.bits := 0.S
 
@@ -367,6 +367,7 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
       iQMuxIn.ready := 0.U
       //      io.oSumMEM.valid := 0.U
       io.oSumSRAM.valid := 0.U
+      state := idle
     }
   }
 
