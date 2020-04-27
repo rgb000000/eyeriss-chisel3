@@ -74,13 +74,13 @@ def filter2mem(filters, path=os.getcwd()+"/filterMEM.hex"):
     shape = (filters.shape[0], filters.shape[1], filters.shape[2], math.ceil(filters.shape[3]/CHANNELMAX)*CHANNELMAX)
     filter = np.zeros(shape, dtype=np.int)
     filter[:, :, :, 0: filters.shape[3]] = filters
+    # split by MAXCHANNEL
     filter_split = [filter[:, :, :, i*CHANNELMAX : (i+1)*CHANNELMAX] for i in range(math.ceil(filter.shape[3] / CHANNELMAX))]
     mem = open(path, "w")
-    
-    for f in filter_split:
-        for i in range(f.shape[1] ** 2):
-            for n in range(f.shape[0]):
-                row = "".join(list(map("{:>02x}".format, list(map(complement, f[n, i // 3, i % 3, :]))))[::-1]) + "\n"
+    for oc in range(filter.shape[0]):
+        for i in range(filter.shape[1] ** 2):
+            for f in filter_split:
+                row = "".join(list(map("{:>02x}".format, list(map(complement, f[oc, i // 3, i % 3, :]))))[::-1]) + "\n"
                 mem.write(row)
 
     mem.close()
@@ -107,13 +107,14 @@ def feature2mem(afeature, path=os.getcwd()+"/featureMEM.hex"):
     feature = np.zeros(shape, dtype=np.int)
     feature[0: afeature.shape[0], :, 0:afeature.shape[2]] = afeature
     feature_split = [feature[:, :, i*CHANNELMAX : (i+1)*CHANNELMAX] for i in range(math.ceil(feature.shape[2] / CHANNELMAX))]
-    for f in feature_split:
-        head = 0
-        for i in range(1 + int((f.shape[0] - ROWMAX) / STEP)):
-            for col in range(f.shape[1]):
-                mem_row = "ERROR \n"
+
+    head = 0
+    for i in range(1 + int((feature.shape[0] - ROWMAX) / STEP)):
+        for col in range(feature.shape[1]):
+            for f in feature_split:
                 mem_row = "".join(list(map("{:>02x}".format, list(map(complement, f[head:head+ROWMAX, col, :].flatten()))))[::-1]) + "\n"
                 mem.write(mem_row)
-            head += STEP
-        assert((head - STEP + ROWMAX) == f.shape[0])
+        head += STEP
+    assert((head - STEP + ROWMAX) == feature.shape[0])
+
     mem.close()
