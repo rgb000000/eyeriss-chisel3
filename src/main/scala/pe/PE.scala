@@ -23,6 +23,8 @@ class PEConfigReg(implicit val p: Parameters) extends Bundle {
 
   val filterAddr = UInt(16.W)
   val imgAddr = UInt(16.W)
+
+  val forceOut = Bool()
 }
 
 

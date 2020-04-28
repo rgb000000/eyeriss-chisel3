@@ -22,7 +22,7 @@ STEP = ROWMAX - (FILTERSIZE - 1)
 outChannel = 1
 inChannel = 128
 inChannelGroup = math.ceil(inChannel / CHANNELMAX)
-featureSize = 5
+featureSize = 8
 
 print()
 print()

@@ -13,10 +13,10 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
   val nchannel = 16
   val relu = 1
 
-  val singleImgLen = 5
+  val singleImgLen = 8
   val totalOutChannel = 1
 
-  def go(filterAddr: BigInt, featureAddr: BigInt): Unit ={
+  def go(filterAddr: BigInt, featureAddr: BigInt, forceOut: Int = 0): Unit ={
     // config PEConfig
     poke(c.io.peconfig.filterNum, filterNum)
     poke(c.io.peconfig.singleFilterLen, singleFilterLen)
@@ -28,6 +28,7 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     poke(c.io.peconfig.accState, 0)
     poke(c.io.peconfig.filterAddr, filterAddr)
     poke(c.io.peconfig.imgAddr, featureAddr)
+    poke(c.io.peconfig.forceOut, forceOut)
 
     // stateSW 00 to 01
     poke(c.io.stateSW, 0)
@@ -44,7 +45,16 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     step(10)
   }
 
-  go(0, 0)
+  for (i <- 0 until 8){
+    go(0x00, 0x00)
+  }
+
+  for (i <- 0 until 7){
+    go(0x00, 0x80)
+  }
+  go(0x00, 0x80, 1)
+
+  step(100)
 
 }
 

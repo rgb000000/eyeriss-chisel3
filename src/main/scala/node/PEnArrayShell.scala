@@ -51,6 +51,7 @@ class PEnArrayShellWithWB(implicit p: Parameters) extends Module {
   ireader.io.doutSplit.ready := penarray.io.Ireaders.last.ready
 
   val wb = Module(new NewWB)
+  wb.io.forceOut := io.peconfig.forceOut
   wb.io.rowLength := io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U
   (wb.io.dins, penarray.io.Write).zipped.foreach(_ <> _)
   io.done := wb.io.done
