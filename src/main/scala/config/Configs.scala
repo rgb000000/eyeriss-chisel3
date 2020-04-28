@@ -61,9 +61,9 @@ class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, her
 
   case Shape => (3, col)
 
-  case FilterSpadDepth => here(MaxChannel) + 1 // just for 1 out channel
-  case ImgSpadDepth => 4
-  case PSumMemDepth => here(MaxChannel)
+  case FilterSpadDepth => 3 * 16 + 1  // just for 1 out channel
+  case ImgSpadDepth => 3 * 16 + 1
+  case PSumMemDepth => 2
 
   case RegFileW => 8
   case RegFileDepth => 16

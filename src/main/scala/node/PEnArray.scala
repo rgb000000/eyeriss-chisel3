@@ -30,7 +30,7 @@ class PEnArray(implicit p: Parameters) extends Module {
   val FselectPass = List.fill(p(Shape)._1)(Module(new selectPass(UInt(p(BRAMKey).dataW.W))))
   FselectPass.foreach(_.io.in <> io.Freader)
   io.Freader.ready := FselectPass.map(_.io.in.ready).reduce(_ | _)
-  (FselectPass, io.Fid.toBools).zipped.foreach(_.io.en := _)
+  (FselectPass, io.Fid.asBools()).zipped.foreach(_.io.en := _)
 
   val penarray = Seq.tabulate(p(Shape)._1, p(Shape)._2)((x, y) => {
     Module(new PEn(position = (x, y)))
@@ -40,17 +40,17 @@ class PEnArray(implicit p: Parameters) extends Module {
 
   require(peLeftandBottom.length == io.Ireaders.length)
 
-  val shiftBits = Seq.tabulate(io.Ireaders.length)((i) => {
-    val en = peLeftandBottom(i).io.img.ready
-    io.Ireaders(i).ready := en
-    ShiftRegister(io.Ireaders(i).bits, p(Shape)._1 + p(Shape)._2 - i, 0.U, en)
-  })
-
-  val shiftValid = Seq.tabulate(io.Ireaders.length)((i) => {
-    val en = peLeftandBottom(i).io.img.ready
-    io.Ireaders(i).ready := en
-    ShiftRegister(io.Ireaders(i).valid, p(Shape)._1 + p(Shape)._2 - i, 0.U, en)
-  })
+//  val shiftBits = Seq.tabulate(io.Ireaders.length)((i) => {
+//    val en = peLeftandBottom(i).io.img.ready
+//    io.Ireaders(i).ready := en
+//    ShiftRegister(io.Ireaders(i).bits, p(Shape)._1 + p(Shape)._2 - i, 0.U, en)
+//  })
+//
+//  val shiftValid = Seq.tabulate(io.Ireaders.length)((i) => {
+//    val en = peLeftandBottom(i).io.img.ready
+//    io.Ireaders(i).ready := en
+//    ShiftRegister(io.Ireaders(i).valid, p(Shape)._1 + p(Shape)._2 - i, 0.U, en)
+//  })
 
   // PEnArray
   // row share filter in
@@ -59,8 +59,9 @@ class PEnArray(implicit p: Parameters) extends Module {
   }
   // bolique upward image in
   penarray.foreach(_.foreach((PEn) => {
-    PEn.io.img.valid := shiftValid(PEn.position._1 + PEn.position._2)
-    PEn.io.img.bits := shiftBits(PEn.position._1 + PEn.position._2)
+//    PEn.io.img.valid := shiftValid(PEn.position._1 + PEn.position._2)
+//    PEn.io.img.bits := shiftBits(PEn.position._1 + PEn.position._2)
+    PEn.io.img <> io.Ireaders(PEn.position._1 + PEn.position._2)
   }))
   // oSum upward
   for (i <- 0 until p(Shape)._1 - 1) {
@@ -70,7 +71,16 @@ class PEnArray(implicit p: Parameters) extends Module {
     pen.io.iSum.valid := 0.U
     pen.io.iSum.bits := 0.S
   })
-  (io.Write, penarray.head).zipped.foreach(_ <> _.io.oSumSRAM)
+  val addTs = Seq.tabulate(p(Shape)._2)(i => {
+    addTree(
+      penarray.map(_(i)).map(_.io.oSumSRAM.bits).toList
+    )
+  })
+  (io.Write, penarray.head).zipped.foreach((w, pe) => {
+    w.valid := pe.io.oSumSRAM.valid
+    pe.io.oSumSRAM.ready := w.ready
+  })
+  (io.Write, addTs).zipped.foreach((w, addT) => {w.bits := addT})
   //  val acc = List.fill(p(Shape)._2)(Module(new Acc))
   //  (acc, penarray.head).zipped.foreach(_.io.in <> _.io.oSumSRAM)
   //  (acc, penarray.head).zipped.foreach(_.io.last := _.io.stateOut === 5.U)
@@ -118,7 +128,6 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
   freader.io.go := io.go
   freader.io.addr := io.peconfig.filterAddr
   freader.io.len := io.peconfig.singleFilterLen * p(Shape)._1.asUInt() * io.peconfig.filterNum
-  freader.io.totalOutChannel := io.peconfig.totalOutChannel
   val ireader = Module(new BRAMImgReader)
   ireader.io.r <> io.ImgBRAM
   ireader.io.go := freader.io.done

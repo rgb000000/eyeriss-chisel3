@@ -31,16 +31,16 @@ class PEnArrayShellWithWB(implicit p: Parameters) extends Module {
   dontTouch(penarrayRST)
 
   val freader = withReset(penarrayRST)(Module(new BRAMFilterReader))
+  freader.io.inChannelGroup := io.peconfig.nchannel
   freader.io.r <> io.FilterBRAM
   freader.io.go := io.go
   freader.io.addr := io.peconfig.filterAddr
-  freader.io.len := io.peconfig.singleFilterLen * p(Shape)._1.asUInt() * io.peconfig.filterNum
-  freader.io.totalOutChannel := io.peconfig.totalOutChannel
+  freader.io.len := io.peconfig.singleFilterLen * p(Shape)._1.asUInt() * io.peconfig.filterNum * io.peconfig.nchannel
   val ireader = withReset(penarrayRST)(Module(new BRAMImgReader))
   ireader.io.r <> io.ImgBRAM
   ireader.io.go := freader.io.done
   ireader.io.addr := io.peconfig.imgAddr
-  ireader.io.len := io.peconfig.singleImgLen
+  ireader.io.len := io.peconfig.singleImgLen * io.peconfig.nchannel
 
   val penarray = withReset(penarrayRST)(Module(new PEnArray))
   penarray.io.Freader <> freader.io.dout

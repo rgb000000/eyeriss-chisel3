@@ -7,8 +7,8 @@ import config.DefaultConfig
 
 
 class BRAMFilterReaderTests(c:BRAMFilterReaderTestTop) extends PeekPokeTester(c){
-  poke(c.io.len, 16*9)
-  poke(c.io.totalOutChannel, 64)
+  poke(c.io.len, 8*9)
+  poke(c.io.inChannelGroup, 8)
   poke(c.io.addr, 0)
   poke(c.io.go, 0)
   step(1)

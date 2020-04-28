@@ -53,21 +53,21 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   //  override def desiredName: String = position.toString()
   val x = WireInit(position._1.U(8.W))
   val y = WireInit(position._2.U(8.W))
-  core.dontTouch(x)
-  core.dontTouch(y)
+  dontTouch(x)
+  dontTouch(y)
   val configReg = Reg(new PEConfigReg)
 
   //  io.oSumMEM.valid := 0.U
   //  io.oSumMEM.bits := 0.S
 
-  val fCnt = Counter(4096) // input filter total length
-  val iCnt = Counter(4096) // input img total length
-  val calCnt = Counter(4096) // calculate times
-  val fCalCnt = Counter(4096) // f shift times
-  val iCalCnt = Counter(4096) // i shift times
-  val cCalCnt = Counter(4096) // channel shift times
-  val pDoneCnt = Counter(4096) // in pDont state times
-  val newImgCnt = Counter(4096) // in pDont state times
+  val fCnt = Counter(512) // input filter total length
+  val iCnt = Counter(512) // input img total length
+  val calCnt = Counter(512) // calculate times
+  val fCalCnt = Counter(512) // f shift times
+  val iCalCnt = Counter(512) // i shift times
+  val cCalCnt = Counter(512) // channel shift times
+  val pDoneCnt = Counter(512) // in pDont state times
+  val newImgCnt = Counter(512) // in pDont state times
   val pSumAddr = Counter(p(PSumMemDepth)) // for addr
   val zfc = WireInit(fCnt.value)
   val zic = WireInit(iCnt.value)
@@ -77,14 +77,14 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   val zpc = WireInit(pDoneCnt.value)
   val zpsa = WireInit(pSumAddr.value)
   val znic = WireInit(newImgCnt.value)
-  core.dontTouch(zfc)
-  core.dontTouch(zic)
-  core.dontTouch(zcc)
-  core.dontTouch(zfcc)
-  core.dontTouch(zccc)
-  core.dontTouch(zpc)
-  core.dontTouch(zpsa)
-  core.dontTouch(znic)
+  dontTouch(zfc)
+  dontTouch(zic)
+  dontTouch(zcc)
+  dontTouch(zfcc)
+  dontTouch(zccc)
+  dontTouch(zpc)
+  dontTouch(zpsa)
+  dontTouch(znic)
   // data mean getData
   val idle :: data :: cal :: pDone :: newImg :: allDone :: Nil = Enum(6)
   val state = RegInit(idle)

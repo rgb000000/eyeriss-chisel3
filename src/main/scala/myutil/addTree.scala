@@ -14,7 +14,7 @@ object addTree {
           a(0)
         }
         case a: List[UInt] if a.length > 1 => {
-          a(0) + a(1)
+          a(0) +& a(1)
         }
       })
     }
@@ -33,7 +33,7 @@ object addTree {
           a(0)
         }
         case a: List[SInt] if a.length > 1 => {
-          a(0) + a(1)
+          a(0) +& a(1)
         }
       })
     }

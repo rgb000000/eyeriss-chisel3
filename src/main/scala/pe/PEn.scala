@@ -1,8 +1,6 @@
 package pe
 
 import chisel3._
-import chisel3.core.dontTouch
-import chisel3.internal.naming.chiselName
 import chisel3.util._
 import myutil._
 import config._
@@ -53,9 +51,9 @@ class PEn(val position: (Int, Int) = (0, 0))(implicit p: Parameters) extends Mod
     pen(i).io.totalSingleFilterNum := io.totalSingleFilterNum
   }
   // oSum
-  val addT = addTree(pen.map(_.io.oSumSRAM.bits) :+ io.iSum.bits)
+  val addT = addTree(pen.map(_.io.oSumSRAM.bits))
   io.oSumSRAM.valid := pen.head.io.oSumSRAM.valid
-  io.oSumSRAM.bits := addT
+  io.oSumSRAM.bits := addT //+ io.iSum.bits
   pen.foreach(_.io.oSumSRAM.ready := io.oSumSRAM.ready)
   io.iSum.ready := pen.head.io.oSumSRAM.valid & io.oSumSRAM.ready
 

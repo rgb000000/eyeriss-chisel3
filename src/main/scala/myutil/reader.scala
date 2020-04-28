@@ -72,15 +72,15 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
   val io = IO(new Bundle {
     val r = Flipped(new BRAMInterface(p(BRAMKey).dataW))
     val dout = DecoupledIO(UInt(p(BRAMKey).dataW.W))
-    val go = Input(Bool())
 
-    val len = Input(UInt(16.W))
     val addr = Input(UInt(p(BRAMKey).addrW.W))
-
-    val totalOutChannel = Input(UInt(8.W))
 
     val fid = Output(UInt(p(Shape)._1.W))
     val done = Output(Bool())
+
+    val go = Input(Bool())
+    val len = Input(UInt(16.W))
+    val inChannelGroup = Input(UInt(8.W))
   })
 
   val idle :: read :: done :: Nil = Enum(3)
@@ -89,7 +89,7 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
 
   val baseAddr = RegInit(0.U(p(BRAMKey).addrW.W))
   val addr = RegInit(0.U(p(BRAMKey).addrW.W))
-  val totalOutChannel = Reg(UInt(8.W))
+  val inChannelGroup = Reg(UInt(8.W))
   val we = RegInit(false.B)
   val valid = RegInit(false.B)
   val validDelay = RegNext(valid)
@@ -98,11 +98,13 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
   val q = Queue(qIn)
   io.dout <> q
 
+  // poolIn
   val pIn = Wire(DecoupledIO(UInt(p(BRAMKey).dataW.W)))
   pIn.bits := io.r.dout
   pIn.valid := validDelay & (!qIn.ready)
   val dataPool = Queue(pIn)
 
+  // when dataPool have data, get data from it instead of from ram
   when(dataPool.valid) {
     qIn <> dataPool
   }.otherwise {
@@ -131,21 +133,15 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
     len := io.len
     addr := io.addr - 1.U
     baseAddr := io.addr
-    totalOutChannel := io.totalOutChannel
+    inChannelGroup := io.inChannelGroup
   }
 
-  val pointCnt = Counter(16)
+  // addr logic
   when(state === read) {
     when(qIn.ready & !dataPool.valid) {
-      when(pointCnt.value === 0.U){
-        addr := baseAddr
-        baseAddr := baseAddr + totalOutChannel
-      }.otherwise{
-        addr := addr + 1.U
-      }
+      addr := addr + 1.U
       valid := 1.U
       len := len - 1.U
-      pointCnt.inc()
     }.otherwise {
       addr := addr
       valid := 0.U
@@ -157,14 +153,17 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
     valid := 0.U
   }
 
-  val idCnt = Counter(3)       // 3 * 16, outChannel first
+  // fid logic
+  val idCnt = Counter(48)       // 3 * 16, outChannel first
   val id = RegInit(1.asUInt(p(Shape)._1.W))
   io.fid := id
   when(io.dout.fire()) {
-    when(idCnt.value === 2.U) {
+    when(idCnt.value === (inChannelGroup * 3.U - 1.U)) {
       id := id << 1.U
+      idCnt.value := 0.U
+    }.otherwise{
+      idCnt.inc()
     }
-    idCnt.inc()
   }
 
   io.r.addr := addr
@@ -194,7 +193,7 @@ class BRAMImgReader(implicit p: Parameters) extends Module {
   val validDelay = RegNext(valid)
 
   val qIn = Wire(DecoupledIO(UInt((n * p(BRAMKey).dataW).W)))
-  val q = Queue(qIn)
+  val q = Queue(qIn, 16)
   val widthcvt = Module(new widthCvtWire(n * p(BRAMKey).dataW, p(BRAMKey).dataW))
   widthcvt.io.in := q.bits
   io.doutSplit.valid := q.valid
@@ -202,7 +201,7 @@ class BRAMImgReader(implicit p: Parameters) extends Module {
   q.ready := io.doutSplit.ready
 
 
-  val pIn = Wire(DecoupledIO(UInt(p(BRAMKey).dataW.W)))
+  val pIn = Wire(DecoupledIO(UInt((n * p(BRAMKey).dataW).W)))
   pIn.bits := io.r.dout
   pIn.valid := validDelay & (!qIn.ready)
   val dataPool = Queue(pIn)
@@ -264,12 +263,12 @@ class BRAMFilterReaderTestTop(implicit p: Parameters) extends Module {
     val go = Input(Bool())
     val len = Input(UInt(16.W))
     val addr = Input(UInt(p(BRAMKey).addrW.W))
-    val totalOutChannel = Input(UInt(8.W))
+    val inChannelGroup = Input(UInt(8.W))
     val fid = Output(UInt(p(Shape)._1.W))
   })
   val bram = Module(new BRAM(p(BRAMKey).dataW))
   val reader = Module(new BRAMFilterReader)
-  reader.io.totalOutChannel := io.totalOutChannel
+  reader.io.inChannelGroup := io.inChannelGroup
   bram.io <> reader.io.r
   reader.io.go := io.go
   reader.io.len := io.len

@@ -10,13 +10,13 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
   val filterNum = 1
   val singleFilterLen = 3
   val imgNum = 1
-  val nchannel = 1
+  val nchannel = 16
   val relu = 1
 
   val singleImgLen = 5
   val totalOutChannel = 1
 
-  for(i <- 0 until p(MaxChannel) * 2){
+  def go(filterAddr: BigInt, featureAddr: BigInt): Unit ={
     // config PEConfig
     poke(c.io.peconfig.filterNum, filterNum)
     poke(c.io.peconfig.singleFilterLen, singleFilterLen)
@@ -24,11 +24,10 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     poke(c.io.peconfig.singleImgLen, singleImgLen)
     poke(c.io.peconfig.nchannel, nchannel)
     poke(c.io.peconfig.relu, relu)
-    poke(c.io.peconfig.totalOutChannel, totalOutChannel)
     poke(c.io.peconfig.bias, 0)
     poke(c.io.peconfig.accState, 0)
-    poke(c.io.peconfig.filterAddr, 0)
-    poke(c.io.peconfig.imgAddr, 0)
+    poke(c.io.peconfig.filterAddr, filterAddr)
+    poke(c.io.peconfig.imgAddr, featureAddr)
 
     // stateSW 00 to 01
     poke(c.io.stateSW, 0)
@@ -44,7 +43,9 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     }
     step(10)
   }
-  step(100)
+
+  go(0, 0)
+
 }
 
 class PEnArrayShellWithWBTester extends ChiselFlatSpec {

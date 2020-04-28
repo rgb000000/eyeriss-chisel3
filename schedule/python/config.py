@@ -19,10 +19,10 @@ else:
 STEP = ROWMAX - (FILTERSIZE - 1)
 
 # convolution parameters
-outChannel = 8
-inChannel = 64
+outChannel = 1
+inChannel = 128
 inChannelGroup = math.ceil(inChannel / CHANNELMAX)
-featureSize = 8
+featureSize = 5
 
 print()
 print()
