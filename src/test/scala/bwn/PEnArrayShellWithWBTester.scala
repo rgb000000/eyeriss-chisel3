@@ -7,13 +7,14 @@ import config._
 import node._
 
 class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p: Parameters) extends PeekPokeTester(c){
-  val filterNum = 1
   val singleFilterLen = 3
   val imgNum = 1
-  val nchannel = 16
   val relu = 1
 
-  val singleImgLen = 8
+  val nchannel = 1        //input Channel Group
+  val filterNum = 1       //output channel
+  val singleImgLen = 5
+
   val totalOutChannel = 1
 
   def go(filterAddr: BigInt, featureAddr: BigInt, forceOut: Int = 0): Unit ={
@@ -45,14 +46,18 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     step(10)
   }
 
-  for (i <- 0 until 8){
-    go(0x00, 0x00)
-  }
-
-  for (i <- 0 until 7){
-    go(0x00, 0x80)
-  }
-  go(0x00, 0x80, 1)
+//  var faddr = 0x00
+//  for(i <- 0 until 8){
+//    go(faddr, 0x00, 0)
+//    faddr += 0x9
+//  }
+//
+//  for(i <- 0 until 7){
+//    go(faddr, 0x08, 0)
+//    faddr += 0x9
+//  }
+//  go(faddr, 0x08, 1)
+  go(0x00, 0x00, 1)
 
   step(100)
 

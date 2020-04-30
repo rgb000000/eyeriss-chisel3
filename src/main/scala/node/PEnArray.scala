@@ -55,7 +55,7 @@ class PEnArray(implicit p: Parameters) extends Module {
   // PEnArray
   // row share filter in
   for (i <- 0 until p(Shape)._2) {
-    (penarray.map(_ (i)), FselectPass.reverse).zipped.foreach(_.io.filter <> _.io.out)
+    (penarray.map(_ (i)), FselectPass).zipped.foreach(_.io.filter <> _.io.out)
   }
   // bolique upward image in
   penarray.foreach(_.foreach((PEn) => {
@@ -144,8 +144,8 @@ class PEnArrayShell(implicit p: Parameters) extends Module {
   penarray.io.Freader <> freader.io.dout
   penarray.io.Fid <> freader.io.fid
 
-  penarray.io.Ireaders.reverse.foreach(_.valid := ireader.io.doutSplit.valid)
-  (penarray.io.Ireaders.reverse, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
+  penarray.io.Ireaders.foreach(_.valid := ireader.io.doutSplit.valid)
+  (penarray.io.Ireaders, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
   ireader.io.doutSplit.ready := penarray.io.Ireaders.last.ready
 
   (accs, penarray.io.Write).zipped.foreach(_.io.in <> _)

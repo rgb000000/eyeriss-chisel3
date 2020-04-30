@@ -46,8 +46,8 @@ class PEnArrayShellWithWB(implicit p: Parameters) extends Module {
   penarray.io.Freader <> freader.io.dout
   penarray.io.Fid <> freader.io.fid
 
-  penarray.io.Ireaders.reverse.foreach(_.valid := ireader.io.doutSplit.valid)
-  (penarray.io.Ireaders.reverse, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
+  penarray.io.Ireaders.foreach(_.valid := ireader.io.doutSplit.valid)
+  (penarray.io.Ireaders, ireader.io.doutSplit.bits).zipped.foreach(_.bits := _)
   ireader.io.doutSplit.ready := penarray.io.Ireaders.last.ready
 
   val wb = Module(new NewWB)
