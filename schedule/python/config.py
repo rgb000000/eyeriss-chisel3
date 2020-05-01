@@ -19,10 +19,10 @@ else:
 STEP = ROWMAX - (FILTERSIZE - 1)
 
 # convolution parameters
-outChannel = 1
+outChannel = 8
 inChannel = 8
 inChannelGroup = math.ceil(inChannel / CHANNELMAX)
-featureSize = 5
+featureSize = 8
 
 assert((inChannel % CHANNELMAX) == 0, "inChannel must be multiple CHANNELMAX")
 

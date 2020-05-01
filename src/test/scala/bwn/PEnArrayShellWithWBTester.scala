@@ -11,11 +11,12 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
   val imgNum = 1
   val relu = 1
 
-  val nchannel = 1        //input Channel Group
   val filterNum = 1       //output channel
-  val singleImgLen = 5
-
   val totalOutChannel = 1
+
+  val nchannel = 1        //input Channel Group
+  val singleImgLen = 8
+
 
   def go(filterAddr: BigInt, featureAddr: BigInt, forceOut: Int = 0): Unit ={
     // config PEConfig
@@ -38,6 +39,7 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     step(1)
     poke(c.io.go, 1)
     step(1)
+    poke(c.io.go, 0)
     poke(c.io.stateSW, 0)
 
     while (peek(c.io.done) != 1){
@@ -46,18 +48,27 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     step(10)
   }
 
-//  var faddr = 0x00
-//  for(i <- 0 until 8){
-//    go(faddr, 0x00, 0)
-//    faddr += 0x9
-//  }
-//
-//  for(i <- 0 until 7){
+  var faddr = 0x00
+  for(i <- 0 until 8){
+    go(faddr, 0x00, 0)
+    println("faddr : " + faddr.toString)
+    faddr += 0x9
+  }
+
+  faddr = 0x00
+  for(i <- 0 until 7){
+    go(faddr, 0x08, 0)
+    println("faddr : " + faddr.toString)
+    faddr += 0x9
+  }
+  go(faddr, 0x08, 1)
+  println("faddr : " + faddr.toString + "and this is end")
+  //
+  //  for(i <- 0 until 7){
 //    go(faddr, 0x08, 0)
 //    faddr += 0x9
 //  }
 //  go(faddr, 0x08, 1)
-  go(0x00, 0x00, 1)
 
   step(100)
 
