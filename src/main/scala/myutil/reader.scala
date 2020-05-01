@@ -101,8 +101,10 @@ class BRAMFilterReader(implicit p: Parameters) extends Module {
   // poolIn
   val pIn = Wire(DecoupledIO(UInt(p(BRAMKey).dataW.W)))
   pIn.bits := io.r.dout
-  pIn.valid := validDelay & (!qIn.ready)
   val dataPool = Queue(pIn)
+  pIn.valid := (validDelay & (!qIn.ready)) | (validDelay & qIn.ready & dataPool.valid)
+  val test = WireInit(validDelay & qIn.ready & dataPool.valid)
+  dontTouch(test)
 
   // when dataPool have data, get data from it instead of from ram
   when(dataPool.valid) {
@@ -203,8 +205,10 @@ class BRAMImgReader(implicit p: Parameters) extends Module {
 
   val pIn = Wire(DecoupledIO(UInt((n * p(BRAMKey).dataW).W)))
   pIn.bits := io.r.dout
-  pIn.valid := validDelay & (!qIn.ready)
   val dataPool = Queue(pIn)
+  pIn.valid := (validDelay & (!qIn.ready)) | (validDelay & qIn.ready & dataPool.valid)
+  val test = WireInit(validDelay & qIn.ready & dataPool.valid)
+  dontTouch(test)
 
   when(dataPool.valid) {
     qIn <> dataPool

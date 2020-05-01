@@ -15,8 +15,13 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
   val totalOutChannel = 1
 
   val nchannel = 1        //input Channel Group
-  val singleImgLen = 8
+  val singleImgLen = 32
 
+  val filterAddr =  0x003f
+  val filterStep =  0x0009
+
+  val featureAddr = 0x0120
+  val featureStep = 0x0020
 
   def go(filterAddr: BigInt, featureAddr: BigInt, forceOut: Int = 0): Unit ={
     // config PEConfig
@@ -48,30 +53,19 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     step(10)
   }
 
-  var faddr = 0x00
-  for(i <- 0 until 8){
-    go(faddr, 0x00, 0)
-    println("faddr : " + faddr.toString)
-    faddr += 0x9
-  }
 
-  faddr = 0x00
-  for(i <- 0 until 7){
-    go(faddr, 0x08, 0)
-    println("faddr : " + faddr.toString)
-    faddr += 0x9
+  for(featureaddr <- 0 to featureAddr by featureStep){
+    for(filteraddr <- 0 to filterAddr by filterStep){
+      println("filter : " + filteraddr.toString + " <-> " + "feature : " + featureaddr.toString)
+      if ((featureaddr == featureAddr) && (filteraddr == filterAddr)){
+        go(filteraddr, featureaddr, 1)
+        println(">>>>>>>>>>>>>>>   This is END")
+      }else{
+        go(filteraddr, featureaddr, 0)
+      }
+    }
   }
-  go(faddr, 0x08, 1)
-  println("faddr : " + faddr.toString + "and this is end")
-  //
-  //  for(i <- 0 until 7){
-//    go(faddr, 0x08, 0)
-//    faddr += 0x9
-//  }
-//  go(faddr, 0x08, 1)
-
   step(100)
-
 }
 
 class PEnArrayShellWithWBTester extends ChiselFlatSpec {

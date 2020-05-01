@@ -22,7 +22,7 @@ STEP = ROWMAX - (FILTERSIZE - 1)
 outChannel = 8
 inChannel = 8
 inChannelGroup = math.ceil(inChannel / CHANNELMAX)
-featureSize = 8
+featureSize = 32
 
 assert((inChannel % CHANNELMAX) == 0, "inChannel must be multiple CHANNELMAX")
 
