@@ -252,6 +252,7 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
       outAddr.inc()
     }
     io.outValid := outAddr.value =/= 0.U
+    io.outAddr := outAddr.value - 1.U
     when(lastState === ping){
       (io.inputRowDataOut, uramPP(0).map(_.io.dout) :+ 0.U :+ 0.U).zipped.foreach(_ := _)
     }.elsewhen(lastState === pong){
