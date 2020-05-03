@@ -24,18 +24,16 @@ class BRAMFilterReaderTests(c:BRAMFilterReaderTestTop) extends PeekPokeTester(c)
 }
 
 class BRAMImgReaderTests(c:BRAMImgReaderTestTop) extends PeekPokeTester(c){
-  poke(c.io.len, 9)
-  poke(c.io.addr, -1)
+  poke(c.io.len, 33)
+  poke(c.io.addr, 0)
+  poke(c.io.topOrBottom, 0)
+  poke(c.io.inChannel, 1)
   poke(c.io.go, 0)
+  poke(c.io.doutSplit.ready, 1)
   step(1)
   poke(c.io.go, 1)
   step(1)
-  step(10)
-  poke(c.io.doutSplit.ready, 1)
-  step(10)
-  poke(c.io.doutSplit.ready, 0)
-  step(10)
-  poke(c.io.doutSplit.ready, 1)
+  poke(c.io.go, 0)
   step(100)
 }
 
