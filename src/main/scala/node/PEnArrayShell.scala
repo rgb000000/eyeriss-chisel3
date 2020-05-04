@@ -36,9 +36,12 @@ class PEnArrayShellWithWB(implicit p: Parameters) extends Module {
   freader.io.go := io.go
   freader.io.addr := io.peconfig.filterAddr
   freader.io.len := io.peconfig.singleFilterLen * p(Shape)._1.asUInt() * io.peconfig.filterNum * io.peconfig.nchannel
-  val ireader = withReset(penarrayRST)(Module(new BRAMImgReader))
+  val ireader = withReset(penarrayRST)(Module(new BRAMImgReaderWithPadding))
+  ireader.io.inChannel := io.peconfig.nchannel
+  ireader.io.topOrBottom := io.peconfig.topOrBottom
+  ireader.io.replace := io.peconfig.replace
   ireader.io.r <> io.ImgBRAM
-  ireader.io.go := freader.io.done
+  ireader.io.go := (freader.io.done) & (!RegNext(freader.io.done))
   ireader.io.addr := io.peconfig.imgAddr
   ireader.io.len := io.peconfig.singleImgLen * io.peconfig.nchannel
 
@@ -52,7 +55,7 @@ class PEnArrayShellWithWB(implicit p: Parameters) extends Module {
 
   val wb = Module(new NewWB)
   wb.io.forceOut := io.peconfig.forceOut
-  wb.io.rowLength := io.peconfig.singleImgLen - io.peconfig.singleFilterLen + 1.U
+  wb.io.rowLength := io.peconfig.singleImgLen + 2.U - io.peconfig.singleFilterLen + 1.U // padding + 2
   (wb.io.dins, penarray.io.Write).zipped.foreach(_ <> _)
   io.done := wb.io.done
   penarrayRST := wb.io.done | reset.asBool()

@@ -15,7 +15,7 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
   val totalOutChannel = 1
 
   val nchannel = 1        //input Channel Group
-  val singleImgLen = 32
+  val singleImgLen = 8
 
   val filterAddr =  0x003f
   val filterStep =  0x0009
@@ -23,7 +23,7 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
   val featureAddr = 0x0120
   val featureStep = 0x0020
 
-  def go(filterAddr: BigInt, featureAddr: BigInt, forceOut: Int = 0): Unit ={
+  def go(filterAddr: BigInt, featureAddr: BigInt, forceOut: Int = 0, topOrBottom:Int = 1, replace:Int = 1): Unit ={
     // config PEConfig
     poke(c.io.peconfig.filterNum, filterNum)
     poke(c.io.peconfig.singleFilterLen, singleFilterLen)
@@ -36,6 +36,8 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     poke(c.io.peconfig.filterAddr, filterAddr)
     poke(c.io.peconfig.imgAddr, featureAddr)
     poke(c.io.peconfig.forceOut, forceOut)
+    poke(c.io.peconfig.topOrBottom, topOrBottom)
+    poke(c.io.peconfig.replace, replace)
 
     // stateSW 00 to 01
     poke(c.io.stateSW, 0)
@@ -46,6 +48,7 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     step(1)
     poke(c.io.go, 0)
     poke(c.io.stateSW, 0)
+    step(1)
 
     while (peek(c.io.done) != 1){
       step(1)
@@ -53,18 +56,44 @@ class PEnArrayShellWithWBTestTopTests(c: PEnArrayShellWithWBTestTop)(implicit p:
     step(10)
   }
 
+  go(0x00, 0x00, 0, 0, 1)
+  go(0x09, 0x00, 0, 0, 1)
+  go(0x12, 0x00, 0, 0, 1)
+  go(0x1b, 0x00, 0, 0, 1)
+  go(0x24, 0x00, 0, 0, 1)
+  go(0x2d, 0x00, 0, 0, 1)
+  go(0x36, 0x00, 0, 0, 1)
+  go(0x3f, 0x00, 0, 0, 0)
 
-  for(featureaddr <- 0 to featureAddr by featureStep){
-    for(filteraddr <- 0 to filterAddr by filterStep){
-      println("filter : " + filteraddr.toString + " <-> " + "feature : " + featureaddr.toString)
-      if ((featureaddr == featureAddr) && (filteraddr == filterAddr)){
-        go(filteraddr, featureaddr, 1)
-        println(">>>>>>>>>>>>>>>   This is END")
-      }else{
-        go(filteraddr, featureaddr, 0)
-      }
-    }
-  }
+  go(0x00, 0x08, 0, 1, 1)
+  go(0x09, 0x08, 0, 1, 1)
+  go(0x12, 0x08, 0, 1, 1)
+  go(0x1b, 0x08, 0, 1, 1)
+  go(0x24, 0x08, 0, 1, 1)
+  go(0x2d, 0x08, 0, 1, 1)
+  go(0x36, 0x08, 0, 1, 1)
+  go(0x3f, 0x08, 0, 1, 0)
+
+
+  go(0x00, 0x08, 0, 2, 1)
+  go(0x09, 0x08, 0, 2, 1)
+  go(0x12, 0x08, 0, 2, 1)
+  go(0x1b, 0x08, 0, 2, 1)
+  go(0x24, 0x08, 0, 2, 1)
+  go(0x2d, 0x08, 0, 2, 1)
+  go(0x36, 0x08, 0, 2, 1)
+  go(0x3f, 0x08, 1, 2, 0)
+//  for(featureaddr <- 0 to featureAddr by featureStep){
+//    for(filteraddr <- 0 to filterAddr by filterStep){
+//      println("filter : " + filteraddr.toString + " <-> " + "feature : " + featureaddr.toString)
+//      if ((featureaddr == featureAddr) && (filteraddr == filterAddr)){
+//        go(filteraddr, featureaddr, 1)
+//        println(">>>>>>>>>>>>>>>   This is END")
+//      }else{
+//        go(filteraddr, featureaddr, 0)
+//      }
+//    }
+//  }
   step(100)
 }
 

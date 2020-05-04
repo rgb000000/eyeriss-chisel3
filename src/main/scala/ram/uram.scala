@@ -151,6 +151,8 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
   val lastState = RegInit(ping)
   val canOut = RegInit(false.B)
 
+  val remainder = (io.length - (p(Shape)._1 + p(Shape)._2 - 1).U) % (p(Shape)._1 + p(Shape)._2 - 3).U
+
   val qs = Seq.tabulate(p(Shape)._2)(i => Queue(io.dins(i), 16))
   val uramPP = Seq.fill(2, p(Shape)._2)(Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel))))
   uramPP.foreach(_.foreach(_.io.clk := clock))
@@ -251,12 +253,21 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
     }.otherwise{
       outAddr.inc()
     }
-    io.outValid := outAddr.value =/= 0.U
+    when(remainder === 0.U){
+      io.outValid := 0.U
+    }.otherwise{
+      io.outValid := outAddr.value =/= 0.U
+    }
     io.outAddr := outAddr.value - 1.U
     when(lastState === ping){
       (io.inputRowDataOut, uramPP(0).map(_.io.dout) :+ 0.U :+ 0.U).zipped.foreach(_ := _)
     }.elsewhen(lastState === pong){
       (io.inputRowDataOut, uramPP(1).map(_.io.dout) :+ 0.U :+ 0.U).zipped.foreach(_ := _)
+    }
+    for (i <- 1 to io.inputRowDataOut.length){
+      when(remainder < i.U){
+        io.inputRowDataOut(i - 1) := 0.U
+      }
     }
   }
 }

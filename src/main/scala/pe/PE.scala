@@ -25,6 +25,10 @@ class PEConfigReg(implicit val p: Parameters) extends Bundle {
   val imgAddr = UInt(16.W)
 
   val forceOut = Bool()
+
+  // feature reader
+  val topOrBottom = UInt(2.W)
+  val replace = Bool()
 }
 
 
@@ -161,7 +165,6 @@ class PE(position: (Int, Int) = (0, 0))(implicit val p: Parameters)
   //  }
 
   val addr = Wire(UInt(log2Ceil(p(PSumMemDepth)).W))
-  val singleResultLen = configReg.singleImgLen - configReg.singleFilterLen + 1.U
   addr := fCalCnt.value
   //  when(mode === normal){
   //    addr := pSumAddr.value

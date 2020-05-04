@@ -39,6 +39,7 @@ class PETesterTop(val position: (Int, Int) = (0, 0))(implicit val p:Parameters) 
   pe.io.img <> iIn
   //  pe.io.oSum <> io.oSum
   pe.io.regConfig := io.peconfig
+  pe.io.regConfig.singleImgLen := io.peconfig.singleImgLen + 2.U //padding + 2
   pe.io.stateSW := io.stateSW
 
   io.stateOut := pe.io.stateOut
