@@ -24,16 +24,51 @@ class BRAMFilterReaderTests(c:BRAMFilterReaderTestTop) extends PeekPokeTester(c)
 }
 
 class BRAMImgReaderTests(c:BRAMImgReaderTestTop) extends PeekPokeTester(c){
-  poke(c.io.len, 33)
-  poke(c.io.addr, 0)
-  poke(c.io.topOrBottom, 0)
-  poke(c.io.inChannel, 1)
-  poke(c.io.go, 0)
-  poke(c.io.doutSplit.ready, 1)
-  step(1)
-  poke(c.io.go, 1)
-  step(1)
-  poke(c.io.go, 0)
+  val len = 32
+  val inChannel = 1
+  def go(addr: BigInt, topOrBotton: Int, replace: Int = 0): Unit ={
+    reset(1)
+    poke(c.io.len, len)
+    poke(c.io.addr, addr)
+    poke(c.io.topOrBottom, topOrBotton)
+    poke(c.io.inChannel, inChannel)
+    poke(c.io.go, 0)
+    poke(c.io.replace, replace)
+    poke(c.io.doutSplit.ready, 1)
+    step(1)
+    poke(c.io.go, 1)
+    step(1)
+    poke(c.io.go, 0)
+    while(peek(c.io.done) != 1){
+      step(1)
+    }
+  }
+  go(0x00, 0, 1)
+  go(0x00, 0, 1)
+  go(0x00, 0, 1)
+  go(0x00, 0, 0)
+
+  go(0x20, 1, 1)
+  go(0x20, 1, 1)
+  go(0x20, 1, 1)
+  go(0x20, 1, 0)
+
+  go(0x40, 1, 1)
+  go(0x40, 1, 1)
+  go(0x40, 1, 1)
+  go(0x40, 1, 0)
+
+  go(0x40, 2, 1)
+  go(0x40, 2, 1)
+  go(0x40, 2, 1)
+  go(0x40, 2, 1)
+//  go(0x40, 1)
+//  go(0x60, 1)
+//  go(0x80, 1)
+//  go(0xa0, 1)
+//  go(0xc0, 1)
+//  go(0xe0, 1)
+//  go(0xc0, 1)
   step(100)
 }
 

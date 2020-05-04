@@ -185,12 +185,14 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
 
     // 0 1 2 -> top middle bottom
     val topOrBottom = Input(UInt(2.W))
+    val replace = Input(Bool())
     val inChannel = Input(UInt(8.W))
     val done = Output(Bool())
   })
 
   // uram control signal
   val addr = RegInit(0.U(p(BRAMKey).addrW.W))
+  val tempaddr = RegInit(0.U(p(BRAMKey).addrW.W))
   val we = RegInit(false.B)
   val valid = RegInit(false.B)
   val validDelay = RegInit(false.B)
@@ -200,12 +202,13 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
   // temp uram
   val tempRow = Module(new URAM(p(BRAMKey).addrW, p(BRAMKey).dataW))
   val tempRowWE = RegInit(false.B)
+  tempRow.io.clk := clock
   tempRowWE := validDelay
   // counter backward 3rd
   val tempRowWdata = RegNext(io.r.dout((n-2)*p(BRAMKey).dataW - 1, (n-3)*p(BRAMKey).dataW))
-  val tempRowAddr = RegNext(RegNext(addr))
-  tempRow.io.we := tempRowWE
-  tempRow.io.waddr := tempRowAddr
+  val tempRowWAddr = RegNext(RegNext(addr - io.addr))
+  tempRow.io.we := tempRowWE & (io.replace === 0.U)
+  tempRow.io.waddr := tempRowWAddr
   tempRow.io.din := tempRowWdata
 
   val outData = Wire(UInt((n * p(BRAMKey).dataW).W))
@@ -217,7 +220,7 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
     outData := (io.r.dout << p(BRAMKey).dataW.U).asUInt() + tempRow.io.dout
   }.elsewhen(io.topOrBottom === 2.U){
     // bottom
-    outData := (io.r.dout << p(BRAMKey).dataW.U).asUInt() + 0.asUInt(p(BRAMKey).dataW.W)
+    outData := (io.r.dout(n * p(BRAMKey).dataW - 1, (n-2) * p(BRAMKey).dataW) << p(BRAMKey).dataW.U).asUInt() + tempRow.io.dout
   }.otherwise{
     // error
     outData := 0.U
@@ -246,9 +249,12 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
   }
 
   val outLen = Counter(512)
+  val outLenOut = Counter(512)
 
 
-  io.done := 0.U
+  val done = RegInit(false.B)
+  io.done := done
+  done := 0.U
   val channleCnt = Counter(256)
   val idle :: left :: middle :: right :: Nil = Enum(4)
   val state = RegInit(idle)
@@ -269,7 +275,7 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
       }
     }
     is(middle){
-      when(outLen.value === io.len){
+      when(outLenOut.value === io.len){
         state := right
       }
     }
@@ -279,7 +285,7 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
           channleCnt.value := 0.U
           state := middle
           state := idle
-          io.done := 1.U
+          done := 1.U
         }.otherwise {
           channleCnt.inc()
         }
@@ -289,6 +295,7 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
   // state === idle logic
   when(state === idle){
     addr := io.addr - 1.U
+    tempaddr := 0.U - 1.U
   }
   // state === top logic
   when(state === left){
@@ -298,11 +305,16 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
   }.elsewhen(state === middle){
     when((qIn.ready & !dataPool.valid) & (outLen.value =/= io.len)) {
       addr := addr + 1.U
+      tempaddr := tempaddr + 1.U
       valid := 1.U
       outLen.inc()
     }.otherwise {
       addr := addr
+      tempaddr := tempaddr
       valid := 0.U
+    }
+    when(qIn.fire()){
+      outLenOut.inc()
     }
   }.elsewhen(state === right){
     when(qIn.ready & !dataPool.valid){
@@ -318,7 +330,7 @@ class BRAMImgReaderWithPadding (implicit p: Parameters) extends Module {
   io.r.addr := addr
   io.r.din := 0.U
   io.r.we := we
-  tempRow.io.raddr := addr
+  tempRow.io.raddr := addr - io.addr
 }
 
 class BRAMImgReader(implicit p: Parameters) extends Module {
@@ -440,6 +452,8 @@ class BRAMImgReaderTestTop(implicit p: Parameters) extends Module {
     // 0 1 2 -> top middle bottom
     val topOrBottom = Input(UInt(2.W))
     val inChannel = Input(UInt(8.W))
+    val replace = Input(Bool())
+    val done = Output(Bool())
   })
   val bram = Module(new BRAM(p(BRAMKey).dataW * n, p(FeatureMEMPath)))
   val reader = Module(new BRAMImgReaderWithPadding)
@@ -449,6 +463,8 @@ class BRAMImgReaderTestTop(implicit p: Parameters) extends Module {
   reader.io.addr := io.addr
   reader.io.inChannel := io.inChannel
   reader.io.topOrBottom := io.topOrBottom
+  reader.io.replace := io.replace
+  io.done := reader.io.done
   io.doutSplit <> reader.io.doutSplit
 }
 
