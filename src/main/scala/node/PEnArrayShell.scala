@@ -20,6 +20,11 @@ class PEnArrayShellWithWB(implicit p: Parameters) extends Module {
     val outValid = Output(Bool())
     val outAddr = Output(UInt(p(URAMKey).addrW.W))
     val inputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
+    val last = Output(Bool())
+    //maxPooling
+    val pooloutValid = Output(Bool())
+    val pooloutAddr = Output(UInt(p(URAMKey).addrW.W))
+    val poolinputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
     // other Config
     val stateSW = Input(UInt(2.W))
     val peconfig = Input(new PEConfigReg)
@@ -54,11 +59,21 @@ class PEnArrayShellWithWB(implicit p: Parameters) extends Module {
   ireader.io.doutSplit.ready := penarray.io.Ireaders.last.ready
 
   val wb = Module(new NewWB)
+  io.last := wb.io.last
   wb.io.forceOut := io.peconfig.forceOut
   wb.io.rowLength := io.peconfig.singleImgLen + 2.U - io.peconfig.singleFilterLen + 1.U // padding + 2
   (wb.io.dins, penarray.io.Write).zipped.foreach(_ <> _)
   io.done := wb.io.done
   penarrayRST := wb.io.done | reset.asBool()
+  val maxPool = Module(new MaxPoolingOut)
+  maxPool.io.forceOut := io.peconfig.forceOut
+  maxPool.io.inRowDataOut := wb.io.inputRowDataOut
+  maxPool.io.inValid := wb.io.outValid
+  maxPool.io.inAddr := wb.io.outAddr
+  maxPool.io.length := wb.io.rowLength
+  io.poolinputRowDataOut := maxPool.io.RowDataOut
+  io.pooloutValid := maxPool.io.outValid
+  io.pooloutAddr := maxPool.io.outAddr
 
   io.inputRowDataOut := wb.io.inputRowDataOut
   io.outValid := wb.io.outValid
@@ -78,6 +93,11 @@ class PEnArrayShellWithWBTestTop(implicit p: Parameters) extends Module{
     val outValid = Output(Bool())
     val outAddr = Output(UInt(p(URAMKey).addrW.W))
     val inputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
+    val last = Output(Bool())
+    //maxPooling
+    val pooloutValid = Output(Bool())
+    val pooloutAddr = Output(UInt(p(URAMKey).addrW.W))
+    val poolinputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
 
     val done = Output(Bool())
     // other Config
@@ -92,6 +112,10 @@ class PEnArrayShellWithWBTestTop(implicit p: Parameters) extends Module{
   io.inputRowDataOut := penarray.io.inputRowDataOut
   io.outValid := penarray.io.outValid
   io.outAddr := penarray.io.outAddr
+  io.last := penarray.io.last
+  io.poolinputRowDataOut := penarray.io.poolinputRowDataOut
+  io.pooloutValid := penarray.io.pooloutValid
+  io.pooloutAddr := penarray.io.pooloutAddr
 
   io.done := penarray.io.done
   penarray.io.FilterBRAM <> filterBRAM.io

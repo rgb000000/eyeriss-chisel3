@@ -87,9 +87,9 @@ class Avalue2MaxChannel(implicit p: Parameters) extends Module {
     }
   })
   when(wIdx === (p(MaxChannel) - 1).asUInt() & (io.op === 1.U)) {
-    when(raddr.value === io.length - 1.U){
+    when(raddr.value === io.length - 1.U) {
       raddr.value := 0.U
-    }.otherwise{
+    }.otherwise {
       raddr.inc()
     }
   }
@@ -98,9 +98,8 @@ class Avalue2MaxChannel(implicit p: Parameters) extends Module {
 }
 
 
-
-class One2MaxChannel(implicit p: Parameters) extends Module{
-  val io = IO(new Bundle{
+class One2MaxChannel(implicit p: Parameters) extends Module {
+  val io = IO(new Bundle {
     val din = Flipped(Decoupled(SInt(p(OSumW).W)))
     val rowLength = Input(UInt(p(URAMKey).addrW.W))
     val dout = Decoupled(UInt((p(OSumW) * p(MaxChannel)).W))
@@ -123,21 +122,264 @@ class One2MaxChannel(implicit p: Parameters) extends Module{
   // addr logic
   io.din.ready := true.B
   io.done := false.B
-  when(io.din.fire()){
+  when(io.din.fire()) {
     we := true.B
     wdata := io.din.bits.asUInt()
-    when(addr.value === io.rowLength - 1.U){
+    when(addr.value === io.rowLength - 1.U) {
       idx.inc()
       addr.value := 0.U
       io.done := true.B
-    }.otherwise{
+    }.otherwise {
       addr.inc()
     }
   }
 }
 
-class MaxChannelReorder (implicit p: Parameters) extends Module{
-  val io = IO(new Bundle{
+class MaxPoolingOut(implicit p: Parameters) extends Module {
+  val n = p(Shape)._2 + p(FilterSize) - 1
+  val io = IO(new Bundle {
+    val inRowDataOut = Input(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
+    val inValid = Input(Bool())
+    val inAddr = Input(UInt(p(URAMKey).addrW.W))
+
+    val RowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
+    val outValid = Output(Bool())
+    val outAddr = Output(UInt(p(URAMKey).addrW.W))
+
+    val length = Input(UInt(p(URAMKey).addrW.W))
+    val forceOut = Input(Bool())
+    val last = Output(Bool())
+  })
+
+  io.outAddr := 0.U
+  io.RowDataOut.foreach(_ := 0.U)
+  io.outValid := 0.U
+  io.last := 0.U
+
+  val lastRowValid = io.length % p(Shape)._2.U + p(Shape)._2.U
+
+  val din = List.fill(n)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+  for (i <- 0 until n) {
+    for (j <- 0 until p(MaxChannel)) {
+      din(i)(j) := io.inRowDataOut(i)((j + 1) * p(AccW) - 1, j * p(AccW)).asSInt()
+    }
+  }
+  val buf = List.fill(n)(RegInit(VecInit(Seq.fill(p(MaxChannel))(0.asSInt(p(AccW).W)))))
+  val getData :: inRowPool :: getData2 :: inRowPool2andRowPool :: lastGetData1 :: lastGetData2 :: Nil = Enum(6)
+  val state = RegInit(getData)
+  val uramWaddr = Counter(256)
+  val uramRaddr = Counter(256)
+  val uramPP = Seq.fill(p(Shape)._2)(Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel))))
+  val afterPoolWaddr = Counter(256)
+  uramPP.foreach(_.io.clk := clock)
+  uramPP.foreach(_.io.din := 0.U)
+  uramPP.foreach(_.io.waddr := uramWaddr.value)
+  uramPP.foreach(_.io.we := 0.U)
+  uramPP.foreach(_.io.raddr := uramRaddr.value)
+  val afterPoolRaddr = Counter(256)
+  val afterPoolPP = Seq.fill(p(Shape)._2)(Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel))))
+  val afterPoolPP2 = Seq.fill(p(Shape)._2)(Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel))))
+  val lastRow = Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel)))
+  val cnt = Counter(512)
+  afterPoolPP.foreach(_.io.clk := clock)
+  afterPoolPP.foreach(_.io.din := 0.U)
+  afterPoolPP.foreach(_.io.waddr := uramRaddr.value)
+  afterPoolPP.foreach(_.io.we := 0.U)
+  afterPoolPP.foreach(_.io.raddr := afterPoolRaddr.value)
+
+  afterPoolPP2.foreach(_.io.clk := clock)
+  afterPoolPP2.foreach(_.io.din := 0.U)
+  afterPoolPP2.foreach(_.io.waddr := uramRaddr.value)
+  afterPoolPP2.foreach(_.io.we := 0.U)
+  afterPoolPP2.foreach(_.io.raddr := afterPoolRaddr.value)
+
+  val canOut = RegInit(false.B)
+  val poolCnt = Counter(2)
+
+  def max(a: SInt, b: SInt): SInt = {
+    Mux(a > b, a, b)
+  }
+  when(io.inValid) {
+    when(cnt.value === io.length - 1.U) {
+      cnt.value := 0.U
+    }.otherwise {
+      cnt.inc()
+    }
+  }
+
+  switch(state) {
+    is(getData) {
+      when(io.forceOut) {
+        state := lastGetData1
+      }.elsewhen(io.inValid) {
+        state := inRowPool
+      }
+    }
+    is(inRowPool) {
+      when(io.inValid & (cnt.value === io.length - 1.U)) {
+        state := getData2
+      }.elsewhen(io.inValid) {
+        state := getData
+      }
+    }
+    is(getData2) {
+      when(io.forceOut){
+        state := lastGetData1
+      }.elsewhen(io.inValid) {
+        state := inRowPool2andRowPool
+      }
+    }
+    is(inRowPool2andRowPool) {
+      when(io.inValid & (cnt.value === io.length - 1.U)) {
+        state := getData
+      }.elsewhen(io.inValid) {
+        state := getData2
+      }
+    }
+    is(lastGetData1) {
+      when(io.inValid){
+        state := lastGetData2
+      }
+    }
+    is(lastGetData2){
+      when(io.inValid){
+        state := lastGetData1
+      }
+    }
+  }
+  when(((state === getData) | (state === getData2)) & io.inValid) {
+    for (i <- 0 until n) {
+      for (j <- 0 until p(MaxChannel)) {
+        buf(i)(j) := din(i)(j)
+      }
+    }
+  }
+
+  when((state === inRowPool) & io.inValid) {
+    //inRow
+    val temp = List.fill(n)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until n) {
+      for (j <- 0 until p(MaxChannel)) {
+        temp(i)(j) := max(buf(i)(j), din(i)(j))
+      }
+    }
+    (uramPP.map(_.io.din), temp.map(_.asUInt())).zipped.foreach(_ := _)
+    uramPP.foreach(_.io.we := 1.U)
+    when(uramWaddr.value === (io.length << 1.U).asUInt() - 1.U) {
+      uramWaddr.value := 0.U
+    }.otherwise {
+      uramWaddr.inc()
+    }
+  }
+
+  when((state === inRowPool2andRowPool) & io.inValid) {
+    // in Row
+    val temp = List.fill(n)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until n) {
+      for (j <- 0 until p(MaxChannel)) {
+        temp(i)(j) := max(buf(i)(j), din(i)(j))
+      }
+    }
+    // between Row
+    val uramDout = List.fill(p(Shape)._2)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until p(Shape)._2) {
+      for (j <- 0 until p(MaxChannel)) {
+        uramDout(i)(j) := uramPP(i).io.dout((j + 1) * p(AccW) - 1, j * p(AccW)).asSInt()
+      }
+    }
+    val topn = List.fill(p(Shape)._2)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for(i <- 0 until p(Shape)._2){
+      (topn(i), temp(i)).zipped.foreach(_ := _)
+    }
+    val last2 = Wire(Vec(p(MaxChannel), SInt(p(AccW).W)))
+    for (i <- 0 until p(MaxChannel)){
+      last2(i) := max(temp(n-2)(i), temp(n-1)(i))
+    }
+    val forPool = (topn ::: uramDout).grouped(2).toList
+    val temp2 = List.fill(p(Shape)._2)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until p(Shape)._2) {
+      for (j <- 0 until p(MaxChannel)) {
+        temp2(i)(j) := max(forPool(i)(0)(j), forPool(i)(1)(j))
+      }
+    }
+//    (afterPoolPP.map(_.io.din), temp2.map(_.asUInt())).zipped.foreach(_ := _)
+//    (afterPoolPP2.map(_.io.din), temp2.map(_.asUInt())).zipped.foreach(_ := _)
+    (io.RowDataOut, temp2.map(_.asUInt()) :+ 0.U :+ 0.U).zipped.foreach(_ := _)
+    io.outValid := 1.U
+    ////////////////
+//    when(poolCnt.value === 0.U){
+//      afterPoolPP.foreach(_.io.we := 1.U)
+//      when(canOut){
+//        (io.RowDataOut, afterPoolPP2.map(_.io.dout) :+ afterPoolPP(0).io.din :+ afterPoolPP(1).io.din).zipped.foreach(_ := _)
+//      }.elsewhen(io.forceOut){
+//        (io.RowDataOut, afterPoolPP.map(_.io.din) :+ last2.asUInt() :+ 0.U).zipped.foreach(_ := _)
+//      }
+//      io.outValid := 1.U
+//    }.elsewhen(poolCnt.value === 1.U){
+//      afterPoolPP2.foreach(_.io.we := 1.U)
+//      when(canOut){
+//        (io.RowDataOut, afterPoolPP.map(_.io.dout) :+ afterPoolPP2(0).io.din :+ afterPoolPP2(1).io.din).zipped.foreach(_ := _)
+//      }
+//      io.outValid := 1.U
+//    }
+    when(uramRaddr.value === (io.length >> 1.U).asUInt() - 1.U) {
+      uramRaddr.value := 0.U
+      canOut := true.B
+      poolCnt.inc()
+    }.otherwise {
+      uramRaddr.inc()
+    }
+  }
+
+  var rowNum = p(Shape)._1 + p(Shape)._2 - 1
+  if(rowNum % 2 == 1){
+    rowNum -= 1
+  }
+  val lastBuf = List.fill(rowNum/2)(RegInit(VecInit(Seq.fill(p(MaxChannel))(0.asSInt(p(AccW).W)))))
+  when((state === lastGetData1) & io.inValid){
+    val temp = List.fill(rowNum)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until rowNum) {
+      for (j <- 0 until p(MaxChannel)) {
+        temp(i)(j) := din(i)(j)
+      }
+    }
+    val temp2 = temp.grouped(2).toList
+    for (i <- 0 until rowNum/2){
+      for(j <- 0 until p(MaxChannel)){
+        lastBuf(i)(j) := max(temp2(i)(0)(j), temp2(i)(1)(j))
+      }
+    }
+  }
+  when((state === lastGetData2) & io.inValid){
+    val temp = List.fill(rowNum)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until rowNum) {
+      for (j <- 0 until p(MaxChannel)) {
+        temp(i)(j) := din(i)(j)
+      }
+    }
+    val temp2 = temp.grouped(2).toList
+    val temp3 = List.fill(rowNum/2)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until rowNum/2){
+      for(j <- 0 until p(MaxChannel)){
+        temp3(i)(j) := max(temp2(i)(0)(j), temp2(i)(1)(j))
+      }
+    }
+    val temp4 = List.fill(rowNum/2)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
+    for (i <- 0 until rowNum/2){
+      for(j <- 0 until p(MaxChannel)){
+        temp4(i)(j) := max(temp3(i)(j), lastBuf(i)(j))
+      }
+    }
+    for(i <- 0 until rowNum/2){
+      io.RowDataOut(i) := temp4(i).asUInt()
+    }
+    io.outValid := 1.U
+  }
+
+}
+
+class MaxChannelReorder(implicit p: Parameters) extends Module {
+  val io = IO(new Bundle {
     val dins = Vec(p(Shape)._2, Flipped(Decoupled(UInt((p(OSumW) * p(MaxChannel)).W))))
     val length = Input(UInt(p(URAMKey).addrW.W))
     val forceOut = Input(Bool())
@@ -145,13 +387,21 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
     val inputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
     val outValid = Output(Bool())
     val outAddr = Output(UInt(p(URAMKey).addrW.W))
+
+    val last = Output(Bool())
   })
   val ping :: pong :: last :: Nil = Enum(3)
   val state = RegInit(ping)
   val lastState = RegInit(ping)
   val canOut = RegInit(false.B)
+  val rowCnt = Counter(512)
+  val rowCntValue = WireInit(rowCnt.value)
+  dontTouch(rowCntValue)
 
-  val remainder = (io.length - (p(Shape)._1 + p(Shape)._2 - 1).U) % (p(Shape)._1 + p(Shape)._2 - 3).U
+  val lastRowValid = io.length % p(Shape)._2.U
+
+  val step = (p(Shape)._1 + p(Shape)._2 - 3).U
+  val remainder = (step - ((io.length - (p(Shape)._1 + p(Shape)._2 - 1).U) % step)) % step
 
   val qs = Seq.tabulate(p(Shape)._2)(i => Queue(io.dins(i), 16))
   val uramPP = Seq.fill(2, p(Shape)._2)(Module(new URAM(p(URAMKey).addrW, p(AccW) * p(MaxChannel))))
@@ -160,32 +410,41 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
 
   val outAddr = Counter(512)
 
-  switch(state){
-    is(ping){
-      when((waddr.value === io.length - 1.U) & qs.head.fire()){
-        when(io.forceOut){
+  io.last := false.B
+
+  switch(state) {
+    is(ping) {
+      when((waddr.value === io.length - 1.U) & qs.head.fire()) {
+        rowCnt.inc()
+        when(io.forceOut) {
           state := last
           lastState := state
-        }.otherwise{
+        }.otherwise {
           state := pong
         }
       }
     }
-    is(pong){
-      when((waddr.value === io.length - 1.U) & qs.head.fire()){
-        when(io.forceOut){
+    is(pong) {
+      when((waddr.value === io.length - 1.U) & qs.head.fire()) {
+        rowCnt.inc()
+        when(io.forceOut) {
           state := last
           lastState := state
-        }.otherwise{
+        }.otherwise {
           state := ping
         }
       }
       canOut := true.B
     }
-    is(last){
-      // because have 1 cycle lantency to read uram so ,there is not (len - 1)
-      when(outAddr.value === io.length){
-        state := ping
+    is(last) {
+      when(lastRowValid =/= 0.U){
+        state === ping
+      }.otherwise{
+        // because have 1 cycle lantency to read uram so ,there is not (len - 1)
+        io.last := 1.U
+        when(outAddr.value === io.length) {
+          state := ping
+        }
       }
     }
   }
@@ -197,23 +456,23 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
   uramPP(1).foreach(_.io.we := false.B)
   (uramPP(1), qs.map(_.bits)).zipped.foreach(_.io.din := _)
 
-  when(qs.map(_.valid).reduce(_ & _)){
+  when(qs.map(_.valid).reduce(_ & _)) {
     qs.foreach(_.ready := true.B)
-  }.otherwise{
+  }.otherwise {
     qs.foreach(_.ready := false.B)
   }
-  when(qs.head.fire()){
-    when(state === ping){
-      when(waddr.value === io.length - 1.U){
+  when(qs.head.fire()) {
+    when(state === ping) {
+      when(waddr.value === io.length - 1.U) {
         waddr.value := 0.U
-      }.otherwise{
+      }.otherwise {
         waddr.inc()
       }
       uramPP(0).foreach(_.io.we := true.B)
-    }.elsewhen(state === pong){
-      when(waddr.value === io.length - 1.U){
+    }.elsewhen(state === pong) {
+      when(waddr.value === io.length - 1.U) {
         waddr.value := 0.U
-      }.otherwise{
+      }.otherwise {
         waddr.inc()
       }
       uramPP(1).foreach(_.io.we := true.B)
@@ -226,54 +485,75 @@ class MaxChannelReorder (implicit p: Parameters) extends Module{
   val valid = RegInit(false.B)
   uramPP.foreach(_.foreach(_.io.raddr := outAddr.value))
 
-  when(canOut){
-    when(qs.head.fire()){
-      when(waddr.value === io.length - 1.U){
+  when(canOut) {
+    when(qs.head.fire()) {
+      when(waddr.value === io.length - 1.U) {
         outAddr.value := 0.U
-      }.otherwise{
+      }.otherwise {
         outAddr.inc()
         valid := true.B
       }
       io.outValid := true.B
+
+      val temp0 = Wire(UInt((p(AccW) * p(MaxChannel)).W))
+      val temp1 = Wire(UInt((p(AccW) * p(MaxChannel)).W))
+      when(io.forceOut){
+        when(lastRowValid === 0.U){
+          temp0 := qs(0).bits
+          temp1 := qs(1).bits
+        }.elsewhen(lastRowValid === 1.U){
+          temp0 := qs(0).bits
+          temp1 := 0.U
+        }.elsewhen(lastRowValid === 2.U){
+          temp0 := qs(0).bits
+          temp1 := qs(1).bits
+        }.otherwise{
+          temp0 := 0xF.U
+          temp1 := 0xF.U
+        }
+      }.otherwise{
+        temp0 := qs(0).bits
+        temp1 := qs(1).bits
+      }
       when(state === pong){
-        (io.inputRowDataOut, uramPP(0).map(_.io.dout) :+ qs(0).bits :+ qs(1).bits).zipped.foreach(
+        (io.inputRowDataOut, uramPP(0).map(_.io.dout) :+ temp0 :+ temp1).zipped.foreach(
           _ := _
         )
       }.elsewhen(state === ping){
-        (io.inputRowDataOut, uramPP(1).map(_.io.dout) :+ qs(0).bits :+ qs(1).bits).zipped.foreach(
+        (io.inputRowDataOut, uramPP(1).map(_.io.dout) :+ temp0 :+ temp1).zipped.foreach(
           _ := _
         )
       }
     }
   }
 
-  when(state === last){
-    when(outAddr.value === io.length){
+  when((state === last) & (lastRowValid === 0.U) ) {
+    when(outAddr.value === io.length) {
       outAddr.value := 0.U
-    }.otherwise{
+    }.otherwise {
       outAddr.inc()
     }
-    when(remainder === 0.U){
+    when(remainder === 0.U) {
       io.outValid := 0.U
-    }.otherwise{
+    }.otherwise {
       io.outValid := outAddr.value =/= 0.U
     }
     io.outAddr := outAddr.value - 1.U
-    when(lastState === ping){
+    when(lastState === ping) {
       (io.inputRowDataOut, uramPP(0).map(_.io.dout) :+ 0.U :+ 0.U).zipped.foreach(_ := _)
-    }.elsewhen(lastState === pong){
+    }.elsewhen(lastState === pong) {
       (io.inputRowDataOut, uramPP(1).map(_.io.dout) :+ 0.U :+ 0.U).zipped.foreach(_ := _)
     }
-    for (i <- 1 to io.inputRowDataOut.length){
-      when(remainder < i.U){
-        io.inputRowDataOut(i - 1) := 0.U
-      }
-    }
+//    for (i <- 0 until io.inputRowDataOut.length){
+//      when(remainder >= (io.inputRowDataOut.length.U - i.U)){
+//        io.inputRowDataOut(i) := 0.U
+//      }
+//    }
   }
 }
 
-class NewWB(implicit p: Parameters) extends Module{
-  val io = IO(new Bundle{
+class NewWB(implicit p: Parameters) extends Module {
+  val io = IO(new Bundle {
     // left
     val dins = Vec(p(Shape)._2, Flipped(Decoupled(SInt(p(OSumW).W))))
     val rowLength = Input(UInt(p(URAMKey).addrW.W))
@@ -282,6 +562,7 @@ class NewWB(implicit p: Parameters) extends Module{
     val inputRowDataOut = Output(Vec(p(Shape)._2 + p(FilterSize) - 1, UInt((p(AccW) * p(MaxChannel)).W)))
     val outValid = Output(Bool())
     val outAddr = Output(UInt(p(URAMKey).addrW.W))
+    val last = Output(Bool())
 
     val done = Output(Bool())
   })
@@ -289,6 +570,7 @@ class NewWB(implicit p: Parameters) extends Module{
   (one2Maxcs, io.dins).zipped.foreach(_.io.din <> _)
   one2Maxcs.foreach(_.io.rowLength := io.rowLength)
   val reorder = Module(new MaxChannelReorder)
+  io.last := reorder.io.last
   reorder.io.forceOut := io.forceOut
   (reorder.io.dins, one2Maxcs).zipped.foreach(_ <> _.io.dout)
   reorder.io.length := io.rowLength
@@ -299,7 +581,6 @@ class NewWB(implicit p: Parameters) extends Module{
 }
 
 
-
 object GetVeilogAvalue2Channel extends App {
   implicit val p = new SmallWidthConfig
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_uram_verilog"), () => new Avalue2MaxChannel)
@@ -308,4 +589,9 @@ object GetVeilogAvalue2Channel extends App {
 object GetVeilogNewWB extends App {
   implicit val p = new SmallWidthConfig
   chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_newwb_verilog"), () => new NewWB)
+}
+
+object GetVeilogMaxPoolingOut extends App {
+  implicit val p = new SmallWidthConfig
+  chisel3.Driver.execute(Array("--target-dir", "test_run_dir/make_maxpooling_verilog"), () => new MaxPoolingOut())
 }
