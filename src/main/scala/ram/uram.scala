@@ -156,6 +156,11 @@ class MaxPoolingOut(implicit p: Parameters) extends Module {
   io.outValid := 0.U
   io.last := 0.U
 
+  val RowData = Wire(Vec(p(Shape)._2, UInt((p(AccW) * p(MaxChannel)).W)))
+  val valid = Wire(Bool())
+  RowData.foreach(_ := 0.U)
+  valid := false.B
+
   val lastRowValid = io.length % p(Shape)._2.U + p(Shape)._2.U
 
   val din = List.fill(n)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
@@ -265,7 +270,7 @@ class MaxPoolingOut(implicit p: Parameters) extends Module {
     }
     (uramPP.map(_.io.din), temp.map(_.asUInt())).zipped.foreach(_ := _)
     uramPP.foreach(_.io.we := 1.U)
-    when(uramWaddr.value === (io.length << 1.U).asUInt() - 1.U) {
+    when(uramWaddr.value === (io.length >> 1.U).asUInt() - 1.U) {
       uramWaddr.value := 0.U
     }.otherwise {
       uramWaddr.inc()
@@ -295,33 +300,15 @@ class MaxPoolingOut(implicit p: Parameters) extends Module {
     for (i <- 0 until p(MaxChannel)){
       last2(i) := max(temp(n-2)(i), temp(n-1)(i))
     }
-    val forPool = (topn ::: uramDout).grouped(2).toList
+    val forPool = (uramDout ::: topn).grouped(2).toList
     val temp2 = List.fill(p(Shape)._2)(Wire(Vec(p(MaxChannel), SInt(p(AccW).W))))
     for (i <- 0 until p(Shape)._2) {
       for (j <- 0 until p(MaxChannel)) {
         temp2(i)(j) := max(forPool(i)(0)(j), forPool(i)(1)(j))
       }
     }
-//    (afterPoolPP.map(_.io.din), temp2.map(_.asUInt())).zipped.foreach(_ := _)
-//    (afterPoolPP2.map(_.io.din), temp2.map(_.asUInt())).zipped.foreach(_ := _)
-    (io.RowDataOut, temp2.map(_.asUInt()) :+ 0.U :+ 0.U).zipped.foreach(_ := _)
-    io.outValid := 1.U
-    ////////////////
-//    when(poolCnt.value === 0.U){
-//      afterPoolPP.foreach(_.io.we := 1.U)
-//      when(canOut){
-//        (io.RowDataOut, afterPoolPP2.map(_.io.dout) :+ afterPoolPP(0).io.din :+ afterPoolPP(1).io.din).zipped.foreach(_ := _)
-//      }.elsewhen(io.forceOut){
-//        (io.RowDataOut, afterPoolPP.map(_.io.din) :+ last2.asUInt() :+ 0.U).zipped.foreach(_ := _)
-//      }
-//      io.outValid := 1.U
-//    }.elsewhen(poolCnt.value === 1.U){
-//      afterPoolPP2.foreach(_.io.we := 1.U)
-//      when(canOut){
-//        (io.RowDataOut, afterPoolPP.map(_.io.dout) :+ afterPoolPP2(0).io.din :+ afterPoolPP2(1).io.din).zipped.foreach(_ := _)
-//      }
-//      io.outValid := 1.U
-//    }
+    (RowData, temp2.map(_.asUInt())).zipped.foreach(_ := _)
+    valid := true.B
     when(uramRaddr.value === (io.length >> 1.U).asUInt() - 1.U) {
       uramRaddr.value := 0.U
       canOut := true.B
@@ -371,10 +358,18 @@ class MaxPoolingOut(implicit p: Parameters) extends Module {
       }
     }
     for(i <- 0 until rowNum/2){
-      io.RowDataOut(i) := temp4(i).asUInt()
+      RowData(i) := temp4(i).asUInt()
     }
-    io.outValid := 1.U
+    valid := true.B
   }
+  val reorder = Module(new MaxChannelReorder)
+  (reorder.io.dins, RowData).zipped.foreach(_.bits := _)
+  reorder.io.dins.foreach(_.valid := valid)
+  reorder.io.length := (io.length >> 1.U).asUInt()
+  reorder.io.forceOut := io.forceOut
+
+  io.RowDataOut <> reorder.io.inputRowDataOut
+  io.outValid := reorder.io.outValid
 
 }
 

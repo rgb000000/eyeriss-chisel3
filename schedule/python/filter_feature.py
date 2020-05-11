@@ -164,6 +164,17 @@ def layer(inChannel, outChannel, featureSize):
                 Z[feature_split_num*Z_split.shape[0]: (feature_split_num + 1)*Z_split.shape[0], :, filterNum] = Z_split[0:residue, :]
     return Z
 
+def MaxPool(Z):
+    shape = Z.shape
+    assert(shape[0]%2 == 0)
+    shape = [int(shape[0]/2), int(shape[1]/2), int(shape[2])]
+    ZZ = np.zeros(shape)
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            for k in range(shape[2]):
+                ZZ[i, j ,k] = Z[i*2:(i+1)*2, j*2:(j+1)*2, k].max()
+    return ZZ
+
 def layerTest():
     
     """ Description: use to test schedule program
