@@ -119,6 +119,9 @@ class AXIRegFile(implicit val p: Parameters) extends Module {
   io.peconfig.accState := regfile(8)
   io.peconfig.filterAddr := regfile(9)
   io.peconfig.imgAddr := regfile(10)
+  io.peconfig.topOrBottom := regfile(11)
+  io.peconfig.forceOut := regfile(12)
+  io.peconfig.replace := regfile(13)
 
   io.loop := regfile(11)
   io.go := regfile(12)
