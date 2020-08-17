@@ -14,7 +14,7 @@ class PETesterTop(val position: (Int, Int) = (0, 0))(implicit val p:Parameters) 
     val filter = Flipped(Decoupled(SInt(p(FilterW).W)))
     val img = Flipped(Decoupled(SInt(p(ImgW).W)))
     //    val oSumMEM = Decoupled(SInt(w.W))
-    val oSumSRAM = Decoupled(SInt(p(OSumW).W))
+    val oSumSRAM = Decoupled(SInt(16.W))
     val stateOut = Output(UInt(4.W))
     val dataDone = Output(Bool())
     val totalFilterNum = Input(UInt(16.W))
@@ -39,7 +39,7 @@ class PETesterTop(val position: (Int, Int) = (0, 0))(implicit val p:Parameters) 
   pe.io.img <> iIn
   //  pe.io.oSum <> io.oSum
   pe.io.regConfig := io.peconfig
-  pe.io.regConfig.singleImgLen := io.peconfig.singleImgLen + 2.U //padding + 2
+  pe.io.regConfig.singleImgLen := io.peconfig.singleImgLen
   pe.io.stateSW := io.stateSW
 
   io.stateOut := pe.io.stateOut

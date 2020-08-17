@@ -5,11 +5,11 @@ import chisel3.util._
 import chisel3.experimental._
 
 @chiselName
-class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 16) extends Module {
+class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 16, w:Int = 8) extends Module {
   val io = IO(new Bundle {
-    val din = Vec(cols, Flipped(DecoupledIO(SInt(8.W))))
-    val dout = Vec(cols/2, DecoupledIO(SInt(8.W)))
-    val channelOutNum = Input(UInt(8.W))
+    val din = Vec(cols, Flipped(DecoupledIO(SInt(w.W))))
+    val dout = Vec(cols/2, DecoupledIO(SInt(w.W)))
+    val channelOutNum = Input(UInt(w.W))
     val peaDone = Input(UInt(1.W))
     val allDone = Output(UInt(1.W))
   })
@@ -23,12 +23,12 @@ class maxPooling(val cols: Int = 32, val stride: Int = 2, channelOut:Int = 16) e
 
   val din = io.din.grouped(2).toList
   for (i <- din.indices) {
-    val qIn = Wire(DecoupledIO(SInt(8.W)))
+    val qIn = Wire(DecoupledIO(SInt(w.W)))
     val q = Queue(qIn, 8)
     val state = RegInit(ud)
     dontTouch(state)
-    val out = RegInit(VecInit(Seq.fill(channelOut)(0.asSInt(8.W))))
-    val out2 = RegInit(VecInit(Seq.fill(channelOut)(0.asSInt(8.W))))
+    val out = RegInit(VecInit(Seq.fill(channelOut)(0.asSInt(w.W))))
+    val out2 = RegInit(VecInit(Seq.fill(channelOut)(0.asSInt(w.W))))
     val channelCnt = Counter(channelOut)
     din(i)(0).ready := qIn.ready
     din(i)(1).ready := qIn.ready

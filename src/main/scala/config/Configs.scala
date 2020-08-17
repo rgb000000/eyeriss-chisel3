@@ -102,6 +102,21 @@ class DefaultConfig(maxChannel: Int = 8, col: Int = 3) extends Config((site, her
 
 })
 
+class ArmConfig extends Config((site, here, up) => {
+  case Shape => (5, 24)
+  case FilterW => 8
+  case ImgW => 8
+  case BiasW => 8
+  case OSumW => 8
+  case AccW => 8
+  case RegFileW => 8
+  case RegFileDepth => 16
+
+  case FilterSpadDepth => 3 * 16 + 1  // just for 1 out channel
+  case ImgSpadDepth => 3 * 16 + 1
+  case PSumMemDepth => 8
+})
+
 class SmallWidthConfig extends DefaultConfig(8, 3)
 
 class BigWidthConfig extends DefaultConfig(64, 14)
